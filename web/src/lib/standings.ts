@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PickOutcome } from "@/generated/prisma";
+import { PickOutcome } from "@/generated/prisma/enums";
 
 const FINISHED = new Set(["FT", "AET", "PEN"]);
 
@@ -59,4 +59,3 @@ export async function recalculateStandingsForTournament(tournamentId: string) {
     ),
   );
 }
-

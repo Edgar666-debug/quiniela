@@ -8,7 +8,7 @@ MVP:
 - Sync de resultados con API-Football + cron en Vercel (`web/vercel.json`).
 
 ## Requisitos
-- Node.js + npm
+- Node.js (recomendado: v24 LTS) + pnpm
 - Supabase (Postgres)
 - API key de [api-football.com](https://www.api-football.com/)
 
@@ -26,9 +26,32 @@ cd web
 npx prisma migrate dev
 ```
 
-3) Dev server:
+3) Instala dependencias:
 ```bash
-npm run dev
+cd web
+pnpm i
+```
+
+4) Dev server:
+```bash
+pnpm dev
+```
+
+## pnpm (supply-chain policies)
+pnpm 11 puede bloquear instalaciones si detecta paquetes “demasiado nuevos” (minimumReleaseAge).
+Si te aparece `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`, ejecuta:
+```bash
+cd web
+pnpm i --trust-lockfile
+```
+Esto puede añadir exclusiones en `web/pnpm-workspace.yaml` para permitir usar el lockfile actual.
+
+## pnpm (build scripts)
+Si te aparece `ERR_PNPM_IGNORED_BUILDS` (por ejemplo Prisma o sharp), aprueba y reconstruye:
+```bash
+cd web
+pnpm approve-builds
+pnpm rebuild
 ```
 
 ## Cron (Vercel)

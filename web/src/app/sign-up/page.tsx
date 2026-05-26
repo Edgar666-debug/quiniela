@@ -22,7 +22,7 @@ export default function SignUpPage() {
           setLoading(true);
           const { error } = await authClient.signUp.email({ name, email, password });
           setLoading(false);
-          if (error) return setError(error.message);
+          if (error) return setError(error.message ?? "No se pudo crear la cuenta");
           window.location.href = "/dashboard";
         }}
       >
@@ -63,4 +63,3 @@ export default function SignUpPage() {
     </main>
   );
 }
-

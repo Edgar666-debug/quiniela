@@ -21,7 +21,7 @@ export default function SignInPage() {
           setLoading(true);
           const { error } = await authClient.signIn.email({ email, password });
           setLoading(false);
-          if (error) return setError(error.message);
+          if (error) return setError(error.message ?? "No se pudo iniciar sesión");
           window.location.href = "/dashboard";
         }}
       >
@@ -55,4 +55,3 @@ export default function SignInPage() {
     </main>
   );
 }
-
