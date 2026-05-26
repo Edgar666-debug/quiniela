@@ -1,0 +1,185 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MemberRole {
+  OWNER
+  ORGANIZER
+  PLAYER
+}
+
+enum PickOutcome {
+  HOME
+  DRAW
+  AWAY
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified Boolean?  @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions  Session[]
+  accounts  Account[]
+
+  tournamentsOwned Tournament[]       @relation("TournamentOwner")
+  memberships      TournamentMember[]
+  picks            Pick[]
+  standings        Standing[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Tournament {
+  id        String   @id @default(cuid())
+  name      String
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownerId String
+  owner   User     @relation("TournamentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  members   TournamentMember[]
+  invites   Invite[]
+  matchdays Matchday[]
+  standings Standing[]
+}
+
+model TournamentMember {
+  id          String     @id @default(cuid())
+  role        MemberRole @default(PLAYER)
+  joinedAt    DateTime   @default(now())
+  tournamentId String
+  userId       String
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+}
+
+model Invite {
+  id           String   @id @default(cuid())
+  token        String   @unique
+  maxUses      Int      @default(1)
+  uses         Int      @default(0)
+  expiresAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+}
+
+model Matchday {
+  id          String   @id @default(cuid())
+  number      Int
+  closesAtUtc DateTime
+  createdAt   DateTime @default(now())
+
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  matches Match[]
+
+  @@unique([tournamentId, number])
+}
+
+model Match {
+  id               String   @id @default(cuid())
+  externalFixtureId Int?    @unique
+  startsAtUtc      DateTime
+  homeTeam         String
+  awayTeam         String
+  statusShort      String   @default("NS")
+  scoreHome        Int?
+  scoreAway        Int?
+  updatedAt        DateTime @updatedAt
+
+  matchdayId String
+  matchday   Matchday @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
+
+  picks Pick[]
+}
+
+model Pick {
+  id        String      @id @default(cuid())
+  outcome   PickOutcome
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  matchId String
+  match   Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, userId])
+}
+
+model Standing {
+  id          String   @id @default(cuid())
+  points      Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+}
