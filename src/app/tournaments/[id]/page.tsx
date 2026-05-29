@@ -1,13 +1,13 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Trophy } from "lucide-react";
+import { ArrowLeft, CalendarDays, Trophy } from "lucide-react";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
-import { StandingsLive } from "./StandingsLive";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default async function TournamentStandingsPage(props: { params: Promise<{ id: string }> }) {
+export default async function TournamentHomePage(props: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/sign-in");
 
@@ -25,17 +25,8 @@ export default async function TournamentStandingsPage(props: { params: Promise<{
   });
   if (!tournament) redirect("/dashboard");
 
-  const initial = await prisma.standing.findMany({
-    where: { tournamentId },
-    orderBy: [{ points: "desc" }, { updatedAt: "desc" }],
-    select: {
-      points: true,
-      user: { select: { id: true, name: true, email: true, image: true } },
-    },
-  });
-
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-16">
+    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-16">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
@@ -43,7 +34,6 @@ export default async function TournamentStandingsPage(props: { params: Promise<{
             <span className="text-sm">Torneo</span>
           </div>
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Ranking en vivo</p>
         </div>
         <Button asChild variant="outline" size="sm">
           <a href="/dashboard">
@@ -52,7 +42,39 @@ export default async function TournamentStandingsPage(props: { params: Promise<{
           </a>
         </Button>
       </div>
-      <StandingsLive tournamentId={tournamentId} initial={initial} />
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Ranking</CardTitle>
+            <CardDescription>Tabla de posiciones en vivo.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <a href={`/tournaments/${tournamentId}/standings`}>
+                <Trophy className="h-4 w-4" />
+                Ver ranking
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Jornadas</CardTitle>
+            <CardDescription>Entrar a una jornada para hacer picks.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline">
+              <a href={`/tournaments/${tournamentId}/matchdays`}>
+                <CalendarDays className="h-4 w-4" />
+                Ver jornadas
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 }
+

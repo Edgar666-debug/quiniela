@@ -15,10 +15,11 @@ MVP:
 ## Configuración
 1) Copia tus variables en `.env`:
    - `DATABASE_URL` (Supabase Postgres)
-   - `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`
-   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `API_FOOTBALL_KEY`
-   - `CRON_SECRET`
+    - `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`
+   - `PASSKEY_RP_ID`, `PASSKEY_RP_NAME` (passkeys/WebAuthn)
+    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+    - `API_FOOTBALL_KEY`
+    - `CRON_SECRET`
 
 2) Migra la base:
 ```bash
