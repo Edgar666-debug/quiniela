@@ -40,6 +40,11 @@ export function MatchdayClient(props: {
   const [homeTeam, setHomeTeam] = useState("");
   const [awayTeam, setAwayTeam] = useState("");
 
+  function toLocalDateTimeInputValue(date: Date) {
+    const tzOffsetMs = date.getTimezoneOffset() * 60_000;
+    return new Date(date.getTime() - tzOffsetMs).toISOString().slice(0, 16);
+  }
+
   const closesAtMs = useMemo(() => new Date(props.initial.matchday.closesAtUtc).getTime(), [props.initial.matchday.closesAtUtc]);
   const [nowMs, setNowMs] = useState(0);
   useEffect(() => {
@@ -100,6 +105,44 @@ export function MatchdayClient(props: {
                 value={fixtureId}
                 onChange={(e) => setFixtureId(e.target.value)}
               />
+              <Button
+                className="w-fit"
+                size="sm"
+                variant="outline"
+                disabled={loading || !fixtureId.trim()}
+                type="button"
+                onClick={async () => {
+                  setMessage(null);
+                  setError(null);
+                  setLoading(true);
+                  const res = await fetch(`/api/api-football/fixtures/${encodeURIComponent(fixtureId.trim())}`, {
+                    cache: "no-store",
+                  });
+                  const data = (await res.json()) as {
+                    fixture?: {
+                      dateUtc: string;
+                      homeTeam: string;
+                      awayTeam: string;
+                      statusShort: string;
+                      scoreHome: number | null;
+                      scoreAway: number | null;
+                    };
+                    error?: string;
+                  };
+                  setLoading(false);
+                  if (!res.ok) return setError(data.error ?? "No se pudo consultar el fixture");
+                  if (!data.fixture) return setError("Fixture no encontrado");
+
+                  const dateUtc = new Date(data.fixture.dateUtc);
+                  setStartsAtLocal(toLocalDateTimeInputValue(dateUtc));
+                  setHomeTeam(data.fixture.homeTeam);
+                  setAwayTeam(data.fixture.awayTeam);
+                  setMessage(`Fixture cargado (estado: ${data.fixture.statusShort}).`);
+                }}
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Autollenar
+              </Button>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="startsAt">Inicio (hora local)</Label>

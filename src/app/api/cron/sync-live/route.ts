@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
-import { fetchFixtureById } from "@/lib/api-football";
+import { fetchFixturesByIds } from "@/lib/api-football";
 import { recalculateStandingsForTournament } from "@/lib/standings";
 
 export const runtime = "nodejs";
@@ -32,30 +32,46 @@ export async function POST(req: Request) {
       externalFixtureId: true,
       matchday: { select: { tournamentId: true } },
     },
-    take: 50,
+    take: 200,
   });
 
   const touchedTournamentIds = new Set<string>();
   let updatedMatches = 0;
 
+  const matchesByFixtureId = new Map<number, typeof matches>();
   for (const match of matches) {
     const fixtureId = match.externalFixtureId!;
-    const fixture = await fetchFixtureById(fixtureId);
-    if (!fixture) continue;
+    const arr = matchesByFixtureId.get(fixtureId);
+    if (arr) arr.push(match);
+    else matchesByFixtureId.set(fixtureId, [match]);
+  }
 
-    const result = await prisma.match.updateMany({
-      where: { id: match.id },
-      data: {
-        startsAtUtc: fixture.dateUtc,
-        statusShort: fixture.statusShort,
-        scoreHome: fixture.scoreHome,
-        scoreAway: fixture.scoreAway,
-      },
-    });
+  const fixtureIds = Array.from(matchesByFixtureId.keys());
+  for (let i = 0; i < fixtureIds.length; i += 20) {
+    const chunk = fixtureIds.slice(i, i + 20);
+    const fixtures = await fetchFixturesByIds(chunk);
 
-    if (result.count > 0) {
-      updatedMatches += 1;
-      touchedTournamentIds.add(match.matchday.tournamentId);
+    for (const fixtureId of chunk) {
+      const fixture = fixtures.get(fixtureId);
+      if (!fixture) continue;
+
+      const relatedMatches = matchesByFixtureId.get(fixtureId) ?? [];
+      for (const match of relatedMatches) {
+        const result = await prisma.match.updateMany({
+          where: { id: match.id },
+          data: {
+            startsAtUtc: fixture.dateUtc,
+            statusShort: fixture.statusShort,
+            scoreHome: fixture.scoreHome,
+            scoreAway: fixture.scoreAway,
+          },
+        });
+
+        if (result.count > 0) {
+          updatedMatches += 1;
+          touchedTournamentIds.add(match.matchday.tournamentId);
+        }
+      }
     }
   }
 
