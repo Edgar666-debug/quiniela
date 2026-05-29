@@ -37,6 +37,7 @@ model User {
 
   sessions  Session[]
   accounts  Account[]
+  passkeys  Passkey[]
 
   tournamentsOwned Tournament[]       @relation("TournamentOwner")
   memberships      TournamentMember[]
@@ -81,6 +82,25 @@ model Verification {
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model Passkey {
+  id           String   @id @default(cuid())
+  name         String?
+  publicKey    String
+  credentialID String   @unique
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  aaguid       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Tournament {

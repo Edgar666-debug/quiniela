@@ -16,9 +16,9 @@ export default async function DashboardPage() {
   });
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-3 px-6 py-16">
+    <main className="mx-auto flex max-w-4xl flex-col gap-4 px-6 py-10">
       <h1 className="text-2xl font-semibold">Dashboard</h1>
-      <p className="text-sm text-zinc-600">Sesión activa: {session.user.email}</p>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">Sesión activa: {session.user.email}</p>
       <DashboardClient
         initialTournaments={memberships.map((m) => ({
           tournamentId: m.tournament.id,
@@ -26,17 +26,7 @@ export default async function DashboardPage() {
           role: m.role,
         }))}
       />
-      <form
-        action={async () => {
-          "use server";
-          await auth.api.signOut({ headers: await headers() });
-          redirect("/");
-        }}
-      >
-        <button className="w-fit rounded-md border px-4 py-2 text-sm font-medium" type="submit">
-          Cerrar sesión
-        </button>
-      </form>
     </main>
   );
 }
+

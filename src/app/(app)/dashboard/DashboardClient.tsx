@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Clipboard, Loader2, Plus, RefreshCw, Ticket, Trophy, Users, KeyRound } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
@@ -37,7 +38,7 @@ export function DashboardClient(props: { initialTournaments: MyTournament[] }) {
   }
 
   return (
-    <div className="mt-6 flex flex-col gap-6">
+    <div className="mt-2 flex flex-col gap-6">
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -153,7 +154,7 @@ export function DashboardClient(props: { initialTournaments: MyTournament[] }) {
                       <p className="text-xs text-zinc-600 dark:text-zinc-400">Rol: {t.role}</p>
                     </div>
                     <Button asChild variant="outline" size="sm">
-                      <a href={`/tournaments/${t.tournamentId}/standings`}>Ranking</a>
+                      <Link href={`/tournaments/${t.tournamentId}`}>Abrir</Link>
                     </Button>
                   </div>
 
@@ -233,4 +234,3 @@ export function DashboardClient(props: { initialTournaments: MyTournament[] }) {
     </div>
   );
 }
-

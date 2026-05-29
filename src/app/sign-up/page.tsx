@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Mail, User, KeyRound, Loader2 } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
@@ -95,9 +96,9 @@ export default function SignUpPage() {
 
           <p className="text-sm text-zinc-600">
             ¿Ya tienes cuenta?{" "}
-            <a className="underline underline-offset-4" href="/sign-in">
+            <Link className="underline underline-offset-4" href="/sign-in">
               Inicia sesión
-            </a>
+            </Link>
             .
           </p>
         </CardContent>
@@ -105,4 +106,3 @@ export default function SignUpPage() {
     </main>
   );
 }
-

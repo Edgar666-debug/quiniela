@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ArrowLeft, CalendarDays, Trophy } from "lucide-react";
+import Link from "next/link";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -26,7 +27,7 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
   if (!tournament) redirect("/dashboard");
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-16">
+    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
@@ -36,10 +37,10 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
         </div>
         <Button asChild variant="outline" size="sm">
-          <a href="/dashboard">
+          <Link href="/tournaments">
             <ArrowLeft className="h-4 w-4" />
-            Volver
-          </a>
+            Torneos
+          </Link>
         </Button>
       </div>
 
@@ -51,10 +52,10 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <a href={`/tournaments/${tournamentId}/standings`}>
+              <Link href={`/tournaments/${tournamentId}/standings`}>
                 <Trophy className="h-4 w-4" />
                 Ver ranking
-              </a>
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -66,10 +67,10 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
           </CardHeader>
           <CardContent>
             <Button asChild variant="outline">
-              <a href={`/tournaments/${tournamentId}/matchdays`}>
+              <Link href={`/tournaments/${tournamentId}/matchdays`}>
                 <CalendarDays className="h-4 w-4" />
                 Ver jornadas
-              </a>
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -77,4 +78,3 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
     </main>
   );
 }
-

@@ -63,10 +63,7 @@ export function StandingsLive(props: { tournamentId: string; initial: StandingRo
                 return (
                   <tr key={r.user.id} className="border-b last:border-b-0 dark:border-zinc-800">
                     <td className="relative px-4 py-3">
-                      <div
-                        className="absolute inset-y-0 left-0 -z-10 bg-zinc-50 dark:bg-zinc-900/30"
-                        style={{ width: `${width}%` }}
-                      />
+                      <div className="absolute inset-y-0 left-0 -z-10 bg-zinc-50 dark:bg-zinc-900/30" style={{ width: `${width}%` }} />
                       <div className="flex items-center gap-2">
                         <span className="w-6 text-center text-sm">{medal ?? i + 1}</span>
                         <span className="truncate font-medium">{r.user.name ?? r.user.email}</span>

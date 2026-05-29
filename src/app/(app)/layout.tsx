@@ -1,0 +1,22 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { AppShell } from "@/components/app/app-shell";
+
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/sign-in");
+
+  const memberships = await prisma.tournamentMember.findMany({
+    where: { userId: session.user.id },
+    select: { role: true, tournament: { select: { id: true, name: true } } },
+    orderBy: { joinedAt: "desc" },
+  });
+
+  const tournaments = memberships.map((m) => ({ id: m.tournament.id, name: m.tournament.name, role: m.role }));
+
+  return <AppShell tournaments={tournaments}>{children}</AppShell>;
+}
+

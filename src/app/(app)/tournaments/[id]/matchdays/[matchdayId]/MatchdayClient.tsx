@@ -115,24 +115,14 @@ export function MatchdayClient(props: {
                   setMessage(null);
                   setError(null);
                   setLoading(true);
-                  const res = await fetch(`/api/api-football/fixtures/${encodeURIComponent(fixtureId.trim())}`, {
-                    cache: "no-store",
-                  });
+                  const res = await fetch(`/api/api-football/fixtures/${encodeURIComponent(fixtureId.trim())}`, { cache: "no-store" });
                   const data = (await res.json()) as {
-                    fixture?: {
-                      dateUtc: string;
-                      homeTeam: string;
-                      awayTeam: string;
-                      statusShort: string;
-                      scoreHome: number | null;
-                      scoreAway: number | null;
-                    };
+                    fixture?: { dateUtc: string; homeTeam: string; awayTeam: string; statusShort: string };
                     error?: string;
                   };
                   setLoading(false);
                   if (!res.ok) return setError(data.error ?? "No se pudo consultar el fixture");
                   if (!data.fixture) return setError("Fixture no encontrado");
-
                   const dateUtc = new Date(data.fixture.dateUtc);
                   setStartsAtLocal(toLocalDateTimeInputValue(dateUtc));
                   setHomeTeam(data.fixture.homeTeam);
@@ -202,31 +192,13 @@ export function MatchdayClient(props: {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant={m.myPick === "HOME" ? "secondary" : "outline"}
-                  disabled={loading || isClosed}
-                  type="button"
-                  onClick={() => pick(m.id, "HOME")}
-                >
+                <Button size="sm" variant={m.myPick === "HOME" ? "secondary" : "outline"} disabled={loading || isClosed} type="button" onClick={() => pick(m.id, "HOME")}>
                   1
                 </Button>
-                <Button
-                  size="sm"
-                  variant={m.myPick === "DRAW" ? "secondary" : "outline"}
-                  disabled={loading || isClosed}
-                  type="button"
-                  onClick={() => pick(m.id, "DRAW")}
-                >
+                <Button size="sm" variant={m.myPick === "DRAW" ? "secondary" : "outline"} disabled={loading || isClosed} type="button" onClick={() => pick(m.id, "DRAW")}>
                   X
                 </Button>
-                <Button
-                  size="sm"
-                  variant={m.myPick === "AWAY" ? "secondary" : "outline"}
-                  disabled={loading || isClosed}
-                  type="button"
-                  onClick={() => pick(m.id, "AWAY")}
-                >
+                <Button size="sm" variant={m.myPick === "AWAY" ? "secondary" : "outline"} disabled={loading || isClosed} type="button" onClick={() => pick(m.id, "AWAY")}>
                   2
                 </Button>
               </div>
@@ -242,3 +214,4 @@ export function MatchdayClient(props: {
     </div>
   );
 }
+

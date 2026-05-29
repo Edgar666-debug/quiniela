@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { CalendarDays, Loader2, Plus, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -58,15 +59,8 @@ export function MatchdaysClient(props: {
             </div>
             <div className="grid gap-2 md:col-span-2">
               <Label htmlFor="closesAt">Cierre (hora local)</Label>
-              <Input
-                id="closesAt"
-                type="datetime-local"
-                value={closesAtLocal}
-                onChange={(e) => setClosesAtLocal(e.target.value)}
-              />
-              <p className="text-xs text-zinc-500">
-                Se convertirá a UTC al guardarse.
-              </p>
+              <Input id="closesAt" type="datetime-local" value={closesAtLocal} onChange={(e) => setClosesAtLocal(e.target.value)} />
+              <p className="text-xs text-zinc-500">Se convertirá a UTC al guardarse.</p>
             </div>
           </div>
           <Button
@@ -110,10 +104,10 @@ export function MatchdaysClient(props: {
                 <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{m.matchesCount} partido(s)</p>
               </div>
               <Button asChild variant="outline" size="sm">
-                <a href={`/tournaments/${props.tournamentId}/matchdays/${m.id}`}>
+                <Link href={`/tournaments/${props.tournamentId}/matchdays/${m.id}`}>
                   <CalendarDays className="h-4 w-4" />
                   Abrir
-                </a>
+                </Link>
               </Button>
             </div>
           </div>
@@ -122,4 +116,3 @@ export function MatchdaysClient(props: {
     </div>
   );
 }
-

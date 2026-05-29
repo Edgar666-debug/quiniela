@@ -1,4 +1,5 @@
 import { ArrowRight, Trophy } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,15 +18,15 @@ export default function Home() {
         </p>
         <div className="mt-2 flex flex-wrap gap-3">
           <Button asChild>
-            <a href="/sign-in">
+            <Link href="/sign-in">
               Iniciar sesión <ArrowRight className="h-4 w-4" />
-            </a>
+            </Link>
           </Button>
           <Button asChild variant="outline">
-            <a href="/sign-up">Crear cuenta</a>
+            <Link href="/sign-up">Crear cuenta</Link>
           </Button>
           <Button asChild variant="ghost">
-            <a href="/dashboard">Dashboard</a>
+            <Link href="/dashboard">Dashboard</Link>
           </Button>
         </div>
       </div>
@@ -62,4 +63,3 @@ export default function Home() {
     </main>
   );
 }
-
