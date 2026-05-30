@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { MatchdayClose } from "@/components/matchdays/matchday-close";
 
 type MatchdayRow = {
   id: string;
@@ -60,7 +61,6 @@ export function MatchdaysClient(props: {
             <div className="grid gap-2 md:col-span-2">
               <Label htmlFor="closesAt">Cierre (hora local)</Label>
               <Input id="closesAt" type="datetime-local" value={closesAtLocal} onChange={(e) => setClosesAtLocal(e.target.value)} />
-              <p className="text-xs text-zinc-500">Se convertirá a UTC al guardarse.</p>
             </div>
           </div>
           <Button
@@ -98,9 +98,7 @@ export function MatchdaysClient(props: {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-semibold">Jornada {m.number}</p>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                  Cierra (UTC): {new Date(m.closesAtUtc).toISOString().replace("T", " ").slice(0, 16)}
-                </p>
+                <MatchdayClose closesAtUtc={m.closesAtUtc} compact />
                 <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{m.matchesCount} partido(s)</p>
               </div>
               <Button asChild variant="outline" size="sm">

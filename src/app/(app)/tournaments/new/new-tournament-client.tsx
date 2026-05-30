@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Loader2, PlusCircle, Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -58,9 +57,6 @@ export function NewTournamentClient() {
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
             Crear torneo
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/dashboard">Volver al dashboard</Link>
           </Button>
         </div>
 

@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Check, Laptop, Moon, Sun } from "lucide-react";
 
-import { applyThemeClass, getStoredTheme, setStoredTheme, type ThemeMode } from "@/lib/theme";
+import {
+  applyThemeClass,
+  getThemeServerSnapshot,
+  getThemeSnapshot,
+  setStoredTheme,
+  subscribeTheme,
+  type ThemeMode,
+} from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -21,22 +28,12 @@ function modeLabel(mode: ThemeMode) {
   return "System";
 }
 
-export function ThemeToggle(props: { collapsed?: boolean }) {
+export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "right" }) {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<ThemeMode>(() => (typeof window === "undefined" ? "system" : (getStoredTheme() ?? "system")));
+  const mode = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
 
   useEffect(() => {
     applyThemeClass(mode);
-  }, [mode]);
-
-  useEffect(() => {
-    if (mode === "system") {
-      const mql = window.matchMedia?.("(prefers-color-scheme: dark)");
-      if (!mql) return;
-      const onChange = () => applyThemeClass("system");
-      mql.addEventListener?.("change", onChange);
-      return () => mql.removeEventListener?.("change", onChange);
-    }
   }, [mode]);
 
   const items = useMemo(
@@ -51,7 +48,6 @@ export function ThemeToggle(props: { collapsed?: boolean }) {
   );
 
   function setTheme(next: ThemeMode) {
-    setMode(next);
     setStoredTheme(next);
     setOpen(false);
   }
@@ -67,14 +63,14 @@ export function ThemeToggle(props: { collapsed?: boolean }) {
         aria-label="Cambiar tema"
       >
         {modeIcon(mode)}
-        {props.collapsed ? null : <span className="text-sm"></span>}
+        {props.collapsed ? null : <span className="text-sm">Tema</span>}
       </Button>
 
       {open ? (
         <div
           className={cn(
-            "absolute left-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-black",
-            props.collapsed ? "left-12" : "",
+            "absolute top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-black",
+            props.align === "right" ? "right-0" : props.collapsed ? "left-12" : "left-0",
           )}
         >
           {items.map((i) => (
