@@ -17,6 +17,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const tournaments = memberships.map((m) => ({ id: m.tournament.id, name: m.tournament.name, role: m.role }));
 
-  return <AppShell tournaments={tournaments}>{children}</AppShell>;
+  return (
+    <AppShell user={{ email: session.user.email, name: session.user.name ?? null }} tournaments={tournaments}>
+      {children}
+    </AppShell>
+  );
 }
-

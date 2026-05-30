@@ -67,7 +67,7 @@ export function ThemeToggle(props: { collapsed?: boolean }) {
         aria-label="Cambiar tema"
       >
         {modeIcon(mode)}
-        {props.collapsed ? null : <span className="text-sm">Tema</span>}
+        {props.collapsed ? null : <span className="text-sm"></span>}
       </Button>
 
       {open ? (
