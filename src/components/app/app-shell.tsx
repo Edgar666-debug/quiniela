@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays, LayoutDashboard, PanelLeftClose, PanelLeftOpen, Ticket, Trophy, User, Users } from "lucide-react";
@@ -157,11 +157,10 @@ export function AppShell(props: { tournaments: TournamentLink[]; children: React
     return m?.[1] ?? null;
   }, [pathname]);
 
-  const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    const v = globalThis.localStorage?.getItem("app.sidebar.collapsed");
-    if (v === "1") setCollapsed(true);
-  }, []);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("app.sidebar.collapsed") === "1";
+  });
 
   function toggleCollapsed() {
     setCollapsed((prev) => {

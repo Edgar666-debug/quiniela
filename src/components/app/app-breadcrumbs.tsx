@@ -13,7 +13,6 @@ type Crumb = { label: string; href?: string };
 
 export function AppBreadcrumbs(props: { items: Crumb[] }) {
   if (props.items.length === 0) return null;
-  const last = props.items[props.items.length - 1];
 
   return (
     <Breadcrumb>
@@ -35,4 +34,3 @@ export function AppBreadcrumbs(props: { items: Crumb[] }) {
     </Breadcrumb>
   );
 }
-

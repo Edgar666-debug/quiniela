@@ -1,10 +1,13 @@
 allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
+  msgpackr-extract: true
   prisma: true
   sharp: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - brace-expansion@1.1.15
   - which-typed-array@1.1.21
+  - oxlint-plugin-react-doctor@0.2.14
+  - react-doctor@0.2.14
 storeDir: ./.pnpm-store/v11

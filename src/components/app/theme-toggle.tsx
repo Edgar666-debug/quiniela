@@ -23,14 +23,11 @@ function modeLabel(mode: ThemeMode) {
 
 export function ThemeToggle(props: { collapsed?: boolean }) {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<ThemeMode>("system");
+  const [mode, setMode] = useState<ThemeMode>(() => (typeof window === "undefined" ? "system" : (getStoredTheme() ?? "system")));
 
   useEffect(() => {
-    const stored = getStoredTheme();
-    const initial = stored ?? "system";
-    setMode(initial);
-    applyThemeClass(initial);
-  }, []);
+    applyThemeClass(mode);
+  }, [mode]);
 
   useEffect(() => {
     if (mode === "system") {
@@ -56,7 +53,6 @@ export function ThemeToggle(props: { collapsed?: boolean }) {
   function setTheme(next: ThemeMode) {
     setMode(next);
     setStoredTheme(next);
-    applyThemeClass(next);
     setOpen(false);
   }
 
@@ -101,4 +97,3 @@ export function ThemeToggle(props: { collapsed?: boolean }) {
     </div>
   );
 }
-

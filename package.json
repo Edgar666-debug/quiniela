@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "doctor": "react-doctor . --offline"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.6.11",
@@ -39,6 +40,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "prisma": "^6.19.3",
+    "react-doctor": "^0.2.14",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
