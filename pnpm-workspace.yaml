@@ -7,3 +7,4 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - brace-expansion@1.1.15
   - which-typed-array@1.1.21
+storeDir: ./.pnpm-store/v11
