@@ -1,11 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Ticket } from "lucide-react";
-import Link from "next/link";
-
+import { Ticket } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InvitesClient } from "./invites-client";
 
@@ -46,12 +43,6 @@ export default async function TournamentInvitesPage(props: { params: Promise<{ i
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Genera tokens para invitar participantes (máx. 10).</p>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/tournaments/${tournamentId}`}>
-            <ArrowLeft className="h-4 w-4" />
-            Torneo
-          </Link>
-        </Button>
       </div>
 
       <InvitesClient tournamentId={tournamentId} initialInvites={invites.map(serializeInvite)} />

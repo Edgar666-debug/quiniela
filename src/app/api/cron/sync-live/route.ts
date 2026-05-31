@@ -85,7 +85,3 @@ export async function POST(req: Request) {
     tournamentsRecalculated: touchedTournamentIds.size,
   });
 }
-
-export async function GET(req: Request) {
-  return POST(req);
-}

@@ -1,11 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Users } from "lucide-react";
-import Link from "next/link";
-
+import { Users } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function TournamentMembersPage(props: { params: Promise<{ id: string }> }) {
@@ -47,12 +44,6 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{members.length} / 10 participantes</p>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/tournaments/${tournamentId}`}>
-            <ArrowLeft className="h-4 w-4" />
-            Torneo
-          </Link>
-        </Button>
       </div>
 
       <Card>

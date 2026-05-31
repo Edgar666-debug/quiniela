@@ -5,8 +5,6 @@ import Link from "next/link";
 import { CalendarDays, Loader2, Plus, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
 
@@ -24,8 +22,6 @@ export function MatchdaysClient(props: {
 }) {
   const [rows, setRows] = useState(props.initial);
   const [loading, setLoading] = useState(false);
-  const [number, setNumber] = useState("");
-  const [closesAtLocal, setClosesAtLocal] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const canManage = useMemo(() => props.role === "OWNER" || props.role === "ORGANIZER", [props.role]);
@@ -53,39 +49,11 @@ export function MatchdaysClient(props: {
       {canManage ? (
         <>
           <Separator />
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="grid gap-2">
-              <Label htmlFor="number">Número</Label>
-              <Input id="number" inputMode="numeric" placeholder="1" value={number} onChange={(e) => setNumber(e.target.value)} />
-            </div>
-            <div className="grid gap-2 md:col-span-2">
-              <Label htmlFor="closesAt">Cierre (hora local)</Label>
-              <Input id="closesAt" type="datetime-local" value={closesAtLocal} onChange={(e) => setClosesAtLocal(e.target.value)} />
-            </div>
-          </div>
-          <Button
-            className="w-fit"
-            disabled={loading || !number.trim() || !closesAtLocal}
-            type="button"
-            onClick={async () => {
-              setError(null);
-              setLoading(true);
-              const closesAtUtc = new Date(closesAtLocal).toISOString();
-              const res = await fetch(`/api/tournaments/${props.tournamentId}/matchdays`, {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ number: Number(number), closesAtUtc }),
-              });
-              const data = (await res.json()) as { error?: string };
-              setLoading(false);
-              if (!res.ok) return setError(data.error ?? "No se pudo crear la jornada");
-              setNumber("");
-              setClosesAtLocal("");
-              await refresh();
-            }}
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Crear jornada
+          <Button asChild className="w-fit" variant="outline" size="sm">
+            <Link href={`/tournaments/${props.tournamentId}/matchdays/new`}>
+              <Plus className="h-4 w-4" />
+              Crear jornada
+            </Link>
           </Button>
         </>
       ) : null}
@@ -114,3 +82,4 @@ export function MatchdaysClient(props: {
     </div>
   );
 }
+

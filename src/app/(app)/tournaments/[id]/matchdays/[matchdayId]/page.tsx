@@ -1,8 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowLeft, CalendarDays } from "lucide-react";
+import { CalendarDays, Plus } from "lucide-react";
 import Link from "next/link";
-
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
@@ -71,12 +70,16 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
             Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
           </p>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/tournaments/${tournamentId}/matchdays`}>
-            <ArrowLeft className="h-4 w-4" />
-            Jornadas
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {(membership.role === "OWNER" || membership.role === "ORGANIZER") && (
+            <Button asChild size="sm">
+              <Link href={`/tournaments/${tournamentId}/matchdays/${matchdayId}/matches/new`}>
+                <Plus className="h-4 w-4" />
+                Agregar partido
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>

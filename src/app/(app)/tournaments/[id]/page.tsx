@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowLeft, CalendarDays, Trophy } from "lucide-react";
+import { CalendarDays, Trophy } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/lib/auth";
@@ -36,12 +36,6 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
           </div>
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/tournaments">
-            <ArrowLeft className="h-4 w-4" />
-            Torneos
-          </Link>
-        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

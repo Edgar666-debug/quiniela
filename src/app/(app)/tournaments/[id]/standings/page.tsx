@@ -1,11 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Trophy } from "lucide-react";
-import Link from "next/link";
-
+import { Trophy } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
 import { StandingsLive } from "./StandingsLive";
 
 export default async function TournamentStandingsPage(props: { params: Promise<{ id: string }> }) {
@@ -46,12 +43,6 @@ export default async function TournamentStandingsPage(props: { params: Promise<{
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Ranking en vivo</p>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/tournaments/${tournamentId}`}>
-            <ArrowLeft className="h-4 w-4" />
-            Volver
-          </Link>
-        </Button>
       </div>
       <StandingsLive tournamentId={tournamentId} initial={initial} />
     </main>

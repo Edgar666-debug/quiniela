@@ -60,37 +60,57 @@ export async function fetchFixturesByIds(fixtureIds: number[]): Promise<Map<numb
   const ids = Array.from(new Set(fixtureIds.filter((id) => Number.isFinite(id) && id > 0))).slice(0, 20);
   if (ids.length === 0) return new Map();
 
-  const url = new URL("/fixtures", env.API_FOOTBALL_BASE_URL);
-  if (ids.length === 1) url.searchParams.set("id", String(ids[0]));
-  else url.searchParams.set("ids", ids.join("-"));
+  async function fetchBatch(batch: number[]): Promise<Map<number, FixtureData>> {
+    const url = new URL("/fixtures", env.API_FOOTBALL_BASE_URL);
+    if (batch.length === 1) url.searchParams.set("id", String(batch[0]));
+    else url.searchParams.set("ids", batch.join("-"));
 
-  const res = await apiFootballRequest(url);
+    const res = await apiFootballRequest(url);
 
-  if (res.status === 204) return new Map();
+    // API-Football returns 204 for "No Content". In practice, we also occasionally see 204 for multi-id lookups
+    // where only part of the batch is available. To avoid missing valid fixtures, we fall back to splitting.
+    if (res.status === 204) return new Map();
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`API-Football error ${res.status}: ${body}`);
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`API-Football error ${res.status}: ${body}`);
+    }
+
+    const json = (await res.json()) as ApiFootballFixtureResponse;
+    const out = new Map<number, FixtureData>();
+    for (const row of json.response ?? []) {
+      out.set(row.fixture.id, {
+        id: row.fixture.id,
+        dateUtc: new Date(row.fixture.date),
+        statusShort: row.fixture.status.short,
+        scoreHome: row.goals.home,
+        scoreAway: row.goals.away,
+        homeTeam: row.teams.home.name,
+        awayTeam: row.teams.away.name,
+        leagueId: row.league?.id,
+        leagueName: row.league?.name,
+        season: row.league?.season,
+        round: row.league?.round,
+      });
+    }
+    return out;
   }
 
-  const json = (await res.json()) as ApiFootballFixtureResponse;
-  const out = new Map<number, FixtureData>();
-  for (const row of json.response ?? []) {
-    out.set(row.fixture.id, {
-      id: row.fixture.id,
-      dateUtc: new Date(row.fixture.date),
-      statusShort: row.fixture.status.short,
-      scoreHome: row.goals.home,
-      scoreAway: row.goals.away,
-      homeTeam: row.teams.home.name,
-      awayTeam: row.teams.away.name,
-      leagueId: row.league?.id,
-      leagueName: row.league?.name,
-      season: row.league?.season,
-      round: row.league?.round,
-    });
+  async function fetchRobust(batch: number[], depth = 0): Promise<Map<number, FixtureData>> {
+    const result = await fetchBatch(batch);
+    if (result.size > 0 || batch.length <= 1 || depth >= 5) return result;
+
+    const mid = Math.ceil(batch.length / 2);
+    const left = batch.slice(0, mid);
+    const right = batch.slice(mid);
+    const [a, b] = await Promise.all([fetchRobust(left, depth + 1), fetchRobust(right, depth + 1)]);
+    const merged = new Map<number, FixtureData>();
+    for (const [k, v] of a) merged.set(k, v);
+    for (const [k, v] of b) merged.set(k, v);
+    return merged;
   }
-  return out;
+
+  return fetchRobust(ids);
 }
 
 export async function fetchFixtureById(fixtureId: number) {

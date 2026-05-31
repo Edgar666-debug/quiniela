@@ -1,11 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowLeft, CalendarDays } from "lucide-react";
-import Link from "next/link";
-
+import { CalendarDays } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MatchdaysClient } from "./MatchdaysClient";
 
@@ -50,14 +47,6 @@ export default async function TournamentMatchdaysPage(props: { params: Promise<{
           </div>
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Elige una jornada para hacer tus picks.</p>
-        </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/tournaments/${tournamentId}`}>
-              <ArrowLeft className="h-4 w-4" />
-              Torneo
-            </Link>
-          </Button>
         </div>
       </div>
 
