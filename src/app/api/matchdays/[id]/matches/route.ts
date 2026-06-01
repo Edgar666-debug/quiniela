@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { fetchFixtureById } from "@/lib/api-football";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,13 +42,39 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  let createData = {
+    matchdayId,
+    externalFixtureId: body.data.externalFixtureId ?? null,
+    startsAtUtc: new Date(body.data.startsAtUtc),
+    homeTeam: body.data.homeTeam,
+    awayTeam: body.data.awayTeam,
+    homeLogoUrl: null as string | null,
+    awayLogoUrl: null as string | null,
+  };
+
+  if (body.data.externalFixtureId) {
+    const fixture = await fetchFixtureById(body.data.externalFixtureId);
+    if (fixture) {
+      createData = {
+        ...createData,
+        startsAtUtc: fixture.dateUtc,
+        homeTeam: fixture.homeTeam,
+        awayTeam: fixture.awayTeam,
+        homeLogoUrl: fixture.homeLogoUrl ?? null,
+        awayLogoUrl: fixture.awayLogoUrl ?? null,
+      };
+    }
+  }
+
   const match = await prisma.match.create({
     data: {
-      matchdayId,
-      externalFixtureId: body.data.externalFixtureId ?? null,
-      startsAtUtc: new Date(body.data.startsAtUtc),
-      homeTeam: body.data.homeTeam,
-      awayTeam: body.data.awayTeam,
+      matchdayId: createData.matchdayId,
+      externalFixtureId: createData.externalFixtureId,
+      startsAtUtc: createData.startsAtUtc,
+      homeTeam: createData.homeTeam,
+      awayTeam: createData.awayTeam,
+      homeLogoUrl: createData.homeLogoUrl,
+      awayLogoUrl: createData.awayLogoUrl,
     },
     select: { id: true },
   });

@@ -42,6 +42,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ fixtureId: stri
       scoreAway: fixture.scoreAway,
       homeTeam: fixture.homeTeam,
       awayTeam: fixture.awayTeam,
+      homeLogoUrl: fixture.homeLogoUrl ?? null,
+      awayLogoUrl: fixture.awayLogoUrl ?? null,
       leagueId: fixture.leagueId ?? null,
       leagueName: fixture.leagueName ?? null,
       season: fixture.season ?? null,

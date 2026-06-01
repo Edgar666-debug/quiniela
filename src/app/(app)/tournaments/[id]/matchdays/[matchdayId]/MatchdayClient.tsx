@@ -5,6 +5,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
+import { cn } from "@/lib/utils";
 
 type Outcome = "HOME" | "DRAW" | "AWAY";
 
@@ -13,7 +14,9 @@ type MatchRow = {
   externalFixtureId: number | null;
   startsAtUtc: string;
   homeTeam: string;
+  homeLogoUrl?: string | null;
   awayTeam: string;
+  awayLogoUrl?: string | null;
   statusShort: string;
   scoreHome: number | null;
   scoreAway: number | null;
@@ -43,6 +46,19 @@ export function MatchdayClient(props: {
   }, []);
   const isClosed = useMemo(() => nowMs >= closesAtMs, [nowMs, closesAtMs]);
 
+  const formatKickoff = useMemo(
+    () =>
+      new Intl.DateTimeFormat("es-MX", {
+        timeZone: "UTC",
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    [],
+  );
+
   function statusLabel(short: string) {
     if (short === "FT") return "Final";
     if (short === "AET") return "Final (ET)";
@@ -56,6 +72,77 @@ export function MatchdayClient(props: {
     if (short === "WO") return "Walkover";
     if (short === "NF") return "No encontrado";
     return short;
+  }
+
+  const grouped = useMemo(() => {
+    const groups = new Map<string, MatchRow[]>();
+    for (const m of rows) {
+      const d = new Date(m.startsAtUtc);
+      const key = d.toISOString().slice(0, 16); // stable UTC minute bucket
+      const arr = groups.get(key);
+      if (arr) arr.push(m);
+      else groups.set(key, [m]);
+    }
+    return Array.from(groups.entries())
+      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+      .map(([k, ms]) => ({ key: k, date: new Date(k + ":00.000Z"), matches: ms }));
+  }, [rows]);
+
+  function TeamPickCard(props: {
+    side: "HOME" | "AWAY";
+    name: string;
+    logoUrl?: string | null;
+    selected: boolean;
+    disabled: boolean;
+    onClick: () => void;
+  }) {
+    return (
+      <button
+        type="button"
+        disabled={props.disabled}
+        onClick={props.onClick}
+        className={cn(
+          "group w-full rounded-xl border p-3 text-left transition-colors disabled:opacity-60",
+          props.selected ? "border-red-500 bg-red-50 dark:bg-red-950/30" : "border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black dark:hover:bg-zinc-950/30",
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-14 overflow-hidden rounded-md border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/30">
+            {props.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={props.logoUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-500 dark:text-zinc-400">{props.name.slice(0, 2).toUpperCase()}</div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">{props.name}</p>
+            <p className={cn("mt-1 w-fit rounded-md px-2 py-1 text-xs", props.selected ? "bg-red-600 text-white" : "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200")}>
+              {props.side === "HOME" ? "Local" : "Visita"}
+            </p>
+          </div>
+        </div>
+      </button>
+    );
+  }
+
+  function DrawPickCard(props: { selected: boolean; disabled: boolean; onClick: () => void }) {
+    return (
+      <button
+        type="button"
+        disabled={props.disabled}
+        onClick={props.onClick}
+        className={cn(
+          "flex h-full w-full flex-col items-center justify-center rounded-xl border p-3 transition-colors disabled:opacity-60",
+          props.selected ? "border-red-500 bg-red-50 dark:bg-red-950/30" : "border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black dark:hover:bg-zinc-950/30",
+        )}
+      >
+        <p className="text-xl font-bold text-zinc-700 dark:text-zinc-200">X</p>
+        <p className={cn("mt-2 w-full rounded-md px-2 py-1 text-center text-xs", props.selected ? "bg-red-600 text-white" : "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200")}>
+          Empate
+        </p>
+      </button>
+    );
   }
 
   async function refresh() {
@@ -96,33 +183,44 @@ export function MatchdayClient(props: {
         </Button>
       </div>
 
-      <div className="grid gap-3">
-        {rows.map((m) => (
-          <div key={m.id} className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">
-                  {m.homeTeam} vs {m.awayTeam}
-                </p>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                  Inicio (UTC): {new Date(m.startsAtUtc).toISOString().replace("T", " ").slice(0, 16)} • Estado: {statusLabel(m.statusShort)}
-                  {m.scoreHome != null && m.scoreAway != null ? ` • ${m.scoreHome}-${m.scoreAway}` : ""}
-                  {m.externalFixtureId ? ` • Fixture ${m.externalFixtureId}` : ""}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant={m.myPick === "HOME" ? "secondary" : "outline"} disabled={loading || isClosed} type="button" onClick={() => pick(m.id, "HOME")}>
-                  1
-                </Button>
-                <Button size="sm" variant={m.myPick === "DRAW" ? "secondary" : "outline"} disabled={loading || isClosed} type="button" onClick={() => pick(m.id, "DRAW")}>
-                  X
-                </Button>
-                <Button size="sm" variant={m.myPick === "AWAY" ? "secondary" : "outline"} disabled={loading || isClosed} type="button" onClick={() => pick(m.id, "AWAY")}>
-                  2
-                </Button>
-              </div>
+      <div className="flex flex-col gap-6">
+        {grouped.map((g) => (
+          <div key={g.key} className="flex flex-col gap-3">
+            <p className="text-center text-sm font-semibold text-zinc-700 dark:text-zinc-200">{formatKickoff.format(g.date)}</p>
+            <div className="grid gap-4">
+              {g.matches.map((m) => (
+                <div key={m.id} className="grid gap-3 rounded-2xl bg-zinc-50/70 p-4 dark:bg-zinc-950/30">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      Estado: {statusLabel(m.statusShort)}
+                      {m.scoreHome != null && m.scoreAway != null ? ` • ${m.scoreHome}-${m.scoreAway}` : ""}
+                      {m.externalFixtureId ? ` • Fixture ${m.externalFixtureId}` : ""}
+                    </p>
+                    {m.myPick ? <p className="text-xs text-zinc-600 dark:text-zinc-400">Tu pick: {m.myPick}</p> : null}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_120px_1fr]">
+                    <TeamPickCard
+                      side="HOME"
+                      name={m.homeTeam}
+                      logoUrl={m.homeLogoUrl}
+                      selected={m.myPick === "HOME"}
+                      disabled={loading || isClosed}
+                      onClick={() => pick(m.id, "HOME")}
+                    />
+                    <DrawPickCard selected={m.myPick === "DRAW"} disabled={loading || isClosed} onClick={() => pick(m.id, "DRAW")} />
+                    <TeamPickCard
+                      side="AWAY"
+                      name={m.awayTeam}
+                      logoUrl={m.awayLogoUrl}
+                      selected={m.myPick === "AWAY"}
+                      disabled={loading || isClosed}
+                      onClick={() => pick(m.id, "AWAY")}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
-            {m.myPick ? <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">Tu pick: {m.myPick}</p> : null}
           </div>
         ))}
       </div>

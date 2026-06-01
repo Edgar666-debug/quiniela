@@ -9,8 +9,8 @@ type ApiFootballFixtureResponse = {
     };
     league?: { id?: number; name?: string; season?: number; round?: string };
     teams: {
-      home: { name: string };
-      away: { name: string };
+      home: { name: string; logo?: string };
+      away: { name: string; logo?: string };
     };
     goals: { home: number | null; away: number | null };
   }>;
@@ -32,6 +32,8 @@ type FixtureData = {
   scoreAway: number | null;
   homeTeam: string;
   awayTeam: string;
+  homeLogoUrl?: string | null;
+  awayLogoUrl?: string | null;
   leagueId?: number;
   leagueName?: string;
   season?: number;
@@ -79,21 +81,23 @@ export async function fetchFixturesByIds(fixtureIds: number[]): Promise<Map<numb
     const json = (await res.json()) as ApiFootballFixtureResponse;
     const out = new Map<number, FixtureData>();
     for (const row of json.response ?? []) {
-      out.set(row.fixture.id, {
-        id: row.fixture.id,
-        dateUtc: new Date(row.fixture.date),
-        statusShort: row.fixture.status.short,
-        scoreHome: row.goals.home,
-        scoreAway: row.goals.away,
-        homeTeam: row.teams.home.name,
-        awayTeam: row.teams.away.name,
-        leagueId: row.league?.id,
-        leagueName: row.league?.name,
-        season: row.league?.season,
-        round: row.league?.round,
-      });
-    }
-    return out;
+    out.set(row.fixture.id, {
+      id: row.fixture.id,
+      dateUtc: new Date(row.fixture.date),
+      statusShort: row.fixture.status.short,
+      scoreHome: row.goals.home,
+      scoreAway: row.goals.away,
+      homeTeam: row.teams.home.name,
+      awayTeam: row.teams.away.name,
+      homeLogoUrl: row.teams.home.logo ?? null,
+      awayLogoUrl: row.teams.away.logo ?? null,
+      leagueId: row.league?.id,
+      leagueName: row.league?.name,
+      season: row.league?.season,
+      round: row.league?.round,
+    });
+  }
+  return out;
   }
 
   async function fetchRobust(batch: number[], depth = 0): Promise<Map<number, FixtureData>> {
@@ -136,6 +140,8 @@ export async function fetchFixtureById(fixtureId: number) {
     scoreAway: fixture.goals.away,
     homeTeam: fixture.teams.home.name,
     awayTeam: fixture.teams.away.name,
+    homeLogoUrl: fixture.teams.home.logo ?? null,
+    awayLogoUrl: fixture.teams.away.logo ?? null,
     leagueId: fixture.league?.id,
     leagueName: fixture.league?.name,
     season: fixture.league?.season,
@@ -180,6 +186,8 @@ export async function searchFixtures(params: {
       scoreAway: row.goals.away,
       homeTeam: row.teams.home.name,
       awayTeam: row.teams.away.name,
+      homeLogoUrl: row.teams.home.logo ?? null,
+      awayLogoUrl: row.teams.away.logo ?? null,
       leagueId: row.league?.id,
       leagueName: row.league?.name,
       season: row.league?.season,

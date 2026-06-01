@@ -31,6 +31,8 @@ export async function GET(_: Request, ctx: { params: Promise<{ fixtureId: string
       scoreAway: fixture.scoreAway,
       homeTeam: fixture.homeTeam,
       awayTeam: fixture.awayTeam,
+      homeLogoUrl: fixture.homeLogoUrl ?? null,
+      awayLogoUrl: fixture.awayLogoUrl ?? null,
     },
   });
 }

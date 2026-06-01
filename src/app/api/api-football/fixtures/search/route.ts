@@ -44,6 +44,8 @@ export async function GET(req: Request) {
       scoreAway: f.scoreAway,
       homeTeam: f.homeTeam,
       awayTeam: f.awayTeam,
+      homeLogoUrl: f.homeLogoUrl ?? null,
+      awayLogoUrl: f.awayLogoUrl ?? null,
       leagueId: f.leagueId ?? null,
       leagueName: f.leagueName ?? null,
       season: f.season ?? null,

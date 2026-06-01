@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CalendarDays, Plus } from "lucide-react";
+import { CalendarDays, Eye, Plus } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -34,7 +34,9 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
       externalFixtureId: true,
       startsAtUtc: true,
       homeTeam: true,
+      homeLogoUrl: true,
       awayTeam: true,
+      awayLogoUrl: true,
       statusShort: true,
       scoreHome: true,
       scoreAway: true,
@@ -51,6 +53,8 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
       startsAtUtc: m.startsAtUtc.toISOString(),
       homeTeam: m.homeTeam,
       awayTeam: m.awayTeam,
+      homeLogoUrl: m.homeLogoUrl,
+      awayLogoUrl: m.awayLogoUrl,
       statusShort: m.statusShort,
       scoreHome: m.scoreHome,
       scoreAway: m.scoreAway,
@@ -79,6 +83,12 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
               </Link>
             </Button>
           )}
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/tournaments/${tournamentId}/matchdays/${matchdayId}/picks`}>
+              <Eye className="h-4 w-4" />
+              Ver picks
+            </Link>
+          </Button>
         </div>
       </div>
 

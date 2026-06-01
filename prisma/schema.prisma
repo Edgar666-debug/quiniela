@@ -170,7 +170,9 @@ model Match {
   externalFixtureId Int?    @unique
   startsAtUtc      DateTime
   homeTeam         String
+  homeLogoUrl      String?
   awayTeam         String
+  awayLogoUrl      String?
   statusShort      String   @default("NS")
   scoreHome        Int?
   scoreAway        Int?

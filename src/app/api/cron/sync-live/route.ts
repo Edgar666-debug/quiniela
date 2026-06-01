@@ -90,6 +90,10 @@ export async function POST(req: Request) {
             statusShort: fixture.statusShort,
             scoreHome: fixture.scoreHome,
             scoreAway: fixture.scoreAway,
+            homeTeam: fixture.homeTeam,
+            awayTeam: fixture.awayTeam,
+            homeLogoUrl: fixture.homeLogoUrl ?? null,
+            awayLogoUrl: fixture.awayLogoUrl ?? null,
             syncMisses: 0,
           },
         });
