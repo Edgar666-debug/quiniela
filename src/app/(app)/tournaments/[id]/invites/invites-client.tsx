@@ -15,17 +15,19 @@ type InviteItem = {
   createdAtUtc: string;
 };
 
-export function InvitesClient(props: { tournamentId: string; initialInvites: InviteItem[] }) {
+export function InvitesClient(props: { tournamentId: string; tournamentStatus: "ACTIVE" | "FINISHED" | "ARCHIVED"; initialInvites: InviteItem[] }) {
   const [invites, setInvites] = useState<InviteItem[]>(props.initialInvites);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const hasAvailable = useMemo(() => invites.some((i) => i.uses < i.maxUses), [invites]);
+  const canGenerate = useMemo(() => props.tournamentStatus === "ACTIVE", [props.tournamentStatus]);
 
   async function generate() {
     setMessage(null);
     setError(null);
+    if (!canGenerate) return setError("El torneo no estÃ¡ activo. No se pueden generar invitaciones.");
     setLoading(true);
     const res = await fetch(`/api/tournaments/${props.tournamentId}/invites`, {
       method: "POST",
@@ -60,7 +62,7 @@ export function InvitesClient(props: { tournamentId: string; initialInvites: Inv
           <CardDescription>Por ahora, cada invitación es de 1 uso.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          <Button className="w-fit" disabled={loading} type="button" onClick={generate}>
+          <Button className="w-fit" disabled={loading || !canGenerate} type="button" onClick={generate}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Generar token
           </Button>
@@ -116,4 +118,3 @@ export function InvitesClient(props: { tournamentId: string; initialInvites: Inv
     </div>
   );
 }
-

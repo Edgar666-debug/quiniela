@@ -18,7 +18,7 @@ function isAuthorized(req: Request) {
   const url = new URL(req.url);
   const auth = req.headers.get("authorization") ?? "";
   const bearer = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
-  const token = bearer || req.headers.get("x-cron-secret") || url.searchParams.get("cronSecret") || "";
+  const token = bearer || req.headers.get("x-cron-secret") || "";
   return token === env.CRON_SECRET;
 }
 

@@ -49,6 +49,10 @@ model User {
   memberships      TournamentMember[]
   picks            Pick[]
   standings        Standing[]
+
+  matchdaysCreated Matchday[] @relation("MatchdayCreatedBy")
+  matchesCreated   Match[]    @relation("MatchCreatedBy")
+  invitesCreated   Invite[]   @relation("InviteCreatedBy")
 }
 
 model Session {
@@ -147,6 +151,9 @@ model Invite {
   expiresAt    DateTime?
   createdAt    DateTime @default(now())
 
+  createdByUserId String?
+  createdBy       User?   @relation("InviteCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
   tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 }
@@ -156,6 +163,9 @@ model Matchday {
   number      Int
   closesAtUtc DateTime
   createdAt   DateTime @default(now())
+
+  createdByUserId String?
+  createdBy       User?   @relation("MatchdayCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
@@ -178,6 +188,9 @@ model Match {
   scoreAway        Int?
   syncMisses       Int      @default(0)
   updatedAt        DateTime @updatedAt
+
+  createdByUserId String?
+  createdBy       User?   @relation("MatchCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   matchdayId String
   matchday   Matchday @relation(fields: [matchdayId], references: [id], onDelete: Cascade)

@@ -20,7 +20,7 @@ export default async function TournamentMatchdaysPage(props: { params: Promise<{
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { name: true },
+    select: { name: true, status: true },
   });
   if (!tournament) redirect("/dashboard");
 
@@ -56,7 +56,7 @@ export default async function TournamentMatchdaysPage(props: { params: Promise<{
           <CardDescription>Las jornadas se cierran por horario (UTC).</CardDescription>
         </CardHeader>
         <CardContent>
-          <MatchdaysClient tournamentId={tournamentId} role={membership.role} initial={initial} />
+          <MatchdaysClient tournamentId={tournamentId} role={membership.role} tournamentStatus={tournament.status} initial={initial} />
         </CardContent>
       </Card>
     </main>

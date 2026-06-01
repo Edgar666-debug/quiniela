@@ -12,10 +12,12 @@ const FINISHED = new Set(["FT", "AET", "PEN"]);
 const VOID = new Set(["PST", "CANC", "ABD", "AWD", "WO", "NF"]);
 
 export async function POST(req: Request) {
+  const startedAtMs = Date.now();
+  const runId = `sync_${startedAtMs}_${Math.random().toString(16).slice(2, 8)}`;
   const url = new URL(req.url);
   const auth = req.headers.get("authorization") ?? "";
   const bearer = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
-  const token = bearer || req.headers.get("x-cron-secret") || url.searchParams.get("cronSecret") || "";
+  const token = bearer || req.headers.get("x-cron-secret") || "";
   if (token !== env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -123,9 +125,19 @@ export async function POST(req: Request) {
     });
   }
 
+  console.info("[cron/sync-live]", {
+    runId,
+    checkedMatches: matches.length,
+    updatedMatches,
+    tournamentsRecalculated: touchedTournamentIds.size,
+    durationMs: Date.now() - startedAtMs,
+  });
+
   return NextResponse.json({
     checkedMatches: matches.length,
     updatedMatches,
     tournamentsRecalculated: touchedTournamentIds.size,
+    runId,
+    durationMs: Date.now() - startedAtMs,
   });
 }

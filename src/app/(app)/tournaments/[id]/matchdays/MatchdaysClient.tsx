@@ -18,6 +18,7 @@ type MatchdayRow = {
 export function MatchdaysClient(props: {
   tournamentId: string;
   role: "OWNER" | "ORGANIZER" | "PLAYER";
+  tournamentStatus: "ACTIVE" | "FINISHED" | "ARCHIVED";
   initial: MatchdayRow[];
 }) {
   const [rows, setRows] = useState(props.initial);
@@ -25,6 +26,7 @@ export function MatchdaysClient(props: {
   const [error, setError] = useState<string | null>(null);
 
   const canManage = useMemo(() => props.role === "OWNER" || props.role === "ORGANIZER", [props.role]);
+  const canCreateMatchday = useMemo(() => canManage && props.tournamentStatus === "ACTIVE", [canManage, props.tournamentStatus]);
 
   async function refresh() {
     setLoading(true);
@@ -46,7 +48,7 @@ export function MatchdaysClient(props: {
         </Button>
       </div>
 
-      {canManage ? (
+      {canCreateMatchday ? (
         <>
           <Separator />
           <Button asChild className="w-fit" variant="outline" size="sm">
@@ -82,4 +84,3 @@ export function MatchdaysClient(props: {
     </div>
   );
 }
-

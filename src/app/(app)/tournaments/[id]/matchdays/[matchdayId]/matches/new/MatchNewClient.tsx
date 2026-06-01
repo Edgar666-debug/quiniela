@@ -89,6 +89,14 @@ export function MatchNewClient(props: {
   const [fixturesError, setFixturesError] = useState<string | null>(null);
   const [fixtures, setFixtures] = useState<FixtureRow[]>([]);
 
+  const startsAtUtcMs = useMemo(() => {
+    if (!startsAtLocal) return null;
+    const d = new Date(startsAtLocal);
+    const t = d.getTime();
+    return Number.isNaN(t) ? null : t;
+  }, [startsAtLocal]);
+  const violatesCloseRule = useMemo(() => (startsAtUtcMs != null ? startsAtUtcMs < closesAtMs : false), [startsAtUtcMs, closesAtMs]);
+
   if (!canManage) {
     return (
       <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
@@ -324,6 +332,12 @@ export function MatchNewClient(props: {
           <CardDescription>Si quieres, también puedes pegar un Fixture ID y autollenar.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          {violatesCloseRule ? (
+            <InlineAlert
+              variant="error"
+              message="Este partido inicia antes del cierre de la jornada (UTC). Ajusta el cierre para que sea antes del primer partido o elige otro fixture."
+            />
+          ) : null}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="fixture">API-Football Fixture ID (opcional)</Label>
@@ -359,6 +373,11 @@ export function MatchNewClient(props: {
               onClick={async () => {
                 setMessage(null);
                 setError(null);
+                if (violatesCloseRule) {
+                  return setError(
+                    "El inicio del partido estÃ¡ antes del cierre (UTC). Ajusta el cierre de la jornada o elige otro fixture.",
+                  );
+                }
                 setLoading(true);
                 const startsAtUtc = new Date(startsAtLocal).toISOString();
                 const externalFixtureId = fixtureId.trim() ? Number(fixtureId) : undefined;

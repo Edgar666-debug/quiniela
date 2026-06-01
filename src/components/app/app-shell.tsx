@@ -23,7 +23,7 @@ import { AppBreadcrumbs } from "@/components/app/app-breadcrumbs";
 import { ThemeToggle } from "@/components/app/theme-toggle";
 import { UserMenu } from "@/components/app/user-menu";
 
-type TournamentLink = { id: string; name: string; role: "OWNER" | "ORGANIZER" | "PLAYER" };
+type TournamentLink = { id: string; name: string; status: "ACTIVE" | "FINISHED" | "ARCHIVED"; role: "OWNER" | "ORGANIZER" | "PLAYER" };
 type AppUser = { email: string; name: string | null };
 
 function SectionLabel(props: { children: React.ReactNode; collapsed: boolean }) {
@@ -77,7 +77,8 @@ function Sidebar(props: {
     [props.currentTournamentId, props.tournaments],
   );
 
-  const canManageInvites = currentTournament?.role === "OWNER" || currentTournament?.role === "ORGANIZER";
+  const canManageInvites =
+    (currentTournament?.role === "OWNER" || currentTournament?.role === "ORGANIZER") && currentTournament?.status === "ACTIVE";
 
   return (
     <nav className={cn("flex h-full flex-col gap-3", props.collapsed ? "items-center" : "")}>

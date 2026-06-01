@@ -11,11 +11,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const memberships = await prisma.tournamentMember.findMany({
     where: { userId: session.user.id },
-    select: { role: true, tournament: { select: { id: true, name: true } } },
+    select: { role: true, tournament: { select: { id: true, name: true, status: true } } },
     orderBy: { joinedAt: "desc" },
   });
 
-  const tournaments = memberships.map((m) => ({ id: m.tournament.id, name: m.tournament.name, role: m.role }));
+  const tournaments = memberships.map((m) => ({ id: m.tournament.id, name: m.tournament.name, status: m.tournament.status, role: m.role }));
 
   return (
     <AppShell user={{ email: session.user.email, name: session.user.name ?? null }} tournaments={tournaments}>

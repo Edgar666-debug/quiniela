@@ -26,9 +26,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const matchday = await prisma.matchday.findUnique({
     where: { id: matchdayId },
-    select: { tournamentId: true, closesAtUtc: true },
+    select: { tournamentId: true, closesAtUtc: true, tournament: { select: { status: true } } },
   });
   if (!matchday) return NextResponse.json({ error: "Matchday not found" }, { status: 404 });
+
+  if (matchday.tournament.status !== "ACTIVE") {
+    return NextResponse.json({ error: "Tournament is not active" }, { status: 409 });
+  }
 
   if (Date.now() >= matchday.closesAtUtc.getTime()) {
     return NextResponse.json({ error: "Matchday is closed" }, { status: 409 });
@@ -87,6 +91,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       awayTeam: createData.awayTeam,
       homeLogoUrl: createData.homeLogoUrl,
       awayLogoUrl: createData.awayLogoUrl,
+      createdByUserId: session.user.id,
     },
     select: { id: true },
   });

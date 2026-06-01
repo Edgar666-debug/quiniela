@@ -31,6 +31,9 @@ function modeLabel(mode: ThemeMode) {
 export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "right" }) {
   const [open, setOpen] = useState(false);
   const mode = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     applyThemeClass(mode);
@@ -52,6 +55,8 @@ export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "righ
     setOpen(false);
   }
 
+  const safeMode: ThemeMode = mounted ? mode : "system";
+
   return (
     <div className="relative">
       <Button
@@ -62,11 +67,11 @@ export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "righ
         onClick={() => setOpen((v) => !v)}
         aria-label="Cambiar tema"
       >
-        {modeIcon(mode)}
+        {modeIcon(safeMode)}
         {props.collapsed ? null : <span className="text-sm">Tema</span>}
       </Button>
 
-      {open ? (
+      {mounted && open ? (
         <div
           className={cn(
             "absolute top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-black",

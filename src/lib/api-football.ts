@@ -40,6 +40,18 @@ type FixtureData = {
   round?: string;
 };
 
+type CacheEntry<T> = { expiresAtMs: number; value: T };
+const responseCache = new Map<string, CacheEntry<unknown>>();
+const inFlight = new Map<string, Promise<unknown>>();
+
+function stableCacheKey(url: URL) {
+  const params = Array.from(url.searchParams.entries()).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] < b[1] ? -1 : 1));
+  const u = new URL(url.toString());
+  u.search = "";
+  for (const [k, v] of params) u.searchParams.append(k, v);
+  return u.toString();
+}
+
 async function apiFootballRequest(url: URL, attempt = 0): Promise<Response> {
   const res = await fetch(url.toString(), {
     headers: {
@@ -58,6 +70,28 @@ async function apiFootballRequest(url: URL, attempt = 0): Promise<Response> {
   return res;
 }
 
+async function requestJsonCached<T>(url: URL, ttlMs: number, fetcher: () => Promise<T>): Promise<T> {
+  const key = stableCacheKey(url);
+  const now = Date.now();
+
+  const cached = responseCache.get(key);
+  if (cached && now < cached.expiresAtMs) return cached.value as T;
+
+  const existing = inFlight.get(key);
+  if (existing) return (await existing) as T;
+
+  const p = (async () => {
+    const value = await fetcher();
+    responseCache.set(key, { expiresAtMs: now + ttlMs, value });
+    return value;
+  })().finally(() => {
+    inFlight.delete(key);
+  });
+
+  inFlight.set(key, p);
+  return (await p) as T;
+}
+
 export async function fetchFixturesByIds(fixtureIds: number[]): Promise<Map<number, FixtureData>> {
   const ids = Array.from(new Set(fixtureIds.filter((id) => Number.isFinite(id) && id > 0))).slice(0, 20);
   if (ids.length === 0) return new Map();
@@ -67,37 +101,39 @@ export async function fetchFixturesByIds(fixtureIds: number[]): Promise<Map<numb
     if (batch.length === 1) url.searchParams.set("id", String(batch[0]));
     else url.searchParams.set("ids", batch.join("-"));
 
-    const res = await apiFootballRequest(url);
+    return requestJsonCached(url, 15_000, async () => {
+      const res = await apiFootballRequest(url);
 
-    // API-Football returns 204 for "No Content". In practice, we also occasionally see 204 for multi-id lookups
-    // where only part of the batch is available. To avoid missing valid fixtures, we fall back to splitting.
-    if (res.status === 204) return new Map();
+      // API-Football returns 204 for "No Content". In practice, we also occasionally see 204 for multi-id lookups
+      // where only part of the batch is available. To avoid missing valid fixtures, we fall back to splitting.
+      if (res.status === 204) return new Map<number, FixtureData>();
 
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new Error(`API-Football error ${res.status}: ${body}`);
-    }
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`API-Football error ${res.status}: ${body}`);
+      }
 
-    const json = (await res.json()) as ApiFootballFixtureResponse;
-    const out = new Map<number, FixtureData>();
-    for (const row of json.response ?? []) {
-    out.set(row.fixture.id, {
-      id: row.fixture.id,
-      dateUtc: new Date(row.fixture.date),
-      statusShort: row.fixture.status.short,
-      scoreHome: row.goals.home,
-      scoreAway: row.goals.away,
-      homeTeam: row.teams.home.name,
-      awayTeam: row.teams.away.name,
-      homeLogoUrl: row.teams.home.logo ?? null,
-      awayLogoUrl: row.teams.away.logo ?? null,
-      leagueId: row.league?.id,
-      leagueName: row.league?.name,
-      season: row.league?.season,
-      round: row.league?.round,
+      const json = (await res.json()) as ApiFootballFixtureResponse;
+      const out = new Map<number, FixtureData>();
+      for (const row of json.response ?? []) {
+        out.set(row.fixture.id, {
+          id: row.fixture.id,
+          dateUtc: new Date(row.fixture.date),
+          statusShort: row.fixture.status.short,
+          scoreHome: row.goals.home,
+          scoreAway: row.goals.away,
+          homeTeam: row.teams.home.name,
+          awayTeam: row.teams.away.name,
+          homeLogoUrl: row.teams.home.logo ?? null,
+          awayLogoUrl: row.teams.away.logo ?? null,
+          leagueId: row.league?.id,
+          leagueName: row.league?.name,
+          season: row.league?.season,
+          round: row.league?.round,
+        });
+      }
+      return out;
     });
-  }
-  return out;
   }
 
   async function fetchRobust(batch: number[], depth = 0): Promise<Map<number, FixtureData>> {
@@ -121,32 +157,34 @@ export async function fetchFixtureById(fixtureId: number) {
   const url = new URL("/fixtures", env.API_FOOTBALL_BASE_URL);
   url.searchParams.set("id", String(fixtureId));
 
-  const res = await apiFootballRequest(url);
-  if (res.status === 204) return null;
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`API-Football error ${res.status}: ${body}`);
-  }
+  return requestJsonCached(url, 15_000, async () => {
+    const res = await apiFootballRequest(url);
+    if (res.status === 204) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`API-Football error ${res.status}: ${body}`);
+    }
 
-  const json = (await res.json()) as ApiFootballFixtureResponse;
-  const fixture = json.response?.[0];
-  if (!fixture) return null;
+    const json = (await res.json()) as ApiFootballFixtureResponse;
+    const fixture = json.response?.[0];
+    if (!fixture) return null;
 
-  return {
-    id: fixture.fixture.id,
-    dateUtc: new Date(fixture.fixture.date),
-    statusShort: fixture.fixture.status.short,
-    scoreHome: fixture.goals.home,
-    scoreAway: fixture.goals.away,
-    homeTeam: fixture.teams.home.name,
-    awayTeam: fixture.teams.away.name,
-    homeLogoUrl: fixture.teams.home.logo ?? null,
-    awayLogoUrl: fixture.teams.away.logo ?? null,
-    leagueId: fixture.league?.id,
-    leagueName: fixture.league?.name,
-    season: fixture.league?.season,
-    round: fixture.league?.round,
-  } satisfies FixtureData;
+    return {
+      id: fixture.fixture.id,
+      dateUtc: new Date(fixture.fixture.date),
+      statusShort: fixture.fixture.status.short,
+      scoreHome: fixture.goals.home,
+      scoreAway: fixture.goals.away,
+      homeTeam: fixture.teams.home.name,
+      awayTeam: fixture.teams.away.name,
+      homeLogoUrl: fixture.teams.home.logo ?? null,
+      awayLogoUrl: fixture.teams.away.logo ?? null,
+      leagueId: fixture.league?.id,
+      leagueName: fixture.league?.name,
+      season: fixture.league?.season,
+      round: fixture.league?.round,
+    } satisfies FixtureData;
+  });
 }
 
 export async function searchFixtures(params: {
@@ -168,32 +206,35 @@ export async function searchFixtures(params: {
   if (params.to) url.searchParams.set("to", params.to);
   if (params.status) url.searchParams.set("status", params.status);
 
-  const res = await apiFootballRequest(url);
-  if (res.status === 204) return [];
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`API-Football error ${res.status}: ${body}`);
-  }
+  const out = await requestJsonCached(url, 30_000, async () => {
+    const res = await apiFootballRequest(url);
+    if (res.status === 204) return [] as FixtureData[];
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`API-Football error ${res.status}: ${body}`);
+    }
 
-  const json = (await res.json()) as ApiFootballFixtureResponse;
-  const out: FixtureData[] = [];
-  for (const row of json.response ?? []) {
-    out.push({
-      id: row.fixture.id,
-      dateUtc: new Date(row.fixture.date),
-      statusShort: row.fixture.status.short,
-      scoreHome: row.goals.home,
-      scoreAway: row.goals.away,
-      homeTeam: row.teams.home.name,
-      awayTeam: row.teams.away.name,
-      homeLogoUrl: row.teams.home.logo ?? null,
-      awayLogoUrl: row.teams.away.logo ?? null,
-      leagueId: row.league?.id,
-      leagueName: row.league?.name,
-      season: row.league?.season,
-      round: row.league?.round,
-    });
-  }
+    const json = (await res.json()) as ApiFootballFixtureResponse;
+    const arr: FixtureData[] = [];
+    for (const row of json.response ?? []) {
+      arr.push({
+        id: row.fixture.id,
+        dateUtc: new Date(row.fixture.date),
+        statusShort: row.fixture.status.short,
+        scoreHome: row.goals.home,
+        scoreAway: row.goals.away,
+        homeTeam: row.teams.home.name,
+        awayTeam: row.teams.away.name,
+        homeLogoUrl: row.teams.home.logo ?? null,
+        awayLogoUrl: row.teams.away.logo ?? null,
+        leagueId: row.league?.id,
+        leagueName: row.league?.name,
+        season: row.league?.season,
+        round: row.league?.round,
+      });
+    }
+    return arr;
+  });
 
   const limit = Math.min(Math.max(params.limit ?? 25, 1), 50);
   return out.slice(0, limit);
@@ -215,28 +256,31 @@ export async function searchLeagues(params: { search: string; season?: number; c
   if (params.season) url.searchParams.set("season", String(params.season));
   if (params.current !== undefined) url.searchParams.set("current", String(params.current));
 
-  const res = await apiFootballRequest(url);
-  if (res.status === 204) return [];
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`API-Football error ${res.status}: ${body}`);
-  }
+  const out = await requestJsonCached(url, 6 * 60 * 60_000, async () => {
+    const res = await apiFootballRequest(url);
+    if (res.status === 204) return [] as LeagueSearchItem[];
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`API-Football error ${res.status}: ${body}`);
+    }
 
-  const json = (await res.json()) as ApiFootballLeaguesResponse;
-  const out: LeagueSearchItem[] = [];
-  for (const row of json.response ?? []) {
-    const years = (row.seasons ?? []).map((s) => s.year).filter((y) => Number.isFinite(y));
-    const currentYears = (row.seasons ?? []).filter((s) => s.current).map((s) => s.year);
-    out.push({
-      id: row.league.id,
-      name: row.league.name,
-      type: row.league.type,
-      countryName: row.country.name,
-      countryCode: row.country.code ?? null,
-      seasonYears: Array.from(new Set(years)).sort((a, b) => b - a),
-      currentSeasons: Array.from(new Set(currentYears)).sort((a, b) => b - a),
-    });
-  }
+    const json = (await res.json()) as ApiFootballLeaguesResponse;
+    const arr: LeagueSearchItem[] = [];
+    for (const row of json.response ?? []) {
+      const years = (row.seasons ?? []).map((s) => s.year).filter((y) => Number.isFinite(y));
+      const currentYears = (row.seasons ?? []).filter((s) => s.current).map((s) => s.year);
+      arr.push({
+        id: row.league.id,
+        name: row.league.name,
+        type: row.league.type,
+        countryName: row.country.name,
+        countryCode: row.country.code ?? null,
+        seasonYears: Array.from(new Set(years)).sort((a, b) => b - a),
+        currentSeasons: Array.from(new Set(currentYears)).sort((a, b) => b - a),
+      });
+    }
+    return arr;
+  });
 
   const limit = Math.min(Math.max(params.limit ?? 20, 1), 50);
   return out.slice(0, limit);

@@ -1,12 +1,11 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CalendarDays, Plus, Users } from "lucide-react";
-import Link from "next/link";
+import { CalendarDays } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MatchdayClient } from "./MatchdayClient";
+import { MatchdayPageActions } from "./MatchdayPageActions";
 
 export default async function MatchdayPage(props: { params: Promise<{ id: string; matchdayId: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -74,22 +73,12 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
             Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {(membership.role === "OWNER" || membership.role === "ORGANIZER") && (
-            <Button asChild size="sm">
-              <Link href={`/tournaments/${tournamentId}/matchdays/${matchdayId}/matches/new`}>
-                <Plus className="h-4 w-4" />
-                Agregar partido
-              </Link>
-            </Button>
-          )}
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/tournaments/${tournamentId}/picks`}>
-              <Users className="h-4 w-4" />
-              Participantes
-            </Link>
-          </Button>
-        </div>
+        <MatchdayPageActions
+          tournamentId={tournamentId}
+          matchdayId={matchdayId}
+          role={membership.role}
+          closesAtUtc={matchday.closesAtUtc.toISOString()}
+        />
       </div>
 
       <Card>

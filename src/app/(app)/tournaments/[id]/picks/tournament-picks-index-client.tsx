@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown, ChevronRight, Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
@@ -13,15 +14,40 @@ type MatchdayRow = { id: string; number: number; closesAtUtc: string; closesAtLa
 
 export function TournamentPicksIndexClient(props: { tournamentId: string; members: MemberRow[]; matchdays: MatchdayRow[] }) {
   const [openUserId, setOpenUserId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [closedOnly, setClosedOnly] = useState(true);
 
   const matchdaysClosedFirst = useMemo(() => {
     const closed = props.matchdays.filter((m) => m.isClosed);
     const open = props.matchdays.filter((m) => !m.isClosed);
-    return [...closed, ...open];
-  }, [props.matchdays]);
+    return closedOnly ? closed : [...closed, ...open];
+  }, [props.matchdays, closedOnly]);
+
+  const filteredMembers = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return props.members;
+    return props.members.filter((m) => (m.name ?? "").toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
+  }, [props.members, query]);
 
   return (
     <div className="grid gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Input
+          placeholder="Buscar participante (nombre o email)"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="sm:max-w-sm"
+        />
+        <div className="flex items-center gap-2">
+          <Button type="button" size="sm" variant={closedOnly ? "default" : "outline"} onClick={() => setClosedOnly(true)}>
+            Solo cerradas
+          </Button>
+          <Button type="button" size="sm" variant={!closedOnly ? "default" : "outline"} onClick={() => setClosedOnly(false)}>
+            Todas
+          </Button>
+        </div>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -32,7 +58,7 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
           </TableRow>
         </TableHeader>
         <TableBody>
-          {props.members.map((m) => {
+          {filteredMembers.map((m) => {
             const isOpen = openUserId === m.id;
             return (
               <Fragment key={m.id}>
@@ -106,7 +132,9 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
         </TableBody>
       </Table>
 
-      {props.members.length === 0 ? <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin participantes.</p> : null}
+      {filteredMembers.length === 0 ? (
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin participantes para esa bÃºsqueda.</p>
+      ) : null}
     </div>
   );
 }

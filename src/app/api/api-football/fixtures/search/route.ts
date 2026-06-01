@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { searchFixtures } from "@/lib/api-football";
 import { TtlCache } from "@/lib/ttl-cache";
+import { getRequestIp, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +26,15 @@ const querySchema = z.object({
 export async function GET(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rl = rateLimit({
+    key: `api-football:fixtures:search:${session.user.id}:${getRequestIp(req)}`,
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (!rl.ok) {
+    return NextResponse.json({ error: "Rate limited", retryAfterSeconds: rl.retryAfterSeconds }, { status: 429 });
+  }
 
   const url = new URL(req.url);
   const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams.entries()));

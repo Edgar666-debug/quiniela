@@ -25,7 +25,9 @@ export const auth = betterAuth({
   emailVerification: {
     async sendVerificationEmail({ user, url, token }) {
       // TODO: integrate a real email provider (Resend, SMTP, etc.).
-      console.log(`[emailVerification] email=${user.email} token=${token} url=${url}`);
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[emailVerification] email=${user.email} url=${url} token=${token.slice(0, 6)}…`);
+      }
     },
   },
   emailAndPassword: { enabled: true },
@@ -33,8 +35,9 @@ export const auth = betterAuth({
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
         // TODO: integrate a real email provider (Resend, SMTP, etc.).
-        // For now, the OTP is logged for local/dev usage.
-        console.log(`[emailOTP] type=${type} email=${email} otp=${otp}`);
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`[emailOTP] type=${type} email=${email} otp=${otp}`);
+        }
       },
     }),
     passkey({

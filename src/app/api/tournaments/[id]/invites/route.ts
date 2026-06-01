@@ -30,6 +30,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { status: true },
+  });
+  if (!tournament) return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
+  if (tournament.status !== "ACTIVE") {
+    return NextResponse.json({ error: "Tournament is not active" }, { status: 409 });
+  }
+
   const memberCount = await prisma.tournamentMember.count({ where: { tournamentId } });
   const remaining = Math.max(0, 10 - memberCount);
   if (remaining <= 0) return NextResponse.json({ error: "Tournament is full" }, { status: 409 });
@@ -44,6 +53,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       token,
       maxUses: body.data.maxUses,
       expiresAt: body.data.expiresAtUtc ? new Date(body.data.expiresAtUtc) : null,
+      createdByUserId: session.user.id,
     },
     select: { token: true, maxUses: true, uses: true, expiresAt: true },
   });

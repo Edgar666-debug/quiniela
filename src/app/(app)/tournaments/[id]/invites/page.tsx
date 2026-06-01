@@ -21,7 +21,7 @@ export default async function TournamentInvitesPage(props: { params: Promise<{ i
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { name: true },
+    select: { name: true, status: true },
   });
   if (!tournament) redirect("/dashboard");
 
@@ -45,7 +45,7 @@ export default async function TournamentInvitesPage(props: { params: Promise<{ i
         </div>
       </div>
 
-      <InvitesClient tournamentId={tournamentId} initialInvites={invites.map(serializeInvite)} />
+      <InvitesClient tournamentId={tournamentId} tournamentStatus={tournament.status} initialInvites={invites.map(serializeInvite)} />
 
       <Card>
         <CardHeader>

@@ -53,7 +53,7 @@ pnpm rebuild
 
 ## Cron (Vercel)
 - Está configurado en `vercel.json` para pegarle a `/api/cron/sync-live` cada 2 minutos.
-- El endpoint acepta `Authorization: Bearer $CRON_SECRET` (y fallback por `x-cron-secret` o `?cronSecret=`).
+- El endpoint acepta `Authorization: Bearer $CRON_SECRET` (y fallback por `x-cron-secret`).
 
 ## Endpoints (MVP)
 - `POST /api/tournaments` crea torneo

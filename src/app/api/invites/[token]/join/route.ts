@@ -27,6 +27,15 @@ export async function POST(_: Request, ctx: { params: Promise<{ token: string }>
     return NextResponse.json({ error: "Invite already used" }, { status: 409 });
   }
 
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: invite.tournamentId },
+    select: { status: true },
+  });
+  if (!tournament) return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
+  if (tournament.status !== "ACTIVE") {
+    return NextResponse.json({ error: "Tournament is not active" }, { status: 409 });
+  }
+
   const memberCount = await prisma.tournamentMember.count({ where: { tournamentId: invite.tournamentId } });
   if (memberCount >= MAX_PARTICIPANTS) {
     return NextResponse.json({ error: "Tournament is full" }, { status: 409 });
@@ -52,4 +61,3 @@ export async function POST(_: Request, ctx: { params: Promise<{ token: string }>
 
   return NextResponse.json({ ok: true, tournamentId: invite.tournamentId });
 }
-
