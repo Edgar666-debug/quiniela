@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Loader2, Plus, RefreshCw, Search } from "lucide-react";
 
@@ -19,6 +19,21 @@ function toLocalDateTimeInputValue(date: Date) {
   return new Date(date.getTime() - tzOffsetMs).toISOString().slice(0, 16);
 }
 
+function statusLabel(short: string) {
+  if (short === "FT") return "Final";
+  if (short === "AET") return "Final (ET)";
+  if (short === "PEN") return "Final (PEN)";
+  if (short === "NS") return "No iniciado";
+  if (short === "HT") return "Medio tiempo";
+  if (short === "PST") return "Pospuesto";
+  if (short === "CANC") return "Cancelado";
+  if (short === "ABD") return "Abandonado";
+  if (short === "AWD") return "Adjudicado";
+  if (short === "WO") return "Walkover";
+  if (short === "NF") return "No encontrado";
+  return short;
+}
+
 const DAY_MS = 24 * 60 * 60_000;
 
 function createDefaultSearchDates() {
@@ -31,9 +46,24 @@ function createDefaultSearchDates() {
   };
 }
 
-export function MatchNewClient(props: { tournamentId: string; matchdayId: string; matchdayNumber: number; role: "OWNER" | "ORGANIZER" | "PLAYER" }) {
+export function MatchNewClient(props: {
+  tournamentId: string;
+  matchdayId: string;
+  matchdayNumber: number;
+  matchdayClosesAtUtc: string;
+  role: "OWNER" | "ORGANIZER" | "PLAYER";
+}) {
   const router = useRouter();
   const canManage = useMemo(() => props.role === "OWNER" || props.role === "ORGANIZER", [props.role]);
+  const closesAtMs = useMemo(() => new Date(props.matchdayClosesAtUtc).getTime(), [props.matchdayClosesAtUtc]);
+  const [nowMs, setNowMs] = useState(0);
+  useEffect(() => {
+    const tick = () => setNowMs(Date.now());
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
+  const isClosed = useMemo(() => nowMs >= closesAtMs, [nowMs, closesAtMs]);
 
   const [fixtureId, setFixtureId] = useState("");
   const [startsAtLocal, setStartsAtLocal] = useState("");
@@ -152,6 +182,7 @@ export function MatchNewClient(props: { tournamentId: string; matchdayId: string
           <CardDescription>Escribe el nombre de la liga o país y selecciona una opción.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
+          {isClosed ? <InlineAlert variant="error" message="La jornada está cerrada. Ya no puedes agregar partidos." /> : null}
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input placeholder="Ej. Liga MX, Premier, Mexico..." value={leagueQuery} onChange={(e) => setLeagueQuery(e.target.value)} />
             <Button type="button" variant="outline" onClick={runLeagueSearch} disabled={leagueLoading || leagueQuery.trim().length < 3}>
@@ -235,6 +266,7 @@ export function MatchNewClient(props: { tournamentId: string; matchdayId: string
               onClick={runFixturesSearch}
               disabled={
                 fixturesLoading ||
+                isClosed ||
                 !searchLeague.trim() ||
                 !searchSeason.trim() ||
                 (searchMode === "date" ? !searchDate.trim() : !searchFrom.trim() || !searchTo.trim())
@@ -259,7 +291,7 @@ export function MatchNewClient(props: { tournamentId: string; matchdayId: string
                           {f.homeTeam} vs {f.awayTeam}
                         </p>
                         <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                          Fixture {f.id} • {f.statusShort} • {new Date(f.dateUtc).toISOString().replace("T", " ").slice(0, 16)} UTC
+                          Fixture {f.id} • {statusLabel(f.statusShort)} • {new Date(f.dateUtc).toISOString().replace("T", " ").slice(0, 16)} UTC
                         </p>
                       </div>
                       <Button
@@ -296,7 +328,7 @@ export function MatchNewClient(props: { tournamentId: string; matchdayId: string
             <div className="grid gap-2">
               <Label htmlFor="fixture">API-Football Fixture ID (opcional)</Label>
               <Input id="fixture" inputMode="numeric" placeholder="123456" value={fixtureId} onChange={(e) => setFixtureId(e.target.value)} />
-              <Button className="w-fit" size="sm" variant="outline" type="button" disabled={loading || !fixtureId.trim()} onClick={loadFixtureById}>
+              <Button className="w-fit" size="sm" variant="outline" type="button" disabled={loading || isClosed || !fixtureId.trim()} onClick={loadFixtureById}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Autollenar
               </Button>
@@ -322,7 +354,7 @@ export function MatchNewClient(props: { tournamentId: string; matchdayId: string
 
           <div className="flex flex-wrap gap-2">
             <Button
-              disabled={loading || !startsAtLocal || !homeTeam.trim() || !awayTeam.trim()}
+              disabled={loading || isClosed || !startsAtLocal || !homeTeam.trim() || !awayTeam.trim()}
               type="button"
               onClick={async () => {
                 setMessage(null);

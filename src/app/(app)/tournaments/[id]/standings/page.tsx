@@ -4,6 +4,7 @@ import { Trophy } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { StandingsLive } from "./StandingsLive";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function TournamentStandingsPage(props: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -32,6 +33,12 @@ export default async function TournamentStandingsPage(props: { params: Promise<{
     },
   });
 
+  const lastSync = await prisma.syncRun.findFirst({
+    where: { tournamentId },
+    orderBy: [{ ranAtUtc: "desc" }],
+    select: { ranAtUtc: true, checkedMatches: true, updatedMatches: true, standingsRecalculated: true },
+  });
+
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
       <div className="flex items-start justify-between gap-4">
@@ -44,6 +51,24 @@ export default async function TournamentStandingsPage(props: { params: Promise<{
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Ranking en vivo</p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sincronización</CardTitle>
+          <CardDescription>Estado de la última sincronización de fixtures.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {lastSync ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Última sync (UTC): {lastSync.ranAtUtc.toISOString().replace("T", " ").slice(0, 16)} • Checked: {lastSync.checkedMatches} • Updated:{" "}
+              {lastSync.updatedMatches} • Standings: {lastSync.standingsRecalculated ? "recalculados" : "sin cambios"}
+            </p>
+          ) : (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">Aún no hay sincronizaciones registradas.</p>
+          )}
+        </CardContent>
+      </Card>
+
       <StandingsLive tournamentId={tournamentId} initial={initial} />
     </main>
   );

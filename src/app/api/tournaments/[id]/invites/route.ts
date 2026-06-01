@@ -30,6 +30,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const memberCount = await prisma.tournamentMember.count({ where: { tournamentId } });
+  const remaining = Math.max(0, 10 - memberCount);
+  if (remaining <= 0) return NextResponse.json({ error: "Tournament is full" }, { status: 409 });
+  if (body.data.maxUses > remaining) {
+    return NextResponse.json({ error: `Not enough slots. Remaining: ${remaining}` }, { status: 409 });
+  }
+
   const token = randomBytes(18).toString("base64url");
   const invite = await prisma.invite.create({
     data: {
@@ -43,4 +50,3 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   return NextResponse.json({ invite });
 }
-

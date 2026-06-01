@@ -43,6 +43,21 @@ export function MatchdayClient(props: {
   }, []);
   const isClosed = useMemo(() => nowMs >= closesAtMs, [nowMs, closesAtMs]);
 
+  function statusLabel(short: string) {
+    if (short === "FT") return "Final";
+    if (short === "AET") return "Final (ET)";
+    if (short === "PEN") return "Final (PEN)";
+    if (short === "NS") return "No iniciado";
+    if (short === "HT") return "Medio tiempo";
+    if (short === "PST") return "Pospuesto";
+    if (short === "CANC") return "Cancelado";
+    if (short === "ABD") return "Abandonado";
+    if (short === "AWD") return "Adjudicado";
+    if (short === "WO") return "Walkover";
+    if (short === "NF") return "No encontrado";
+    return short;
+  }
+
   async function refresh() {
     setLoading(true);
     setError(null);
@@ -90,7 +105,7 @@ export function MatchdayClient(props: {
                   {m.homeTeam} vs {m.awayTeam}
                 </p>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                  Inicio (UTC): {new Date(m.startsAtUtc).toISOString().replace("T", " ").slice(0, 16)} • Estado: {m.statusShort}
+                  Inicio (UTC): {new Date(m.startsAtUtc).toISOString().replace("T", " ").slice(0, 16)} • Estado: {statusLabel(m.statusShort)}
                   {m.scoreHome != null && m.scoreAway != null ? ` • ${m.scoreHome}-${m.scoreAway}` : ""}
                   {m.externalFixtureId ? ` • Fixture ${m.externalFixtureId}` : ""}
                 </p>
@@ -118,4 +133,3 @@ export function MatchdayClient(props: {
     </div>
   );
 }
-

@@ -25,9 +25,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const matchday = await prisma.matchday.findUnique({
     where: { id: matchdayId },
-    select: { tournamentId: true },
+    select: { tournamentId: true, closesAtUtc: true },
   });
   if (!matchday) return NextResponse.json({ error: "Matchday not found" }, { status: 404 });
+
+  if (Date.now() >= matchday.closesAtUtc.getTime()) {
+    return NextResponse.json({ error: "Matchday is closed" }, { status: 409 });
+  }
 
   const membership = await prisma.tournamentMember.findUnique({
     where: { tournamentId_userId: { tournamentId: matchday.tournamentId, userId: session.user.id } },
@@ -50,4 +54,3 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   return NextResponse.json({ match });
 }
-

@@ -1,12 +1,14 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CalendarDays, Trophy } from "lucide-react";
+import { CalendarDays, Trophy, Users } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { InlineAlert } from "@/components/app/inline-alert";
+import { TournamentAdminClient } from "./tournament-admin-client";
 
 export default async function TournamentHomePage(props: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -16,13 +18,13 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
 
   const membership = await prisma.tournamentMember.findUnique({
     where: { tournamentId_userId: { tournamentId, userId: session.user.id } },
-    select: { id: true },
+    select: { id: true, role: true },
   });
   if (!membership) redirect("/dashboard");
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { name: true },
+    select: { name: true, status: true },
   });
   if (!tournament) redirect("/dashboard");
 
@@ -32,9 +34,10 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
             <Trophy className="h-4 w-4" />
-            <span className="text-sm">Torneo</span>
+          <span className="text-sm">Torneo</span>
           </div>
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
+          {tournament.status !== "ACTIVE" ? <InlineAlert variant="info" message={`Estado: ${tournament.status}`} className="mt-2" /> : null}
         </div>
       </div>
 
@@ -68,6 +71,33 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
             </Button>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Participantes</CardTitle>
+            <CardDescription>Ver miembros y administrar acceso.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline">
+              <Link href={`/tournaments/${tournamentId}/members`}>
+                <Users className="h-4 w-4" />
+                Ver participantes
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {membership.role === "OWNER" ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Administración</CardTitle>
+              <CardDescription>Archiva el torneo para evitar cambios.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TournamentAdminClient tournamentId={tournamentId} status={tournament.status} />
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </main>
   );

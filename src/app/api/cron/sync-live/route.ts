@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const FINISHED = new Set(["FT", "AET", "PEN"]);
-const VOID = new Set(["PST", "CANC", "ABD", "AWD", "WO"]);
+const VOID = new Set(["PST", "CANC", "ABD", "AWD", "WO", "NF"]);
 
 export async function POST(req: Request) {
   const url = new URL(req.url);
@@ -21,21 +21,31 @@ export async function POST(req: Request) {
   }
 
   const now = new Date();
+  const lookbackMs = 72 * 60 * 60_000; // 72h
+  const from = new Date(now.getTime() - lookbackMs);
   const matches = await prisma.match.findMany({
     where: {
       externalFixtureId: { not: null },
-      startsAtUtc: { lte: now },
+      startsAtUtc: { lte: now, gte: from },
+      syncMisses: { lt: 3 },
       NOT: [{ statusShort: { in: Array.from(FINISHED) } }, { statusShort: { in: Array.from(VOID) } }],
     },
     select: {
       id: true,
       externalFixtureId: true,
+      syncMisses: true,
       matchday: { select: { tournamentId: true } },
     },
     take: 200,
   });
 
+  const checkedByTournamentId = new Map<string, number>();
+  for (const match of matches) {
+    checkedByTournamentId.set(match.matchday.tournamentId, (checkedByTournamentId.get(match.matchday.tournamentId) ?? 0) + 1);
+  }
+
   const touchedTournamentIds = new Set<string>();
+  const updatedByTournamentId = new Map<string, number>();
   let updatedMatches = 0;
 
   const matchesByFixtureId = new Map<number, typeof matches>();
@@ -53,9 +63,25 @@ export async function POST(req: Request) {
 
     for (const fixtureId of chunk) {
       const fixture = fixtures.get(fixtureId);
-      if (!fixture) continue;
-
       const relatedMatches = matchesByFixtureId.get(fixtureId) ?? [];
+
+      // If API-Football didn't return this fixture, increment syncMisses.
+      // After 3 misses, mark it as terminal "NF" (not found) to stop re-checking.
+      if (!fixture) {
+        await prisma.$transaction(
+          relatedMatches.map((match) =>
+            prisma.match.update({
+              where: { id: match.id },
+              data: {
+                syncMisses: match.syncMisses + 1,
+                statusShort: match.syncMisses + 1 >= 3 ? "NF" : undefined,
+              },
+            }),
+          ),
+        );
+        continue;
+      }
+
       for (const match of relatedMatches) {
         const result = await prisma.match.updateMany({
           where: { id: match.id },
@@ -64,12 +90,14 @@ export async function POST(req: Request) {
             statusShort: fixture.statusShort,
             scoreHome: fixture.scoreHome,
             scoreAway: fixture.scoreAway,
+            syncMisses: 0,
           },
         });
 
         if (result.count > 0) {
           updatedMatches += 1;
           touchedTournamentIds.add(match.matchday.tournamentId);
+          updatedByTournamentId.set(match.matchday.tournamentId, (updatedByTournamentId.get(match.matchday.tournamentId) ?? 0) + 1);
         }
       }
     }
@@ -77,6 +105,18 @@ export async function POST(req: Request) {
 
   for (const tournamentId of touchedTournamentIds) {
     await recalculateStandingsForTournament(tournamentId);
+  }
+
+  const tournamentIds = Array.from(checkedByTournamentId.keys());
+  if (tournamentIds.length > 0) {
+    await prisma.syncRun.createMany({
+      data: tournamentIds.map((tournamentId) => ({
+        tournamentId,
+        checkedMatches: checkedByTournamentId.get(tournamentId) ?? 0,
+        updatedMatches: updatedByTournamentId.get(tournamentId) ?? 0,
+        standingsRecalculated: touchedTournamentIds.has(tournamentId),
+      })),
+    });
   }
 
   return NextResponse.json({

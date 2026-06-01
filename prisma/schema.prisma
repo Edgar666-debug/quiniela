@@ -26,6 +26,12 @@ enum PickOutcome {
   AWAY
 }
 
+enum TournamentStatus {
+  ACTIVE
+  FINISHED
+  ARCHIVED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -106,7 +112,7 @@ model Passkey {
 model Tournament {
   id        String   @id @default(cuid())
   name      String
-  status    String   @default("ACTIVE")
+  status    TournamentStatus @default(ACTIVE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -117,6 +123,7 @@ model Tournament {
   invites   Invite[]
   matchdays Matchday[]
   standings Standing[]
+  syncRuns  SyncRun[]
 }
 
 model TournamentMember {
@@ -167,6 +174,7 @@ model Match {
   statusShort      String   @default("NS")
   scoreHome        Int?
   scoreAway        Int?
+  syncMisses       Int      @default(0)
   updatedAt        DateTime @updatedAt
 
   matchdayId String
@@ -202,4 +210,19 @@ model Standing {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, userId])
+}
+
+model SyncRun {
+  id        String   @id @default(cuid())
+  ranAtUtc  DateTime @default(now())
+  status    String   @default("SUCCESS")
+  message   String?
+  checkedMatches Int @default(0)
+  updatedMatches Int @default(0)
+  standingsRecalculated Boolean @default(false)
+
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId, ranAtUtc])
 }

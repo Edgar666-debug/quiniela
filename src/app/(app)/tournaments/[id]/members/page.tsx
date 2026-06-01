@@ -4,6 +4,7 @@ import { Users } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MembersClient } from "./MembersClient";
 
 export default async function TournamentMembersPage(props: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -13,7 +14,7 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
 
   const membership = await prisma.tournamentMember.findUnique({
     where: { tournamentId_userId: { tournamentId, userId: session.user.id } },
-    select: { id: true },
+    select: { id: true, role: true },
   });
   if (!membership) redirect("/dashboard");
 
@@ -51,21 +52,13 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
           <CardTitle>Lista</CardTitle>
           <CardDescription>Roles: OWNER, ORGANIZER, PLAYER.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {members.map((m) => (
-            <div
-              key={m.user.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{m.user.name ?? m.user.email}</p>
-                <p className="truncate text-xs text-zinc-600 dark:text-zinc-400">{m.user.email}</p>
-              </div>
-              <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                <span className="rounded-full border border-zinc-200 px-2 py-1 dark:border-zinc-800">{m.role}</span>
-              </div>
-            </div>
-          ))}
+        <CardContent>
+          <MembersClient
+            tournamentId={tournamentId}
+            myUserId={session.user.id}
+            myRole={membership.role}
+            initial={members.map((m) => ({ role: m.role, user: m.user }))}
+          />
         </CardContent>
       </Card>
     </main>

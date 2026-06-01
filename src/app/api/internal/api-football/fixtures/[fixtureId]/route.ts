@@ -3,9 +3,12 @@ import { z } from "zod";
 
 import { env } from "@/lib/env";
 import { fetchFixtureById } from "@/lib/api-football";
+import { TtlCache } from "@/lib/ttl-cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const cache = new TtlCache<Awaited<ReturnType<typeof fetchFixtureById>>>(500);
 
 const paramsSchema = z.object({
   fixtureId: z.coerce.number().int().positive(),
@@ -26,7 +29,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ fixtureId: stri
   const parsed = paramsSchema.safeParse(rawParams);
   if (!parsed.success) return NextResponse.json({ error: "Invalid fixtureId" }, { status: 400 });
 
-  const fixture = await fetchFixtureById(parsed.data.fixtureId);
+  const fixtureId = parsed.data.fixtureId;
+  const fixture = await cache.getOrSet(`internal-fixture:${fixtureId}`, 15_000, () => fetchFixtureById(fixtureId));
   if (!fixture) return NextResponse.json({ fixture: null }, { status: 200 });
 
   return NextResponse.json({

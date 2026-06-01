@@ -14,7 +14,7 @@ export default async function TournamentsIndexPage() {
 
   const memberships = await prisma.tournamentMember.findMany({
     where: { userId: session.user.id },
-    select: { role: true, tournament: { select: { id: true, name: true } } },
+    select: { role: true, tournament: { select: { id: true, name: true, status: true } } },
     orderBy: { joinedAt: "desc" },
   });
 
@@ -55,7 +55,10 @@ export default async function TournamentsIndexPage() {
             <Card key={m.tournament.id}>
               <CardHeader>
                 <CardTitle className="truncate">{m.tournament.name}</CardTitle>
-                <CardDescription>Rol: {m.role}</CardDescription>
+                <CardDescription>
+                  Rol: {m.role}
+                  {m.tournament.status !== "ACTIVE" ? ` • ${m.tournament.status}` : ""}
+                </CardDescription>
               </CardHeader>
               <CardContent className="flex gap-2">
                 <Button asChild>

@@ -4,9 +4,12 @@ import { z } from "zod";
 
 import { auth } from "@/lib/auth";
 import { searchLeagues } from "@/lib/api-football";
+import { TtlCache } from "@/lib/ttl-cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const cache = new TtlCache<Awaited<ReturnType<typeof searchLeagues>>>(300);
 
 const querySchema = z.object({
   q: z.string().trim().min(3).max(64),
@@ -26,12 +29,15 @@ export async function GET(req: Request) {
   const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams.entries()));
   if (!parsed.success) return NextResponse.json({ error: "Invalid query" }, { status: 400 });
 
-  const leagues = await searchLeagues({
-    search: parsed.data.q,
-    season: parsed.data.season,
-    current: parsed.data.current,
-    limit: parsed.data.limit,
-  });
+  const key = `leagues:${parsed.data.q}:${parsed.data.season ?? ""}:${parsed.data.current ?? ""}:${parsed.data.limit ?? ""}`;
+  const leagues = await cache.getOrSet(key, 6 * 60 * 60_000, () =>
+    searchLeagues({
+      search: parsed.data.q,
+      season: parsed.data.season,
+      current: parsed.data.current,
+      limit: parsed.data.limit,
+    }),
+  );
 
   return NextResponse.json({ leagues });
 }

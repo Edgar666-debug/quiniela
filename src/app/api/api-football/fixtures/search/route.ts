@@ -4,9 +4,12 @@ import { z } from "zod";
 
 import { auth } from "@/lib/auth";
 import { searchFixtures } from "@/lib/api-football";
+import { TtlCache } from "@/lib/ttl-cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const cache = new TtlCache<Awaited<ReturnType<typeof searchFixtures>>>(500);
 
 const querySchema = z.object({
   league: z.coerce.number().int().positive().optional(),
@@ -27,7 +30,10 @@ export async function GET(req: Request) {
   const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams.entries()));
   if (!parsed.success) return NextResponse.json({ error: "Invalid query" }, { status: 400 });
 
-  const fixtures = await searchFixtures(parsed.data);
+  const q = parsed.data;
+  const key = `fixtures:${q.league ?? ""}:${q.season ?? ""}:${q.date ?? ""}:${q.from ?? ""}:${q.to ?? ""}:${q.team ?? ""}:${q.status ?? ""}:${q.limit ?? ""}`;
+  // Short TTL to protect API quota. Users can always hit refresh/search again.
+  const fixtures = await cache.getOrSet(key, 30_000, () => searchFixtures(q));
 
   return NextResponse.json({
     fixtures: fixtures.map((f) => ({
