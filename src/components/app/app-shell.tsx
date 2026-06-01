@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   CalendarDays,
   LayoutDashboard,
+  ListChecks,
   Menu,
   PanelLeft,
   Ticket,
@@ -168,6 +169,14 @@ function Sidebar(props: {
             collapsed={props.collapsed}
             onNavigate={props.onNavigate}
           />
+          <NavItem
+            href={`/tournaments/${currentTournament.id}/picks`}
+            icon={<ListChecks className="h-4 w-4" />}
+            label="Picks"
+            active={pathname.startsWith(`/tournaments/${currentTournament.id}/picks`)}
+            collapsed={props.collapsed}
+            onNavigate={props.onNavigate}
+          />
           {canManageInvites ? (
             <NavItem
               href={`/tournaments/${currentTournament.id}/invites`}
@@ -303,6 +312,7 @@ function buildCrumbs(pathname: string, tournamentName: string | null, tournament
     if (pathname.startsWith(`/tournaments/${tournamentId}/matchdays`)) return [...base, { label: "Jornadas" }];
     if (pathname.startsWith(`/tournaments/${tournamentId}/standings`)) return [...base, { label: "Ranking" }];
     if (pathname.startsWith(`/tournaments/${tournamentId}/members`)) return [...base, { label: "Participantes" }];
+    if (pathname.startsWith(`/tournaments/${tournamentId}/picks`)) return [...base, { label: "Picks" }];
     if (pathname.startsWith(`/tournaments/${tournamentId}/invites`)) return [...base, { label: "Invitaciones" }];
     return base;
   }

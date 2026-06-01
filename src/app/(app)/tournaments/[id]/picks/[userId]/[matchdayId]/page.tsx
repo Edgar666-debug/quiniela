@@ -1,30 +1,37 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CalendarDays, Plus, Users } from "lucide-react";
+import { CalendarDays, Eye } from "lucide-react";
 import Link from "next/link";
+
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MatchdayClient } from "./MatchdayClient";
+import { ParticipantMatchdayPicksClient } from "./ParticipantMatchdayPicksClient";
 
-export default async function MatchdayPage(props: { params: Promise<{ id: string; matchdayId: string }> }) {
+export default async function ParticipantMatchdayPicksPage(props: { params: Promise<{ id: string; userId: string; matchdayId: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/sign-in");
 
-  const { id: tournamentId, matchdayId } = await props.params;
+  const { id: tournamentId, userId, matchdayId } = await props.params;
 
   const membership = await prisma.tournamentMember.findUnique({
     where: { tournamentId_userId: { tournamentId, userId: session.user.id } },
-    select: { role: true },
+    select: { id: true },
   });
   if (!membership) redirect("/dashboard");
+
+  const participant = await prisma.tournamentMember.findUnique({
+    where: { tournamentId_userId: { tournamentId, userId } },
+    select: { user: { select: { name: true, email: true } } },
+  });
+  if (!participant) redirect(`/tournaments/${tournamentId}/picks`);
 
   const matchday = await prisma.matchday.findUnique({
     where: { id: matchdayId },
     select: { id: true, number: true, closesAtUtc: true, tournamentId: true },
   });
-  if (!matchday || matchday.tournamentId !== tournamentId) redirect(`/tournaments/${tournamentId}/matchdays`);
+  if (!matchday || matchday.tournamentId !== tournamentId) redirect(`/tournaments/${tournamentId}/picks`);
 
   const matches = await prisma.match.findMany({
     where: { matchdayId },
@@ -40,25 +47,25 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
       statusShort: true,
       scoreHome: true,
       scoreAway: true,
-      picks: { where: { userId: session.user.id }, select: { outcome: true }, take: 1 },
+      picks: { where: { userId }, select: { outcome: true }, take: 1 },
     },
   });
 
   const initial = {
-    role: membership.role,
-    matchday: { id: matchday.id, number: matchday.number, closesAtUtc: matchday.closesAtUtc.toISOString() },
+    matchday: { number: matchday.number, closesAtUtc: matchday.closesAtUtc.toISOString() },
+    participantLabel: participant.user.name ?? participant.user.email,
     matches: matches.map((m) => ({
       id: m.id,
       externalFixtureId: m.externalFixtureId,
       startsAtUtc: m.startsAtUtc.toISOString(),
       homeTeam: m.homeTeam,
-      awayTeam: m.awayTeam,
       homeLogoUrl: m.homeLogoUrl,
+      awayTeam: m.awayTeam,
       awayLogoUrl: m.awayLogoUrl,
       statusShort: m.statusShort,
       scoreHome: m.scoreHome,
       scoreAway: m.scoreAway,
-      myPick: m.picks[0]?.outcome ?? null,
+      pick: m.picks[0]?.outcome ?? null,
     })),
   };
 
@@ -75,17 +82,9 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {(membership.role === "OWNER" || membership.role === "ORGANIZER") && (
-            <Button asChild size="sm">
-              <Link href={`/tournaments/${tournamentId}/matchdays/${matchdayId}/matches/new`}>
-                <Plus className="h-4 w-4" />
-                Agregar partido
-              </Link>
-            </Button>
-          )}
           <Button asChild variant="outline" size="sm">
             <Link href={`/tournaments/${tournamentId}/picks`}>
-              <Users className="h-4 w-4" />
+              <Eye className="h-4 w-4" />
               Participantes
             </Link>
           </Button>
@@ -94,13 +93,14 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
 
       <Card>
         <CardHeader>
-          <CardTitle>Partidos</CardTitle>
-          <CardDescription>Selecciona 1X2 antes del cierre. 1 punto por acierto.</CardDescription>
+          <CardTitle>Picks</CardTitle>
+          <CardDescription>Solo lectura.</CardDescription>
         </CardHeader>
         <CardContent>
-          <MatchdayClient matchdayId={matchdayId} initial={initial} />
+          <ParticipantMatchdayPicksClient tournamentId={tournamentId} userId={userId} matchdayId={matchdayId} initial={initial} />
         </CardContent>
       </Card>
     </main>
   );
 }
+

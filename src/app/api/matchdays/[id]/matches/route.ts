@@ -66,6 +66,18 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     }
   }
 
+  // Regla: el cierre debe ser antes de que inicie el primer partido.
+  // Por lo tanto, no permitimos crear partidos que inicien antes del cierre.
+  if (createData.startsAtUtc.getTime() < matchday.closesAtUtc.getTime()) {
+    return NextResponse.json(
+      {
+        error:
+          "El partido inicia antes del cierre de la jornada (UTC). Ajusta el cierre para que sea antes del primer partido o elige otro fixture.",
+      },
+      { status: 409 },
+    );
+  }
+
   const match = await prisma.match.create({
     data: {
       matchdayId: createData.matchdayId,

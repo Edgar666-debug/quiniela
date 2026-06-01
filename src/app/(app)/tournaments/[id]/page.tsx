@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CalendarDays, Trophy, Users } from "lucide-react";
+import { CalendarDays, Eye, Trophy, Users } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/lib/auth";
@@ -34,7 +34,7 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
             <Trophy className="h-4 w-4" />
-          <span className="text-sm">Torneo</span>
+            <span className="text-sm">Torneo</span>
           </div>
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
           {tournament.status !== "ACTIVE" ? <InlineAlert variant="info" message={`Estado: ${tournament.status}`} className="mt-2" /> : null}
@@ -82,6 +82,21 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
               <Link href={`/tournaments/${tournamentId}/members`}>
                 <Users className="h-4 w-4" />
                 Ver participantes
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Picks</CardTitle>
+            <CardDescription>Ver picks por participante después del cierre.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline">
+              <Link href={`/tournaments/${tournamentId}/picks`}>
+                <Eye className="h-4 w-4" />
+                Ver picks
               </Link>
             </Button>
           </CardContent>
