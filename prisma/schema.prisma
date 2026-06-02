@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -13,45 +7,24 @@ datasource db {
   provider = "postgresql"
 }
 
-enum MemberRole {
-  OWNER
-  ORGANIZER
-  PLAYER
-}
-
-enum PickOutcome {
-  HOME
-  DRAW
-  AWAY
-}
-
-enum TournamentStatus {
-  ACTIVE
-  FINISHED
-  ARCHIVED
-}
-
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified Boolean?  @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  sessions  Session[]
-  accounts  Account[]
-  passkeys  Passkey[]
-
+  id               String             @id @default(cuid())
+  name             String?
+  email            String             @unique
+  emailVerified    Boolean?           @default(false)
+  image            String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  accounts         Account[]
+  invitesCreated   Invite[]           @relation("InviteCreatedBy")
+  matchesCreated   Match[]            @relation("MatchCreatedBy")
+  matchdaysCreated Matchday[]         @relation("MatchdayCreatedBy")
+  passkeys         Passkey[]
+  picks            Pick[]
+  sessions         Session[]
+  standings        Standing[]
   tournamentsOwned Tournament[]       @relation("TournamentOwner")
   memberships      TournamentMember[]
-  picks            Pick[]
-  standings        Standing[]
-
-  matchdaysCreated Matchday[] @relation("MatchdayCreatedBy")
-  matchesCreated   Match[]    @relation("MatchCreatedBy")
-  invitesCreated   Invite[]   @relation("InviteCreatedBy")
 }
 
 model Session {
@@ -62,9 +35,8 @@ model Session {
   updatedAt DateTime @updatedAt
   ipAddress String?
   userAgent String?
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
@@ -72,7 +44,6 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -82,6 +53,7 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Verification {
@@ -105,96 +77,89 @@ model Passkey {
   aaguid       String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model Tournament {
-  id        String   @id @default(cuid())
+  id        String             @id @default(cuid())
   name      String
-  status    TournamentStatus @default(ACTIVE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  ownerId String
-  owner   User     @relation("TournamentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-
-  members   TournamentMember[]
+  status    TournamentStatus   @default(ACTIVE)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  ownerId   String
   invites   Invite[]
   matchdays Matchday[]
   standings Standing[]
   syncRuns  SyncRun[]
+  owner     User               @relation("TournamentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members   TournamentMember[]
 }
 
 model TournamentMember {
-  id          String     @id @default(cuid())
-  role        MemberRole @default(PLAYER)
-  joinedAt    DateTime   @default(now())
+  id           String     @id @default(cuid())
+  role         MemberRole @default(PLAYER)
+  joinedAt     DateTime   @default(now())
   tournamentId String
   userId       String
-
-  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, userId])
 }
 
 model Invite {
-  id           String   @id @default(cuid())
-  token        String   @unique
-  maxUses      Int      @default(1)
-  uses         Int      @default(0)
-  expiresAt    DateTime?
-  createdAt    DateTime @default(now())
-
+  id              String     @id @default(cuid())
+  token           String     @unique
+  maxUses         Int        @default(1)
+  uses            Int        @default(0)
+  expiresAt       DateTime?
+  createdAt       DateTime   @default(now())
+  tournamentId    String
   createdByUserId String?
-  createdBy       User?   @relation("InviteCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdBy       User?      @relation("InviteCreatedBy", fields: [createdByUserId], references: [id])
+  tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 
-  tournamentId String
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  @@index([createdByUserId])
 }
 
 model Matchday {
-  id          String   @id @default(cuid())
-  number      Int
-  closesAtUtc DateTime
-  createdAt   DateTime @default(now())
-
+  id              String     @id @default(cuid())
+  number          Int
+  closesAtUtc     DateTime
+  createdAt       DateTime   @default(now())
+  tournamentId    String
   createdByUserId String?
-  createdBy       User?   @relation("MatchdayCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-
-  tournamentId String
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-
-  matches Match[]
+  matches         Match[]
+  createdBy       User?      @relation("MatchdayCreatedBy", fields: [createdByUserId], references: [id])
+  tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, number])
+  @@index([createdByUserId])
 }
 
 model Match {
-  id               String   @id @default(cuid())
-  externalFixtureId Int?    @unique
-  startsAtUtc      DateTime
-  homeTeam         String
-  homeLogoUrl      String?
-  awayTeam         String
-  awayLogoUrl      String?
-  statusShort      String   @default("NS")
-  scoreHome        Int?
-  scoreAway        Int?
-  syncMisses       Int      @default(0)
-  updatedAt        DateTime @updatedAt
+  id                String   @id @default(cuid())
+  externalFixtureId Int?     @unique
+  startsAtUtc       DateTime
+  homeTeam          String
+  awayTeam          String
+  statusShort       String   @default("NS")
+  scoreHome         Int?
+  scoreAway         Int?
+  updatedAt         DateTime @updatedAt
+  matchdayId        String
+  syncMisses        Int      @default(0)
+  homeLogoUrl       String?
+  awayLogoUrl       String?
+  createdByUserId   String?
+  createdBy         User?    @relation("MatchCreatedBy", fields: [createdByUserId], references: [id])
+  matchday          Matchday @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
+  picks             Pick[]
 
-  createdByUserId String?
-  createdBy       User?   @relation("MatchCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-
-  matchdayId String
-  matchday   Matchday @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
-
-  picks Pick[]
+  @@index([createdByUserId])
 }
 
 model Pick {
@@ -202,41 +167,54 @@ model Pick {
   outcome   PickOutcome
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
-
-  matchId String
-  match   Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchId   String
+  userId    String
+  match     Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([matchId, userId])
 }
 
 model Standing {
-  id          String   @id @default(cuid())
-  points      Int      @default(0)
-  updatedAt   DateTime @updatedAt
-
+  id           String     @id @default(cuid())
+  points       Int        @default(0)
+  updatedAt    DateTime   @updatedAt
   tournamentId String
+  userId       String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, userId])
 }
 
 model SyncRun {
-  id        String   @id @default(cuid())
-  ranAtUtc  DateTime @default(now())
-  status    String   @default("SUCCESS")
-  message   String?
-  checkedMatches Int @default(0)
-  updatedMatches Int @default(0)
-  standingsRecalculated Boolean @default(false)
-
-  tournamentId String
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  id                    String     @id @default(cuid())
+  ranAtUtc              DateTime   @default(now())
+  status                String     @default("SUCCESS")
+  message               String?
+  checkedMatches        Int        @default(0)
+  updatedMatches        Int        @default(0)
+  standingsRecalculated Boolean    @default(false)
+  tournamentId          String
+  tournament            Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 
   @@index([tournamentId, ranAtUtc])
+}
+
+enum MemberRole {
+  OWNER
+  ORGANIZER
+  PLAYER
+}
+
+enum PickOutcome {
+  HOME
+  DRAW
+  AWAY
+}
+
+enum TournamentStatus {
+  ACTIVE
+  FINISHED
+  ARCHIVED
 }

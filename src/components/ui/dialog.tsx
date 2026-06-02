@@ -48,7 +48,7 @@ export function DialogContent({ className, children, ref, ...props }: DialogCont
         <div className="absolute right-3 top-3">
           <DialogClose asChild>
             <Button variant="ghost" size="icon" aria-label="Cerrar">
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </Button>
           </DialogClose>
         </div>

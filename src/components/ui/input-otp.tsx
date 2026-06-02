@@ -22,13 +22,13 @@ export function InputOTPGroup({ className, ...props }: React.HTMLAttributes<HTML
 }
 
 export function InputOTPSlot({ index, className, ...props }: { index: number } & React.HTMLAttributes<HTMLDivElement>) {
-  const inputOTPContext = React.useContext(OTPInputContext);
+  const inputOTPContext = React.use(OTPInputContext);
   const slot = inputOTPContext?.slots?.[index];
 
   return (
     <div
       className={cn(
-        "relative flex h-10 w-10 items-center justify-center rounded-md border border-zinc-200 bg-white text-sm shadow-sm transition-all dark:border-zinc-800 dark:bg-black",
+        "relative flex size-10 items-center justify-center rounded-md border border-zinc-200 bg-white text-sm shadow-sm transition-all dark:border-zinc-800 dark:bg-zinc-950",
         slot?.isActive ? "ring-2 ring-zinc-950 ring-offset-2 ring-offset-white dark:ring-zinc-50 dark:ring-offset-black" : "",
         className,
       )}

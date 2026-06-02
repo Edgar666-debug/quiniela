@@ -20,7 +20,7 @@ export function JoinTournamentClient() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
+          <Users className="size-5" />
           Token de invitación
         </CardTitle>
         <CardDescription>Los tokens suelen ser de un solo uso.</CardDescription>
@@ -55,7 +55,7 @@ export function JoinTournamentClient() {
               router.refresh();
             }}
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <Ticket className="size-4" />}
             Unirme
           </Button>
         </div>

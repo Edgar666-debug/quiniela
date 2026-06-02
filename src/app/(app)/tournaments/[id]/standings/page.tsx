@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Trophy } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createSupabaseRealtimeToken } from "@/lib/supabase/realtime-token";
 import { StandingsLive } from "./StandingsLive";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -29,27 +30,30 @@ export default async function TournamentStandingsPage(props: { params: Promise<{
   });
   if (!tournament) redirect("/dashboard");
 
-  const initial = await prisma.standing.findMany({
-    where: { tournamentId },
-    orderBy: [{ points: "desc" }, { updatedAt: "desc" }],
-    select: {
-      points: true,
-      user: { select: { id: true, name: true, email: true, image: true } },
-    },
-  });
+  const [initial, lastSync] = await Promise.all([
+    prisma.standing.findMany({
+      where: { tournamentId },
+      orderBy: [{ points: "desc" }, { updatedAt: "desc" }],
+      select: {
+        points: true,
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    }),
+    prisma.syncRun.findFirst({
+      where: { tournamentId },
+      orderBy: [{ ranAtUtc: "desc" }],
+      select: { ranAtUtc: true, checkedMatches: true, updatedMatches: true, standingsRecalculated: true },
+    }),
+  ]);
 
-  const lastSync = await prisma.syncRun.findFirst({
-    where: { tournamentId },
-    orderBy: [{ ranAtUtc: "desc" }],
-    select: { ranAtUtc: true, checkedMatches: true, updatedMatches: true, standingsRecalculated: true },
-  });
+  const realtimeToken = createSupabaseRealtimeToken(session.user.id);
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <Trophy className="h-4 w-4" />
+            <Trophy className="size-4" />
             <span className="text-sm">Torneo</span>
           </div>
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
@@ -74,7 +78,7 @@ export default async function TournamentStandingsPage(props: { params: Promise<{
         </CardContent>
       </Card>
 
-      <StandingsLive tournamentId={tournamentId} initial={initial} />
+      <StandingsLive tournamentId={tournamentId} initial={initial} realtimeToken={realtimeToken} />
     </main>
   );
 }

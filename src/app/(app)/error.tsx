@@ -16,7 +16,7 @@ export default function AppError(props: { error: Error & { digest?: string }; re
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <AlertTriangle className="size-5 text-red-600" />
             Ocurrió un error
           </CardTitle>
           <CardDescription>Intenta recargar esta sección. Si persiste, revisa los logs del servidor.</CardDescription>
@@ -27,7 +27,7 @@ export default function AppError(props: { error: Error & { digest?: string }; re
           </pre>
           <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={() => props.reset()}>
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className="size-4" />
               Reintentar
             </Button>
           </div>

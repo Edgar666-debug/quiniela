@@ -116,11 +116,9 @@ export async function POST(req: Request) {
           for (const result of results) {
             if (result.count > 0) {
               updated += 1;
-              touchedIds.add(result.match.matchday.tournamentId);
-              updatedCounts.set(
-                result.match.matchday.tournamentId,
-                (updatedCounts.get(result.match.matchday.tournamentId) ?? 0) + 1,
-              );
+              const tournamentId = result.match.matchday.tournamentId;
+              touchedIds.add(tournamentId);
+              updatedCounts.set(tournamentId, (updatedCounts.get(tournamentId) ?? 0) + 1);
             }
           }
         }),

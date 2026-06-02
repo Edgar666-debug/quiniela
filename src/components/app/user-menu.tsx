@@ -38,12 +38,12 @@ export function UserMenu(props: { user: { email: string; name: string | null }; 
           variant="ghost"
           disabled={loading}
           className={cn(
-            props.collapsed ? "h-10 w-10 justify-center px-0" : "w-full justify-start gap-3 px-2",
+            props.collapsed ? "size-10 justify-center px-0" : "w-full justify-start gap-3 px-2",
             "rounded-xl",
           )}
           aria-label="Menú de usuario"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 dark:border-zinc-800 dark:bg-black dark:text-zinc-200">
+          <div className="flex size-8 items-center justify-center rounded-full border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
             {(props.user.name ?? props.user.email).slice(0, 1).toUpperCase()}
           </div>
           {props.collapsed ? null : (
@@ -52,7 +52,7 @@ export function UserMenu(props: { user: { email: string; name: string | null }; 
                 <p className="truncate text-sm font-medium">{displayName}</p>
                 <p className="truncate text-xs text-zinc-600 dark:text-zinc-400">{props.user.email}</p>
               </div>
-              <ChevronUp className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+              <ChevronUp className="size-4 text-zinc-500 dark:text-zinc-400" />
             </>
           )}
         </Button>
@@ -75,7 +75,7 @@ export function UserMenu(props: { user: { email: string; name: string | null }; 
               props.onNavigate?.();
             }}
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="size-4" />
             Cuenta
           </Link>
         </DropdownMenuItem>
@@ -87,7 +87,7 @@ export function UserMenu(props: { user: { email: string; name: string | null }; 
               props.onNavigate?.();
             }}
           >
-            <Mail className="h-4 w-4" />
+            <Mail className="size-4" />
             Invitaciones
           </Link>
         </DropdownMenuItem>
@@ -95,7 +95,7 @@ export function UserMenu(props: { user: { email: string; name: string | null }; 
         <DropdownMenuSeparator />
 
         <DropdownMenuItem onSelect={() => signOut()} className="text-red-600 focus:text-red-600 dark:text-red-500 dark:focus:text-red-500">
-          <LogOut className="h-4 w-4" />
+          <LogOut className="size-4" />
           Cerrar sesión
         </DropdownMenuItem>
       </DropdownMenuContent>

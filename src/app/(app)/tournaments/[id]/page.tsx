@@ -38,7 +38,7 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <Trophy className="h-4 w-4" />
+            <Trophy className="size-4" />
             <span className="text-sm">Torneo</span>
           </div>
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>
@@ -55,7 +55,7 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
           <CardContent>
             <Button asChild>
               <Link href={`/tournaments/${tournamentId}/standings`}>
-                <Trophy className="h-4 w-4" />
+                <Trophy className="size-4" />
                 Ver ranking
               </Link>
             </Button>
@@ -70,7 +70,7 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
           <CardContent>
             <Button asChild variant="outline">
               <Link href={`/tournaments/${tournamentId}/matchdays`}>
-                <CalendarDays className="h-4 w-4" />
+                <CalendarDays className="size-4" />
                 Ver jornadas
               </Link>
             </Button>
@@ -85,7 +85,7 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
           <CardContent>
             <Button asChild variant="outline">
               <Link href={`/tournaments/${tournamentId}/members`}>
-                <Users className="h-4 w-4" />
+                <Users className="size-4" />
                 Ver participantes
               </Link>
             </Button>
@@ -100,7 +100,7 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
           <CardContent>
             <Button asChild variant="outline">
               <Link href={`/tournaments/${tournamentId}/picks`}>
-                <Eye className="h-4 w-4" />
+                <Eye className="size-4" />
                 Ver picks
               </Link>
             </Button>

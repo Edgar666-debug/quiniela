@@ -44,9 +44,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ error: "El cierre debe ser una fecha futura (UTC)." }, { status: 409 });
   }
   // Guardrail: evita cierres absurdamente lejanos por error de captura.
-  const maxFutureMs = 180 * 24 * 60 * 60_000; // 180 dÃ­as
+  const maxFutureMs = 180 * 24 * 60 * 60_000; // 180 días
   if (closesAt.getTime() - Date.now() > maxFutureMs) {
-    return NextResponse.json({ error: "El cierre estÃ¡ demasiado lejos. Revisa la fecha (UTC)." }, { status: 409 });
+    return NextResponse.json({ error: "El cierre está demasiado lejos. Revisa la fecha (UTC)." }, { status: 409 });
   }
 
   const matchday = await prisma.matchday.create({

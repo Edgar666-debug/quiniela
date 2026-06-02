@@ -19,25 +19,25 @@ export function DashboardClient(props: { initialTournaments: MyTournament[] }) {
     <div className="mt-4 grid gap-4 md:grid-cols-2">
       <FeatureCard
         href="/tournaments/new"
-        icon={<PlusCircle className="h-6 w-6 text-emerald-600" />}
+        icon={<PlusCircle className="size-6 text-emerald-600" />}
         title="Crear torneo"
         description="Crea un torneo, define jornadas y comparte invitaciones."
       />
       <FeatureCard
         href="/tournaments/join"
-        icon={<Ticket className="h-6 w-6 text-emerald-600" />}
+        icon={<Ticket className="size-6 text-emerald-600" />}
         title="Unirme por invitación"
         description="Pega el token de invitación y entra a un torneo."
       />
       <FeatureCard
         href="/tournaments"
-        icon={<Trophy className="h-6 w-6 text-emerald-600" />}
+        icon={<Trophy className="size-6 text-emerald-600" />}
         title="Mis torneos"
         description="Abre un torneo y navega a jornadas, picks y ranking en vivo."
       />
       <FeatureCard
         href={lastTournament ? `/tournaments/${lastTournament.tournamentId}/matchdays` : "/tournaments"}
-        icon={<CalendarDays className="h-6 w-6 text-emerald-600" />}
+        icon={<CalendarDays className="size-6 text-emerald-600" />}
         title={lastTournament ? "Continuar torneo" : "Jornadas"}
         description={
           lastTournament ? `Ir a jornadas de “${lastTournament.name}”.` : "Selecciona un torneo para ver sus jornadas."
@@ -45,13 +45,13 @@ export function DashboardClient(props: { initialTournaments: MyTournament[] }) {
       />
       <FeatureCard
         href={lastTournament ? `/tournaments/${lastTournament.tournamentId}/standings` : "/tournaments"}
-        icon={<Users className="h-6 w-6 text-emerald-600" />}
+        icon={<Users className="size-6 text-emerald-600" />}
         title="Ranking en vivo"
         description="Consulta el ranking y empates (múltiples ganadores)."
       />
       <FeatureCard
         href="/account/passkeys"
-        icon={<KeyRound className="h-6 w-6 text-emerald-600" />}
+        icon={<KeyRound className="size-6 text-emerald-600" />}
         title="Passkeys"
         description="Entra sin contraseña usando passkey (WebAuthn)."
       />

@@ -42,11 +42,9 @@ export function MatchNewClient(props: {
   const router = useRouter();
   const canManage = props.role === "OWNER" || props.role === "ORGANIZER";
   const closesAtMs = new Date(props.matchdayClosesAtUtc).getTime();
-  const [nowMs, setNowMs] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   useEffect(() => {
-    const tick = () => setNowMs(Date.now());
-    tick();
-    const id = setInterval(tick, 30_000);
+    const id = setInterval(() => setNowMs(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
   const isClosed = nowMs >= closesAtMs;
@@ -162,7 +160,7 @@ export function MatchNewClient(props: {
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <CalendarDays className="h-4 w-4" />
+            <CalendarDays className="size-4" />
             <span className="text-sm">Jornada {props.matchdayNumber}</span>
           </div>
           <h1 className="text-2xl font-semibold">Agregar partido</h1>
@@ -180,7 +178,7 @@ export function MatchNewClient(props: {
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input placeholder="Ej. Liga MX, Premier, Mexico..." value={leagueQuery} onChange={(e) => setLeagueQuery(e.target.value)} />
             <Button type="button" variant="outline" onClick={runLeagueSearch} disabled={leagueLoading || leagueQuery.trim().length < 3}>
-              {leagueLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              {leagueLoading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
               Buscar
             </Button>
           </div>
@@ -266,7 +264,7 @@ export function MatchNewClient(props: {
                 (searchMode === "date" ? !searchDate.trim() : !searchFrom.trim() || !searchTo.trim())
               }
             >
-              {fixturesLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {fixturesLoading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
               Buscar fixtures
             </Button>
             {fixturesError ? <InlineAlert variant="error" message={fixturesError} /> : null}
@@ -329,7 +327,7 @@ export function MatchNewClient(props: {
               <Label htmlFor="fixture">API-Football Fixture ID (opcional)</Label>
               <Input id="fixture" inputMode="numeric" placeholder="123456" value={fixtureId} onChange={(e) => setFixtureId(e.target.value)} />
               <Button className="w-fit" size="sm" variant="outline" type="button" disabled={loading || isClosed || !fixtureId.trim()} onClick={loadFixtureById}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {loading ? <Loader2 className="size-4 animate-spin" /> : null}
                 Autollenar
               </Button>
             </div>
@@ -361,7 +359,7 @@ export function MatchNewClient(props: {
                 setError(null);
                 if (violatesCloseRule) {
                   return setError(
-                    "El inicio del partido estÃ¡ antes del cierre (UTC). Ajusta el cierre de la jornada o elige otro fixture.",
+                    "El inicio del partido está antes del cierre (UTC). Ajusta el cierre de la jornada o elige otro fixture.",
                   );
                 }
                 setLoading(true);
@@ -379,7 +377,7 @@ export function MatchNewClient(props: {
                 router.refresh();
               }}
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              {loading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
               Agregar partido
             </Button>
           </div>

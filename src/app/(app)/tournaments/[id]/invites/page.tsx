@@ -42,7 +42,7 @@ export default async function TournamentInvitesPage(props: { params: Promise<{ i
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <Ticket className="h-4 w-4" />
+            <Ticket className="size-4" />
             <span className="text-sm">Invitaciones</span>
           </div>
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>

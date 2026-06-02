@@ -28,7 +28,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
   async function generate() {
     setMessage(null);
     setError(null);
-    if (!canGenerate) return setError("El torneo no estÃ¡ activo. No se pueden generar invitaciones.");
+    if (!canGenerate) return setError("El torneo no está activo. No se pueden generar invitaciones.");
     setLoading(true);
     const res = await fetch(`/api/tournaments/${props.tournamentId}/invites`, {
       method: "POST",
@@ -60,14 +60,14 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Ticket className="h-5 w-5" />
+            <Ticket className="size-5" />
             Generar invitación
           </CardTitle>
           <CardDescription>Por ahora, cada invitación es de 1 uso.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <Button className="w-fit" disabled={loading || !canGenerate} type="button" onClick={generate}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
             Generar token
           </Button>
           {hasAvailable ? (
@@ -107,7 +107,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
                         setMessage(`Token copiado: ${i.token}`);
                       }}
                     >
-                      <Clipboard className="h-4 w-4" />
+                      <Clipboard className="size-4" />
                       Copiar
                     </Button>
                   </div>

@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "doctor": "react-doctor . --offline"
+    "doctor": "react-doctor . --offline --no-dead-code -y",
+    "doctor:ci": "react-doctor . --offline --no-dead-code -y --fail-on error"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.6.13",

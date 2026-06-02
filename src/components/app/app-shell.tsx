@@ -44,7 +44,7 @@ function NavItem(props: {
       asChild
       variant={props.active ? "secondary" : "ghost"}
       className={cn(
-        props.collapsed ? "h-10 w-10 justify-center px-0" : "w-full justify-start gap-2",
+        props.collapsed ? "size-10 justify-center px-0" : "w-full justify-start gap-2",
         props.active ? "" : "text-zinc-700 dark:text-zinc-200",
       )}
     >
@@ -85,10 +85,10 @@ function Sidebar(props: {
         <div
           className={cn(
             "flex items-center gap-2",
-            props.collapsed ? "h-10 w-10 justify-center rounded-xl border border-zinc-200 dark:border-zinc-800" : "",
+            props.collapsed ? "size-10 justify-center rounded-xl border border-zinc-200 dark:border-zinc-800" : "",
           )}
         >
-          <Trophy className="h-5 w-5 shrink-0" />
+          <Trophy className="size-5 shrink-0" />
           {props.collapsed ? null : <span className="text-sm font-semibold">Quiniela</span>}
         </div>
       </div>
@@ -97,7 +97,7 @@ function Sidebar(props: {
       <div className={cn("flex flex-col gap-1", props.collapsed ? "items-center" : "")}>
         <NavItem
           href="/dashboard"
-          icon={<LayoutDashboard className="h-4 w-4" />}
+          icon={<LayoutDashboard className="size-4" />}
           label="Dashboard"
           active={pathname === "/dashboard"}
           collapsed={props.collapsed}
@@ -105,7 +105,7 @@ function Sidebar(props: {
         />
         <NavItem
           href="/tournaments"
-          icon={<Trophy className="h-4 w-4" />}
+          icon={<Trophy className="size-4" />}
           label="Torneos"
           active={pathname === "/tournaments" || pathname.startsWith("/tournaments/")}
           collapsed={props.collapsed}
@@ -113,7 +113,7 @@ function Sidebar(props: {
         />
         <NavItem
           href="/account"
-          icon={<User className="h-4 w-4" />}
+          icon={<User className="size-4" />}
           label="Mi cuenta"
           active={pathname === "/account" || pathname.startsWith("/account/")}
           collapsed={props.collapsed}
@@ -127,8 +127,8 @@ function Sidebar(props: {
         <div className={cn("flex flex-col gap-1", props.collapsed ? "items-center" : "")}>
           <SectionLabel collapsed={props.collapsed}>Torneo</SectionLabel>
           {props.collapsed ? (
-            <div className="h-10 w-10 rounded-xl border border-zinc-200 p-2 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200">
-              <Trophy className="h-5 w-5" />
+            <div className="size-10 rounded-xl border border-zinc-200 p-2 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200">
+              <Trophy className="size-5" />
             </div>
           ) : (
             <div className="px-2">
@@ -139,7 +139,7 @@ function Sidebar(props: {
 
           <NavItem
             href={`/tournaments/${currentTournament.id}`}
-            icon={<Trophy className="h-4 w-4" />}
+            icon={<Trophy className="size-4" />}
             label="Resumen"
             active={pathname === `/tournaments/${currentTournament.id}`}
             collapsed={props.collapsed}
@@ -147,7 +147,7 @@ function Sidebar(props: {
           />
           <NavItem
             href={`/tournaments/${currentTournament.id}/matchdays`}
-            icon={<CalendarDays className="h-4 w-4" />}
+            icon={<CalendarDays className="size-4" />}
             label="Jornadas"
             active={pathname.startsWith(`/tournaments/${currentTournament.id}/matchdays`)}
             collapsed={props.collapsed}
@@ -155,7 +155,7 @@ function Sidebar(props: {
           />
           <NavItem
             href={`/tournaments/${currentTournament.id}/standings`}
-            icon={<Trophy className="h-4 w-4" />}
+            icon={<Trophy className="size-4" />}
             label="Ranking"
             active={pathname.startsWith(`/tournaments/${currentTournament.id}/standings`)}
             collapsed={props.collapsed}
@@ -163,7 +163,7 @@ function Sidebar(props: {
           />
           <NavItem
             href={`/tournaments/${currentTournament.id}/members`}
-            icon={<Users className="h-4 w-4" />}
+            icon={<Users className="size-4" />}
             label="Participantes"
             active={pathname.startsWith(`/tournaments/${currentTournament.id}/members`)}
             collapsed={props.collapsed}
@@ -171,7 +171,7 @@ function Sidebar(props: {
           />
           <NavItem
             href={`/tournaments/${currentTournament.id}/picks`}
-            icon={<ListChecks className="h-4 w-4" />}
+            icon={<ListChecks className="size-4" />}
             label="Picks"
             active={pathname.startsWith(`/tournaments/${currentTournament.id}/picks`)}
             collapsed={props.collapsed}
@@ -180,7 +180,7 @@ function Sidebar(props: {
           {canManageInvites ? (
             <NavItem
               href={`/tournaments/${currentTournament.id}/invites`}
-              icon={<Ticket className="h-4 w-4" />}
+              icon={<Ticket className="size-4" />}
               label="Invitaciones"
               active={pathname.startsWith(`/tournaments/${currentTournament.id}/invites`)}
               collapsed={props.collapsed}
@@ -225,18 +225,18 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950 dark:bg-black dark:text-zinc-50">
+    <div className="min-h-screen bg-white text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
       <div className={cn("mx-auto grid max-w-7xl grid-cols-1", collapsed ? "md:grid-cols-[84px_1fr]" : "md:grid-cols-[280px_1fr]")}>
         <aside className="sticky top-0 hidden h-screen border-r border-zinc-200 p-4 dark:border-zinc-800 md:block">
           <Sidebar user={props.user} tournaments={props.tournaments} currentTournamentId={currentTournamentId} collapsed={collapsed} />
         </aside>
 
         <div className="min-w-0">
-          <header className="sticky top-0 z-40 hidden border-b border-zinc-200 bg-white/80 px-6 py-3 backdrop-blur dark:border-zinc-800 dark:bg-black/80 md:block">
+          <header className="sticky top-0 z-40 hidden border-b border-zinc-200 bg-white/80 px-6 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80 md:block">
             <div className="flex items-center justify-between gap-4">
               <div className="flex min-w-0 items-center gap-3">
                 <Button variant="ghost" size="icon" type="button" onClick={toggleCollapsed} aria-label="Alternar menú">
-                  <PanelLeft className="h-4 w-4" />
+                  <PanelLeft className="size-4" />
                 </Button>
                 <div className="min-w-0">
                   <AppBreadcrumbs items={buildCrumbs(pathname, currentTournament?.name ?? null, currentTournamentId)} />
@@ -246,10 +246,10 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
             </div>
           </header>
 
-          <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 p-4 backdrop-blur dark:border-zinc-800 dark:bg-black/80 md:hidden">
+          <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 p-4 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80 md:hidden">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Trophy className="h-5 w-5" />
+                <Trophy className="size-5" />
                 <span className="text-sm font-semibold">Quiniela</span>
               </div>
               <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
                 <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" type="button" aria-label="Abrir menú">
-                      <Menu className="h-4 w-4" />
+                      <Menu className="size-4" />
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="left">

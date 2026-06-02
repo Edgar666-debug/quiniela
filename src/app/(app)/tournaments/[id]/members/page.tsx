@@ -44,7 +44,7 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <Users className="h-4 w-4" />
+            <Users className="size-4" />
             <span className="text-sm">Participantes</span>
           </div>
           <h1 className="text-2xl font-semibold">{tournament.name}</h1>

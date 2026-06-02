@@ -45,7 +45,7 @@ export function MatchdaysClient(props: {
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">{rows.length} jornada(s)</p>
         <Button variant="outline" size="sm" type="button" onClick={refresh} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           Refrescar
         </Button>
       </div>
@@ -55,7 +55,7 @@ export function MatchdaysClient(props: {
           <Separator />
           <Button asChild className="w-fit" variant="outline" size="sm">
             <Link href={`/tournaments/${props.tournamentId}/matchdays/new`}>
-              <Plus className="h-4 w-4" />
+              <Plus className="size-4" />
               Crear jornada
             </Link>
           </Button>
@@ -75,7 +75,7 @@ export function MatchdaysClient(props: {
               </div>
               <Button asChild variant="outline" size="sm">
                 <Link href={`/tournaments/${props.tournamentId}/matchdays/${m.id}`}>
-                  <CalendarDays className="h-4 w-4" />
+                  <CalendarDays className="size-4" />
                   Abrir
                 </Link>
               </Button>

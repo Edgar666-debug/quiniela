@@ -73,7 +73,7 @@ export function MatchdayNewClient(props: { tournamentId: string }) {
                 router.refresh();
               }}
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              {loading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
               Crear jornada
             </Button>
           </div>

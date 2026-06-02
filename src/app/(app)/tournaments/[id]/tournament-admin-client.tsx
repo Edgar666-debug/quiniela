@@ -33,7 +33,7 @@ export function TournamentAdminClient(props: { tournamentId: string; status: str
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="outline" disabled={loading || !isActive}>
-              <Archive className="h-4 w-4" />
+              <Archive className="size-4" />
               Archivar
             </Button>
           </AlertDialogTrigger>
@@ -102,7 +102,7 @@ export function TournamentAdminClient(props: { tournamentId: string; status: str
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" disabled={loading || !isActive}>
-              <Flag className="h-4 w-4" />
+              <Flag className="size-4" />
               Finalizar
             </Button>
           </AlertDialogTrigger>

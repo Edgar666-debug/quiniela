@@ -5,6 +5,7 @@ import { Shield } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/lib/auth";
+import { passkeyDateFormatter } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,19 +23,20 @@ export default async function AccountPage() {
 
   const current = (session as unknown as { session?: { id?: string; token?: string } }).session ?? null;
 
-  const passkeys = await prisma.passkey.findMany({
-    where: { userId: session.user.id },
-    orderBy: [{ createdAt: "desc" }],
-    select: { id: true, name: true, createdAt: true },
-    take: 20,
-  });
-
-  const sessions = await prisma.session.findMany({
-    where: { userId: session.user.id },
-    orderBy: [{ updatedAt: "desc" }],
-    select: { id: true, token: true, ipAddress: true, userAgent: true, createdAt: true, updatedAt: true, expiresAt: true },
-    take: 30,
-  });
+  const [passkeys, sessions] = await Promise.all([
+    prisma.passkey.findMany({
+      where: { userId: session.user.id },
+      orderBy: [{ createdAt: "desc" }],
+      select: { id: true, name: true, createdAt: true },
+      take: 20,
+    }),
+    prisma.session.findMany({
+      where: { userId: session.user.id },
+      orderBy: [{ updatedAt: "desc" }],
+      select: { id: true, token: true, ipAddress: true, userAgent: true, createdAt: true, updatedAt: true, expiresAt: true },
+      take: 30,
+    }),
+  ]);
 
   const initialSessions: SessionItem[] = sessions.map((s) => ({
     id: s.id,
@@ -82,7 +84,7 @@ export default async function AccountPage() {
           <CardContent className="flex flex-col gap-6">
             <Button asChild variant="outline" className="w-full justify-center">
               <Link href="/account/passkeys">
-                <Shield className="h-4 w-4" />
+                <Shield className="size-4" />
                 Añadir Passkey
               </Link>
             </Button>
@@ -98,7 +100,7 @@ export default async function AccountPage() {
                       <p className="text-sm font-medium">{p.name ?? "Passkey"}</p>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400">
                         Creado:{" "}
-                        {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(p.createdAt)}
+                        {passkeyDateFormatter.format(p.createdAt)}
                       </p>
                     </li>
                   ))}

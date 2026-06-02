@@ -19,7 +19,7 @@ function medalForIndex(index: number) {
   return null;
 }
 
-export function StandingsLive(props: { tournamentId: string; initial: StandingRow[] }) {
+export function StandingsLive(props: { tournamentId: string; initial: StandingRow[]; realtimeToken: string | null }) {
   const [localRows, setLocalRows] = useState<{ source: StandingRow[]; value: StandingRow[] } | null>(null);
   const rows = localRows?.source === props.initial ? localRows.value : props.initial;
 
@@ -33,7 +33,7 @@ export function StandingsLive(props: { tournamentId: string; initial: StandingRo
     if (data.standings) setLocalRows({ source: props.initial, value: data.standings });
   }, [props.initial, props.tournamentId]);
 
-  useStandingsRealtime(props.tournamentId, refresh);
+  useStandingsRealtime(props.tournamentId, props.realtimeToken, refresh);
 
   const maxPoints = Math.max(0, ...rows.map((r) => r.points));
 
@@ -45,7 +45,7 @@ export function StandingsLive(props: { tournamentId: string; initial: StandingRo
           <CardDescription>Se actualiza automáticamente cuando cambian los puntos.</CardDescription>
         </div>
         <Button variant="outline" size="sm" type="button" onClick={refresh} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           Actualizar
         </Button>
       </CardHeader>

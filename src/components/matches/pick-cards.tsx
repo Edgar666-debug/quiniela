@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { cn } from "@/lib/utils";
 
 function TeamLogo(props: { name: string; logoUrl?: string | null; className?: string }) {
@@ -11,8 +13,7 @@ function TeamLogo(props: { name: string; logoUrl?: string | null; className?: st
       )}
     >
       {props.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={props.logoUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+        <Image src={props.logoUrl} alt="" width={56} height={40} className="h-full w-full object-cover" unoptimized />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-500 dark:text-zinc-400">
           {props.name.slice(0, 2).toUpperCase()}

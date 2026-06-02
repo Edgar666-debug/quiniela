@@ -15,7 +15,7 @@ export default function Home() {
     <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-16">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-zinc-600">
-          <Trophy className="h-4 w-4" />
+          <Trophy className="size-4" />
           <span className="text-sm">Quiniela</span>
         </div>
         <h1 className="text-4xl font-semibold tracking-tight">Torneos tipo quiniela, simples y rápidos</h1>
@@ -25,7 +25,7 @@ export default function Home() {
         <div className="mt-2 flex flex-wrap gap-3">
           <Button asChild>
             <Link href="/sign-in">
-              Iniciar sesión <ArrowRight className="h-4 w-4" />
+              Iniciar sesión <ArrowRight className="size-4" />
             </Link>
           </Button>
           <Button asChild variant="outline">

@@ -19,7 +19,7 @@ export function NewTournamentClient() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-5 w-5" />
+          <Trophy className="size-5" />
           Datos del torneo
         </CardTitle>
         <CardDescription>El nombre lo puedes cambiar después (si quieres).</CardDescription>
@@ -55,7 +55,7 @@ export function NewTournamentClient() {
               router.refresh();
             }}
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}
             Crear torneo
           </Button>
         </div>

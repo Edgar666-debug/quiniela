@@ -79,7 +79,7 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <CalendarDays className="h-4 w-4" />
+            <CalendarDays className="size-4" />
             <span className="text-sm">Jornada {matchday.number}</span>
           </div>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -89,7 +89,7 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
             <Link href={`/tournaments/${tournamentId}/picks`}>
-              <Eye className="h-4 w-4" />
+              <Eye className="size-4" />
               Participantes
             </Link>
           </Button>

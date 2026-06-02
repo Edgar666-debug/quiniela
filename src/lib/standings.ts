@@ -10,20 +10,21 @@ function outcomeFromScore(scoreHome: number, scoreAway: number): PickOutcome {
 }
 
 export async function recalculateStandingsForTournament(tournamentId: string) {
-  const members = await prisma.tournamentMember.findMany({
-    where: { tournamentId },
-    select: { userId: true },
-  });
-
-  const finishedMatches = await prisma.match.findMany({
-    where: {
-      matchday: { tournamentId },
-      statusShort: { in: Array.from(FINISHED) },
-      scoreHome: { not: null },
-      scoreAway: { not: null },
-    },
-    select: { id: true, scoreHome: true, scoreAway: true },
-  });
+  const [members, finishedMatches] = await Promise.all([
+    prisma.tournamentMember.findMany({
+      where: { tournamentId },
+      select: { userId: true },
+    }),
+    prisma.match.findMany({
+      where: {
+        matchday: { tournamentId },
+        statusShort: { in: Array.from(FINISHED) },
+        scoreHome: { not: null },
+        scoreAway: { not: null },
+      },
+      select: { id: true, scoreHome: true, scoreAway: true },
+    }),
+  ]);
 
   const matchOutcomeById = new Map<string, PickOutcome>();
   for (const match of finishedMatches) {

@@ -24,7 +24,7 @@ export function AppBreadcrumbs(props: { items: Crumb[] }) {
               {isLast || !item.href ? <BreadcrumbPage>{item.label}</BreadcrumbPage> : <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>}
               {isLast ? null : (
                 <BreadcrumbSeparator>
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="size-4" />
                 </BreadcrumbSeparator>
               )}
             </BreadcrumbItem>

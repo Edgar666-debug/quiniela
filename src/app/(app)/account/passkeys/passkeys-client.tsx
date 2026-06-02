@@ -19,7 +19,7 @@ export function PasskeysClient() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <KeyRound className="h-5 w-5" />
+          <KeyRound className="size-5" />
           Registrar passkey
         </CardTitle>
         <CardDescription>En local funciona en `localhost`. En producción requiere HTTPS.</CardDescription>
@@ -44,7 +44,7 @@ export function PasskeysClient() {
             setMessage("Passkey registrada.");
           }}
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
           Agregar passkey
         </Button>
 

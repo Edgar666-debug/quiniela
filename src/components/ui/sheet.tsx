@@ -50,7 +50,7 @@ export function SheetContent({ className, children, side = "left", ref, ...props
         <div className="absolute right-3 top-3">
           <SheetClose asChild>
             <Button variant="ghost" size="icon" aria-label="Cerrar">
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </Button>
           </SheetClose>
         </div>

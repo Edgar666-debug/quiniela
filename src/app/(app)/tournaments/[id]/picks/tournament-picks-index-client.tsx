@@ -71,7 +71,7 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
                       aria-label={isOpen ? "Contraer" : "Expandir"}
                       onClick={() => setOpenUserId((prev) => (prev === m.id ? null : m.id))}
                     >
-                      {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      {isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
                     </Button>
                   </TableCell>
                   <TableCell className="py-2">
@@ -89,7 +89,7 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
                 {isOpen ? (
                   <TableRow key={`${m.id}-expanded`} className="hover:bg-transparent">
                     <TableCell colSpan={4} className="pt-0">
-                      <div className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-black">
+                      <div className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
                         <div className="grid gap-2 md:grid-cols-2">
                           {matchdaysClosedFirst.map((md) => {
                             const href = `/tournaments/${props.tournamentId}/picks/${m.id}/${md.id}`;
@@ -101,7 +101,7 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
                                   "flex items-center justify-between gap-3 rounded-lg border px-3 py-2",
                                   disabled
                                     ? "border-zinc-200 bg-zinc-50 text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/30 dark:text-zinc-400"
-                                    : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black",
+                                    : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950",
                                 )}
                               >
                                 <div className="min-w-0">
@@ -110,8 +110,8 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
                                 </div>
                                 {disabled ? (
                                   <div className="flex items-center gap-2 text-xs">
-                                    <Lock className="h-4 w-4" />
-                                    <span>AÃºn abierta</span>
+                                    <Lock className="size-4" />
+                                    <span>Aún abierta</span>
                                   </div>
                                 ) : (
                                   <Button asChild size="sm" variant="outline">
@@ -133,7 +133,7 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
       </Table>
 
       {filteredMembers.length === 0 ? (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin participantes para esa bÃºsqueda.</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin participantes para esa búsqueda.</p>
       ) : null}
     </div>
   );

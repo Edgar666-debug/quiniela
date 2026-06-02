@@ -71,7 +71,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <CalendarDays className="h-4 w-4" />
+            <CalendarDays className="size-4" />
             <span className="text-sm">Jornada {matchday.number}</span>
           </div>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">

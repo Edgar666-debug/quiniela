@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Image as ImageIcon, Loader2, Save, User as UserIcon, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -53,12 +54,11 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+        <div className="flex size-12 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+            <Image src={imageUrl} alt="" width={48} height={48} className="h-full w-full object-cover" unoptimized />
           ) : (
-            <UserIcon className="h-5 w-5 text-zinc-500" />
+            <UserIcon className="size-5 text-zinc-500" />
           )}
         </div>
         <div className="min-w-0">
@@ -107,7 +107,7 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
 
       <div className="flex flex-wrap gap-2">
         <Button type="button" onClick={save} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           Guardar
         </Button>
         <Button
@@ -123,11 +123,11 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
             })
           }
         >
-          <X className="h-4 w-4" />
+          <X className="size-4" />
           Quitar avatar
         </Button>
         <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">
-          <ImageIcon className="h-4 w-4" />
+          <ImageIcon className="size-4" />
           URL pública
         </div>
       </div>

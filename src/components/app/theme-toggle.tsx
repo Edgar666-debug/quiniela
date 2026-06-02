@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Check, Laptop, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -10,10 +10,12 @@ import { Button } from "@/components/ui/button";
 type ThemeMode = "system" | "light" | "dark";
 const MODES: ThemeMode[] = ["system", "light", "dark"];
 
+const emptySubscribe = () => () => {};
+
 function modeIcon(mode: ThemeMode) {
-  if (mode === "dark") return <Moon className="h-4 w-4" />;
-  if (mode === "light") return <Sun className="h-4 w-4" />;
-  return <Laptop className="h-4 w-4" />;
+  if (mode === "dark") return <Moon className="size-4" />;
+  if (mode === "light") return <Sun className="size-4" />;
+  return <Laptop className="size-4" />;
 }
 
 function modeLabel(mode: ThemeMode) {
@@ -25,11 +27,7 @@ function modeLabel(mode: ThemeMode) {
 export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "right" }) {
   const [open, setOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setTimeout(() => setMounted(true), 0);
-  }, []);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   const items = MODES.map((m) => ({
     mode: m,
@@ -63,7 +61,7 @@ export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "righ
       {mounted && open ? (
         <div
           className={cn(
-            "absolute top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-black",
+            "absolute top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950",
             props.align === "right" ? "right-0" : props.collapsed ? "left-12" : "left-0",
           )}
         >
@@ -79,7 +77,7 @@ export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "righ
             >
               {i.icon}
               <span className="flex-1">{i.label}</span>
-              {i.active ? <Check className="h-4 w-4 text-emerald-600" /> : null}
+              {i.active ? <Check className="size-4 text-emerald-600" /> : null}
             </button>
           ))}
         </div>

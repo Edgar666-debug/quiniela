@@ -7,6 +7,7 @@ import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
 import { DrawPickCard, TeamPickCard } from "@/components/matches/pick-cards";
+import { kickoffDateFormatter } from "@/lib/format";
 import { statusLabel, type Outcome } from "@/lib/football";
 
 type MatchRow = {
@@ -34,18 +35,7 @@ export function ParticipantMatchdayPicksClient(props: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const formatKickoff = useMemo(
-    () =>
-      new Intl.DateTimeFormat("es-MX", {
-        timeZone: "UTC",
-        weekday: "long",
-        day: "2-digit",
-        month: "long",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    [],
-  );
+  const formatKickoff = kickoffDateFormatter;
 
   const grouped = useMemo(() => {
     const groups = new Map<string, MatchRow[]>();
@@ -94,7 +84,7 @@ export function ParticipantMatchdayPicksClient(props: {
           <p className="text-xs text-zinc-600 dark:text-zinc-400">{rows.length} partido(s)</p>
         </div>
         <Button variant="outline" size="sm" type="button" onClick={refresh} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           Refrescar
         </Button>
       </div>

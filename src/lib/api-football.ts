@@ -267,8 +267,12 @@ export async function searchLeagues(params: { search: string; season?: number; c
     const json = (await res.json()) as ApiFootballLeaguesResponse;
     const arr: LeagueSearchItem[] = [];
     for (const row of json.response ?? []) {
-      const years = (row.seasons ?? []).map((s) => s.year).filter((y) => Number.isFinite(y));
-      const currentYears = (row.seasons ?? []).filter((s) => s.current).map((s) => s.year);
+      const years: number[] = [];
+      const currentYears: number[] = [];
+      for (const s of row.seasons ?? []) {
+        if (Number.isFinite(s.year)) years.push(s.year);
+        if (s.current) currentYears.push(s.year);
+      }
       arr.push({
         id: row.league.id,
         name: row.league.name,

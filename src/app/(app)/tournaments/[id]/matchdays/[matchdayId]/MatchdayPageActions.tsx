@@ -27,14 +27,14 @@ export function MatchdayPageActions(props: {
       {!isClosed && canManage ? (
         <Button asChild size="sm">
           <Link href={`/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}/matches/new`}>
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
             Agregar partido
           </Link>
         </Button>
       ) : null}
       <Button asChild variant="outline" size="sm">
         <Link href={`/tournaments/${props.tournamentId}/picks`}>
-          <Users className="h-4 w-4" />
+          <Users className="size-4" />
           Participantes
         </Link>
       </Button>

@@ -71,7 +71,7 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium">Current Sessions</p>
         <Button variant="ghost" size="sm" type="button" onClick={refresh} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           Refresh
         </Button>
       </div>
@@ -84,8 +84,8 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
             <li key={s.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
-                    <Laptop className="h-5 w-5" />
+                  <div className="flex size-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+                    <Laptop className="size-5" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -117,7 +117,7 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
                   aria-label="Cerrar sesión"
                   title={s.isCurrent ? "No puedes cerrar la sesión actual desde aquí." : "Cerrar sesión"}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="size-4" />
                 </Button>
               </div>
             </li>

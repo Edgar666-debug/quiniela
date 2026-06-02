@@ -34,7 +34,7 @@ export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; c
   if (props.compact) {
     return (
       <div className={cn("flex items-center gap-2 text-xs", props.className)}>
-        {isClosed ? <Lock className="h-3.5 w-3.5 text-zinc-500" /> : <Timer className="h-3.5 w-3.5 text-emerald-500" />}
+        {isClosed ? <Lock className="size-3.5 text-zinc-500" /> : <Timer className="size-3.5 text-emerald-500" />}
         <span className={cn(isClosed ? "text-zinc-500" : "text-emerald-400")}>{isClosed ? "Cerrada" : "Abierta"}</span>
         <span className="text-zinc-600 dark:text-zinc-400">•</span>
         <span className="text-zinc-600 dark:text-zinc-400">{formatUtcDateTime(props.closesAtUtc)}</span>
@@ -46,7 +46,7 @@ export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; c
     <div className={cn("flex flex-col gap-1 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800", props.className)}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          {isClosed ? <Lock className="h-4 w-4 text-zinc-500" /> : <Timer className="h-4 w-4 text-emerald-500" />}
+          {isClosed ? <Lock className="size-4 text-zinc-500" /> : <Timer className="size-4 text-emerald-500" />}
           <p className="text-sm font-medium">{isClosed ? "Jornada cerrada" : "Jornada abierta"}</p>
         </div>
         <span
