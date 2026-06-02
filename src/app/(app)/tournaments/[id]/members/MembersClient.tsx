@@ -12,15 +12,10 @@ type MemberRow = {
 };
 
 export function MembersClient(props: { tournamentId: string; myUserId: string; myRole: "OWNER" | "ORGANIZER" | "PLAYER"; initial: MemberRow[] }) {
-  const [rows, setRows] = useState(props.initial);
+  const [localRows, setLocalRows] = useState<{ source: MemberRow[]; value: MemberRow[] } | null>(null);
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const [prevInitial, setPrevInitial] = useState(props.initial);
-  if (props.initial !== prevInitial) {
-    setPrevInitial(props.initial);
-    setRows(props.initial);
-  }
+  const rows = localRows?.source === props.initial ? localRows.value : props.initial;
 
   const canManage = useMemo(() => props.myRole === "OWNER" || props.myRole === "ORGANIZER", [props.myRole]);
 
@@ -78,7 +73,10 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
                   const data = (await res.json().catch(() => ({}))) as { error?: string };
                   setLoadingUserId(null);
                   if (!res.ok) return setError(data.error ?? "No se pudo expulsar");
-                  setRows((prev) => prev.filter((x) => x.user.id !== m.user.id));
+                  setLocalRows({
+                    source: props.initial,
+                    value: rows.filter((x) => x.user.id !== m.user.id),
+                  });
                 }}
               >
                 {loadingUserId === m.user.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}

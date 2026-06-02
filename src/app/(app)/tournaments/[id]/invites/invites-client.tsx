@@ -16,14 +16,8 @@ type InviteItem = {
 };
 
 export function InvitesClient(props: { tournamentId: string; tournamentStatus: "ACTIVE" | "FINISHED" | "ARCHIVED"; initialInvites: InviteItem[] }) {
-  const [localInvites, setLocalInvites] = useState<InviteItem[] | null>(null);
-  const [prevInitialInvites, setPrevInitialInvites] = useState(props.initialInvites);
-  if (props.initialInvites !== prevInitialInvites) {
-    setPrevInitialInvites(props.initialInvites);
-    setLocalInvites(null);
-  }
-
-  const invites = localInvites ?? props.initialInvites;
+  const [localInvites, setLocalInvites] = useState<{ source: InviteItem[]; value: InviteItem[] } | null>(null);
+  const invites = localInvites?.source === props.initialInvites ? localInvites.value : props.initialInvites;
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +47,10 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
       expiresAtUtc: data.invite.expiresAt ?? null,
       createdAtUtc: new Date().toISOString(),
     };
-    setLocalInvites([item, ...invites].slice(0, 20));
+    setLocalInvites({
+      source: props.initialInvites,
+      value: [item, ...invites].slice(0, 20),
+    });
     await navigator.clipboard.writeText(item.token).catch(() => {});
     setMessage(`Invitación creada y copiada: ${item.token}`);
   }

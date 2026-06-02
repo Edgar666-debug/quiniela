@@ -20,12 +20,8 @@ function medalForIndex(index: number) {
 }
 
 export function StandingsLive(props: { tournamentId: string; initial: StandingRow[] }) {
-  const [rows, setRows] = useState(props.initial);
-  const [prevInitial, setPrevInitial] = useState(props.initial);
-  if (props.initial !== prevInitial) {
-    setPrevInitial(props.initial);
-    setRows(props.initial);
-  }
+  const [localRows, setLocalRows] = useState<{ source: StandingRow[]; value: StandingRow[] } | null>(null);
+  const rows = localRows?.source === props.initial ? localRows.value : props.initial;
 
   const [loading, setLoading] = useState(false);
 
@@ -34,8 +30,8 @@ export function StandingsLive(props: { tournamentId: string; initial: StandingRo
     const res = await fetch(`/api/tournaments/${props.tournamentId}/standings`, { cache: "no-store" });
     const data = (await res.json()) as { standings?: StandingRow[] };
     setLoading(false);
-    if (data.standings) setRows(data.standings);
-  }, [props.tournamentId]);
+    if (data.standings) setLocalRows({ source: props.initial, value: data.standings });
+  }, [props.initial, props.tournamentId]);
 
   useStandingsRealtime(props.tournamentId, refresh);
 

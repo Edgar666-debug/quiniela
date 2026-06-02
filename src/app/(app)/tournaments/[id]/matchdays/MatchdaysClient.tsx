@@ -21,12 +21,8 @@ export function MatchdaysClient(props: {
   tournamentStatus: "ACTIVE" | "FINISHED" | "ARCHIVED";
   initial: MatchdayRow[];
 }) {
-  const [rows, setRows] = useState(props.initial);
-  const [prevInitial, setPrevInitial] = useState(props.initial);
-  if (props.initial !== prevInitial) {
-    setPrevInitial(props.initial);
-    setRows(props.initial);
-  }
+  const [localRows, setLocalRows] = useState<{ source: MatchdayRow[]; value: MatchdayRow[] } | null>(null);
+  const rows = localRows?.source === props.initial ? localRows.value : props.initial;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +37,7 @@ export function MatchdaysClient(props: {
     const data = (await res.json()) as { matchdays?: MatchdayRow[]; error?: string };
     setLoading(false);
     if (!res.ok) return setError(data.error ?? "No se pudo cargar jornadas");
-    setRows(data.matchdays ?? []);
+    setLocalRows({ source: props.initial, value: data.matchdays ?? [] });
   }
 
   return (

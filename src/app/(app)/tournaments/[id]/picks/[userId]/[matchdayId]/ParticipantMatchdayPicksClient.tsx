@@ -29,14 +29,8 @@ export function ParticipantMatchdayPicksClient(props: {
   matchdayId: string;
   initial: { matchday: { number: number; closesAtUtc: string }; participantLabel: string; matches: MatchRow[] };
 }) {
-  const [localRows, setLocalRows] = useState<MatchRow[] | null>(null);
-  const [prevInitialMatches, setPrevInitialMatches] = useState(props.initial.matches);
-  if (props.initial.matches !== prevInitialMatches) {
-    setPrevInitialMatches(props.initial.matches);
-    setLocalRows(null);
-  }
-
-  const rows = localRows ?? props.initial.matches;
+  const [localRows, setLocalRows] = useState<{ source: MatchRow[]; value: MatchRow[] } | null>(null);
+  const rows = localRows?.source === props.initial.matches ? localRows.value : props.initial.matches;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +68,7 @@ export function ParticipantMatchdayPicksClient(props: {
     const data = (await res.json()) as { matches?: MatchRow[]; error?: string };
     setLoading(false);
     if (!res.ok) return setError(data.error ?? "No se pudo cargar picks");
-    setLocalRows(data.matches ?? []);
+    setLocalRows({ source: props.initial.matches, value: data.matches ?? [] });
   }
 
 

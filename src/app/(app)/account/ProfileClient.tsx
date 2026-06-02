@@ -8,14 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function ProfileClient(props: { initial: { name: string | null; image: string | null; email: string } }) {
-  const [name, setName] = useState(props.initial.name ?? "");
-  const [image, setImage] = useState(props.initial.image ?? "");
-  const [prevInitial, setPrevInitial] = useState(props.initial);
-  if (props.initial.name !== prevInitial.name || props.initial.image !== prevInitial.image) {
-    setPrevInitial(props.initial);
-    setName(props.initial.name ?? "");
-    setImage(props.initial.image ?? "");
-  }
+  const [draft, setDraft] = useState<{
+    sourceName: string | null;
+    sourceImage: string | null;
+    name: string;
+    image: string;
+  } | null>(null);
+
+  const activeDraft =
+    draft?.sourceName === props.initial.name && draft?.sourceImage === props.initial.image ? draft : null;
+  const name = activeDraft?.name ?? props.initial.name ?? "";
+  const image = activeDraft?.image ?? props.initial.image ?? "";
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -39,8 +42,12 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
     setLoading(false);
     if (!res.ok) return setError(data.error ?? "No se pudo guardar el perfil.");
     setMessage("Perfil actualizado.");
-    setName(data.user?.name ?? "");
-    setImage(data.user?.image ?? "");
+    setDraft({
+      sourceName: props.initial.name,
+      sourceImage: props.initial.image,
+      name: data.user?.name ?? "",
+      image: data.user?.image ?? "",
+    });
   }
 
   return (
@@ -63,14 +70,34 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
       <div className="grid gap-4 md:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="profileName">Nombre</Label>
-          <Input id="profileName" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" maxLength={80} />
+          <Input
+            id="profileName"
+            value={name}
+            onChange={(e) =>
+              setDraft({
+                sourceName: props.initial.name,
+                sourceImage: props.initial.image,
+                name: e.target.value,
+                image,
+              })
+            }
+            placeholder="Tu nombre"
+            maxLength={80}
+          />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="profileImage">Avatar (URL)</Label>
           <Input
             id="profileImage"
             value={image}
-            onChange={(e) => setImage(e.target.value)}
+            onChange={(e) =>
+              setDraft({
+                sourceName: props.initial.name,
+                sourceImage: props.initial.image,
+                name,
+                image: e.target.value,
+              })
+            }
             placeholder="https://..."
             inputMode="url"
             spellCheck={false}
@@ -83,7 +110,19 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Guardar
         </Button>
-        <Button type="button" variant="outline" disabled={loading || !image.trim()} onClick={() => setImage("")}>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={loading || !image.trim()}
+          onClick={() =>
+            setDraft({
+              sourceName: props.initial.name,
+              sourceImage: props.initial.image,
+              name,
+              image: "",
+            })
+          }
+        >
           <X className="h-4 w-4" />
           Quitar avatar
         </Button>

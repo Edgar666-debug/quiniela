@@ -10,14 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
 export function CredentialsClient(props: { currentEmail: string }) {
-  const [emailOverride, setEmailOverride] = useState<string | null>(null);
-  const [prevCurrentEmail, setPrevCurrentEmail] = useState(props.currentEmail);
-  if (props.currentEmail !== prevCurrentEmail) {
-    setPrevCurrentEmail(props.currentEmail);
-    setEmailOverride(null);
-  }
-
-  const email = emailOverride ?? props.currentEmail;
+  const [emailOverride, setEmailOverride] = useState<{ source: string; value: string } | null>(null);
+  const email = emailOverride?.source === props.currentEmail ? emailOverride.value : props.currentEmail;
   const [newEmail, setNewEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -60,7 +54,7 @@ export function CredentialsClient(props: { currentEmail: string }) {
             setLoading(false);
             if (error) return setError(error.message ?? "No se pudo iniciar el cambio de email.");
             setMessage("Listo: revisa tu correo para confirmar el cambio (por ahora lo verás en consola del servidor).");
-            setEmailOverride(newEmail.trim());
+            setEmailOverride({ source: props.currentEmail, value: newEmail.trim() });
             setNewEmail("");
           }}
         >

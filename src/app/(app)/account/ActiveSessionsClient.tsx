@@ -39,14 +39,8 @@ function parseOS(ua: string | null) {
 }
 
 export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
-  const [fetchedSessions, setFetchedSessions] = useState<SessionItem[] | null>(null);
-  const [prevInitial, setPrevInitial] = useState(props.initial);
-  if (props.initial !== prevInitial) {
-    setPrevInitial(props.initial);
-    setFetchedSessions(null);
-  }
-
-  const sessions = fetchedSessions ?? props.initial;
+  const [fetchedSessions, setFetchedSessions] = useState<{ source: SessionItem[]; value: SessionItem[] } | null>(null);
+  const sessions = fetchedSessions?.source === props.initial ? fetchedSessions.value : props.initial;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +53,7 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
     const data = (await res.json()) as { sessions?: SessionItem[]; error?: string };
     setLoading(false);
     if (!res.ok) return setError(data.error ?? "No se pudieron cargar las sesiones.");
-    setFetchedSessions(data.sessions ?? []);
+    setFetchedSessions({ source: props.initial, value: data.sessions ?? [] });
   }
 
   async function revoke(id: string) {

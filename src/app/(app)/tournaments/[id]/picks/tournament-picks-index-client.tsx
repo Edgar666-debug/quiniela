@@ -15,7 +15,7 @@ type MatchdayRow = { id: string; number: number; closesAtUtc: string; closesAtLa
 export function TournamentPicksIndexClient(props: { tournamentId: string; members: MemberRow[]; matchdays: MatchdayRow[] }) {
   const [openUserId, setOpenUserId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [closedOnly, _setClosedOnly] = useState(true);
+  const closedOnly = true;
 
   const matchdaysClosedFirst = useMemo(() => {
     const closed = props.matchdays.filter((m) => m.isClosed);
