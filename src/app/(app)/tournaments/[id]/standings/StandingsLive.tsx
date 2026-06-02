@@ -21,6 +21,12 @@ function medalForIndex(index: number) {
 
 export function StandingsLive(props: { tournamentId: string; initial: StandingRow[] }) {
   const [rows, setRows] = useState(props.initial);
+  const [prevInitial, setPrevInitial] = useState(props.initial);
+  if (props.initial !== prevInitial) {
+    setPrevInitial(props.initial);
+    setRows(props.initial);
+  }
+
   const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -80,4 +86,3 @@ export function StandingsLive(props: { tournamentId: string; initial: StandingRo
     </Card>
   );
 }
-

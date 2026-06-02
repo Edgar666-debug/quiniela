@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   number: z.number().int().min(1).max(100),
-  closesAtUtc: z.string().datetime(),
+  closesAtUtc: z.iso.datetime(),
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {

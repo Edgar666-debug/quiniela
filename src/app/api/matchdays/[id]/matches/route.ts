@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   externalFixtureId: z.number().int().positive().optional(),
-  startsAtUtc: z.string().datetime(),
+  startsAtUtc: z.iso.datetime(),
   homeTeam: z.string().min(1).max(80),
   awayTeam: z.string().min(1).max(80),
 });

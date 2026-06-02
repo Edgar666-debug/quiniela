@@ -5,19 +5,19 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().min(1),
     BETTER_AUTH_SECRET: z.string().min(32),
-    BETTER_AUTH_URL: z.string().url(),
+    BETTER_AUTH_URL: z.url(),
     RESEND_API_KEY: z.string().min(1),
     EMAIL_FROM: z.string().min(1),
-    EMAIL_REPLY_TO: z.string().email().optional(),
+    EMAIL_REPLY_TO: z.email().optional(),
     SUPABASE_JWT_SECRET: z.string().min(32),
     PASSKEY_RP_ID: z.string().min(1).default("localhost"),
     PASSKEY_RP_NAME: z.string().min(1).default("Quiniela"),
     API_FOOTBALL_KEY: z.string().min(1),
-    API_FOOTBALL_BASE_URL: z.string().url().default("https://v3.football.api-sports.io"),
+    API_FOOTBALL_BASE_URL: z.url().default("https://v3.football.api-sports.io"),
     CRON_SECRET: z.string().min(16),
   },
   client: {
-    NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+    NEXT_PUBLIC_SUPABASE_URL: z.url(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   },
   runtimeEnv: {

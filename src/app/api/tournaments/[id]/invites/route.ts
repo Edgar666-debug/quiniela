@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   maxUses: z.number().int().min(1).max(10).default(1),
-  expiresAtUtc: z.string().datetime().optional(),
+  expiresAtUtc: z.iso.datetime().optional(),
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {

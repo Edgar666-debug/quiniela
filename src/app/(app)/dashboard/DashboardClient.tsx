@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { CalendarDays, KeyRound, PlusCircle, Ticket, Trophy, Users } from "lucide-react";
 
@@ -14,8 +13,7 @@ type MyTournament = {
 };
 
 export function DashboardClient(props: { initialTournaments: MyTournament[] }) {
-  const [tournaments] = useState<MyTournament[]>(props.initialTournaments);
-  const lastTournament = tournaments[0] ?? null;
+  const lastTournament = props.initialTournaments[0] ?? null;
 
   return (
     <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -80,4 +78,3 @@ function FeatureCard(props: { href: string; icon: React.ReactNode; title: string
     </Link>
   );
 }
-

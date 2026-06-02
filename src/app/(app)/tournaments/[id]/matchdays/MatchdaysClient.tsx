@@ -22,6 +22,12 @@ export function MatchdaysClient(props: {
   initial: MatchdayRow[];
 }) {
   const [rows, setRows] = useState(props.initial);
+  const [prevInitial, setPrevInitial] = useState(props.initial);
+  if (props.initial !== prevInitial) {
+    setPrevInitial(props.initial);
+    setRows(props.initial);
+  }
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

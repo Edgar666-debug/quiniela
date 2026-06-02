@@ -16,6 +16,12 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [prevInitial, setPrevInitial] = useState(props.initial);
+  if (props.initial !== prevInitial) {
+    setPrevInitial(props.initial);
+    setRows(props.initial);
+  }
+
   const canManage = useMemo(() => props.myRole === "OWNER" || props.myRole === "ORGANIZER", [props.myRole]);
 
   function canRemove(target: MemberRow) {
@@ -85,4 +91,3 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
     </div>
   );
 }
-

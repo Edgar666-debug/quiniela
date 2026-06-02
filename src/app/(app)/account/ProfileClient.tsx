@@ -10,6 +10,13 @@ import { Label } from "@/components/ui/label";
 export function ProfileClient(props: { initial: { name: string | null; image: string | null; email: string } }) {
   const [name, setName] = useState(props.initial.name ?? "");
   const [image, setImage] = useState(props.initial.image ?? "");
+  const [prevInitial, setPrevInitial] = useState(props.initial);
+  if (props.initial.name !== prevInitial.name || props.initial.image !== prevInitial.image) {
+    setPrevInitial(props.initial);
+    setName(props.initial.name ?? "");
+    setImage(props.initial.image ?? "");
+  }
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

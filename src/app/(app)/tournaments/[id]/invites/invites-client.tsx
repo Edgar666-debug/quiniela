@@ -16,7 +16,14 @@ type InviteItem = {
 };
 
 export function InvitesClient(props: { tournamentId: string; tournamentStatus: "ACTIVE" | "FINISHED" | "ARCHIVED"; initialInvites: InviteItem[] }) {
-  const [invites, setInvites] = useState<InviteItem[]>(props.initialInvites);
+  const [localInvites, setLocalInvites] = useState<InviteItem[] | null>(null);
+  const [prevInitialInvites, setPrevInitialInvites] = useState(props.initialInvites);
+  if (props.initialInvites !== prevInitialInvites) {
+    setPrevInitialInvites(props.initialInvites);
+    setLocalInvites(null);
+  }
+
+  const invites = localInvites ?? props.initialInvites;
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +53,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
       expiresAtUtc: data.invite.expiresAt ?? null,
       createdAtUtc: new Date().toISOString(),
     };
-    setInvites((prev) => [item, ...prev].slice(0, 20));
+    setLocalInvites([item, ...invites].slice(0, 20));
     await navigator.clipboard.writeText(item.token).catch(() => {});
     setMessage(`Invitación creada y copiada: ${item.token}`);
   }
