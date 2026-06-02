@@ -6,6 +6,7 @@ MVP:
 - Quiniela 1X2 (HOME/DRAW/AWAY): 1 punto por acierto.
 - Ranking en vivo (vía Supabase Realtime sobre la tabla `Standing`).
 - Sync de resultados con API-Football + cron en Vercel (`vercel.json`).
+- Emails transaccionales con Resend + React Email.
 
 ## Requisitos
 - Node.js (recomendado: v24 LTS) + pnpm
@@ -16,6 +17,7 @@ MVP:
 1) Copia tus variables en `.env`:
    - `DATABASE_URL` (Supabase Postgres)
     - `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`
+    - `RESEND_API_KEY`, `EMAIL_FROM` (`EMAIL_REPLY_TO` opcional)
    - `PASSKEY_RP_ID`, `PASSKEY_RP_NAME` (passkeys/WebAuthn)
     - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
     - `SUPABASE_JWT_SECRET` (para JWTs cortos de Realtime + RLS)

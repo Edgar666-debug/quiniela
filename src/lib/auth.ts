@@ -1,11 +1,12 @@
+import { passkey } from "@better-auth/passkey";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
-import { prismaAdapter } from "better-auth/adapters/prisma";
 import { emailOTP } from "better-auth/plugins";
-import { passkey } from "@better-auth/passkey";
 
-import { prisma } from "@/lib/prisma";
+import { sendOtpEmail, sendVerificationLinkEmail } from "@/lib/email";
 import { env } from "@/lib/env";
+import { prisma } from "@/lib/prisma";
 
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
@@ -17,27 +18,24 @@ export const auth = betterAuth({
   user: {
     changeEmail: {
       enabled: true,
-      // While we don't have a real email provider yet, allow updating without verification
-      // only when the current email isn't verified (Better Auth default behavior).
+      // Keep the current behavior until a full change-email verification flow is added.
       updateEmailWithoutVerification: true,
     },
   },
   emailVerification: {
-    async sendVerificationEmail({ user, url, token }) {
-      // TODO: integrate a real email provider (Resend, SMTP, etc.).
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`[emailVerification] email=${user.email} url=${url} token=${token.slice(0, 6)}…`);
-      }
+    async sendVerificationEmail({ user, url }) {
+      await sendVerificationLinkEmail({
+        email: user.email,
+        name: user.name,
+        url,
+      });
     },
   },
   emailAndPassword: { enabled: true },
   plugins: [
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
-        // TODO: integrate a real email provider (Resend, SMTP, etc.).
-        if (process.env.NODE_ENV !== "production") {
-          console.log(`[emailOTP] type=${type} email=${email} otp=${otp}`);
-        }
+        await sendOtpEmail({ email, otp, type });
       },
     }),
     passkey({
