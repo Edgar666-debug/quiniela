@@ -3,7 +3,10 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/app/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Quiniela",
+  title: {
+    default: "Quiniela",
+    template: "%s | Quiniela",
+  },
   description: "Plataforma de quinielas por torneo",
 };
 

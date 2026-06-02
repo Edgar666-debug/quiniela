@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Trophy } from "lucide-react";
@@ -7,6 +8,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: "Torneos",
+};
 
 export default async function TournamentsIndexPage() {
   const session = await auth.api.getSession({ headers: await headers() });

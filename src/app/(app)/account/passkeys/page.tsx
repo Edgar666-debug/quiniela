@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import { KeyRound } from "lucide-react";
 import { PasskeysClient } from "./passkeys-client";
+
+export const metadata: Metadata = {
+  title: "Passkeys",
+};
 
 export default function PasskeysPage() {
   return (

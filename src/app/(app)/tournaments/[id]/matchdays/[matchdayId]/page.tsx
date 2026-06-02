@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CalendarDays } from "lucide-react";
@@ -6,6 +7,10 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MatchdayClient } from "./MatchdayClient";
 import { MatchdayPageActions } from "./MatchdayPageActions";
+
+export const metadata: Metadata = {
+  title: "Detalle de jornada",
+};
 
 export default async function MatchdayPage(props: { params: Promise<{ id: string; matchdayId: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });

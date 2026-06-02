@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Shield } from "lucide-react";
@@ -10,6 +11,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ActiveSessionsClient, type SessionItem } from "./ActiveSessionsClient";
 import { CredentialsClient } from "./CredentialsClient";
 import { ProfileClient } from "./ProfileClient";
+
+export const metadata: Metadata = {
+  title: "Mi cuenta",
+};
 
 export default async function AccountPage() {
   const session = await auth.api.getSession({ headers: await headers() });

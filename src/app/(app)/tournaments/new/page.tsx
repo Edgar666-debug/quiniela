@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { Trophy } from "lucide-react";
 
 import { NewTournamentClient } from "./new-tournament-client";
+
+export const metadata: Metadata = {
+  title: "Crear torneo",
+};
 
 export default function NewTournamentPage() {
   return (
@@ -18,4 +23,3 @@ export default function NewTournamentPage() {
     </main>
   );
 }
-

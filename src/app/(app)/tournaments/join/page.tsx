@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { Ticket } from "lucide-react";
 
 import { JoinTournamentClient } from "./join-tournament-client";
+
+export const metadata: Metadata = {
+  title: "Unirme a un torneo",
+};
 
 export default function JoinTournamentPage() {
   return (
@@ -18,4 +23,3 @@ export default function JoinTournamentPage() {
     </main>
   );
 }
-

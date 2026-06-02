@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { ArrowRight, Trophy } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: "Inicio",
+  description: "Torneos tipo quiniela por invitación, jornadas con cierre y ranking en vivo.",
+};
 
 export default function Home() {
   return (

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Eye, Users } from "lucide-react";
@@ -6,6 +7,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TournamentPicksIndexClient } from "./tournament-picks-index-client";
+
+export const metadata: Metadata = {
+  title: "Picks",
+};
 
 function formatUtcShort(iso: string) {
   return new Intl.DateTimeFormat("es-MX", {
@@ -104,4 +109,3 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
     </main>
   );
 }
-

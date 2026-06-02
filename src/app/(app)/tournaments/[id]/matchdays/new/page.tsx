@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MatchdayNewClient } from "./MatchdayNewClient";
+
+export const metadata: Metadata = {
+  title: "Crear jornada",
+};
 
 export default async function MatchdayNewPage(props: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -20,4 +25,3 @@ export default async function MatchdayNewPage(props: { params: Promise<{ id: str
 
   return <MatchdayNewClient tournamentId={tournamentId} />;
 }
-

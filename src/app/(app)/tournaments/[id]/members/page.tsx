@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Users } from "lucide-react";
@@ -5,6 +6,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MembersClient } from "./MembersClient";
+
+export const metadata: Metadata = {
+  title: "Participantes",
+};
 
 export default async function TournamentMembersPage(props: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });

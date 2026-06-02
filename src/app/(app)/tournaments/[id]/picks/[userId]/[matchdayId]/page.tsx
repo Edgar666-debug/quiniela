@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CalendarDays, Eye } from "lucide-react";
@@ -8,6 +9,10 @@ import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ParticipantMatchdayPicksClient } from "./ParticipantMatchdayPicksClient";
+
+export const metadata: Metadata = {
+  title: "Picks del participante",
+};
 
 export default async function ParticipantMatchdayPicksPage(props: { params: Promise<{ id: string; userId: string; matchdayId: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -103,4 +108,3 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
     </main>
   );
 }
-

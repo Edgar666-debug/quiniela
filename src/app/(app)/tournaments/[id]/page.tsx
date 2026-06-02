@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CalendarDays, Eye, Trophy, Users } from "lucide-react";
@@ -9,6 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InlineAlert } from "@/components/app/inline-alert";
 import { TournamentAdminClient } from "./tournament-admin-client";
+
+export const metadata: Metadata = {
+  title: "Resumen del torneo",
+};
 
 export default async function TournamentHomePage(props: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
