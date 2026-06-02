@@ -15,7 +15,7 @@ type MatchdayRow = { id: string; number: number; closesAtUtc: string; closesAtLa
 export function TournamentPicksIndexClient(props: { tournamentId: string; members: MemberRow[]; matchdays: MatchdayRow[] }) {
   const [openUserId, setOpenUserId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [closedOnly, setClosedOnly] = useState(true);
+  const [closedOnly, _setClosedOnly] = useState(true);
 
   const matchdaysClosedFirst = useMemo(() => {
     const closed = props.matchdays.filter((m) => m.isClosed);
@@ -38,14 +38,14 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
           onChange={(e) => setQuery(e.target.value)}
           className="sm:max-w-sm"
         />
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <Button type="button" size="sm" variant={closedOnly ? "default" : "outline"} onClick={() => setClosedOnly(true)}>
             Solo cerradas
           </Button>
           <Button type="button" size="sm" variant={!closedOnly ? "default" : "outline"} onClick={() => setClosedOnly(false)}>
             Todas
           </Button>
-        </div>
+        </div> */}
       </div>
 
       <Table>

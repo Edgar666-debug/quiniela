@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { themeInitScript } from "@/lib/theme";
-import Script from "next/script";
+import { ThemeProvider } from "@/components/app/theme-provider";
 
 export const metadata: Metadata = {
   title: "Quiniela",
@@ -15,10 +14,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="h-full antialiased" suppressHydrationWarning>
-      <head>
-        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitScript() }} />
-      </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

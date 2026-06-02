@@ -6,9 +6,8 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
-import { cn } from "@/lib/utils";
-
-type Outcome = "HOME" | "DRAW" | "AWAY";
+import { DrawPickCard, TeamPickCard } from "@/components/matches/pick-cards";
+import { statusLabel, type Outcome } from "@/lib/football";
 
 type MatchRow = {
   id: string;
@@ -47,21 +46,6 @@ export function ParticipantMatchdayPicksClient(props: {
     [],
   );
 
-  function statusLabel(short: string) {
-    if (short === "FT") return "Final";
-    if (short === "AET") return "Final (ET)";
-    if (short === "PEN") return "Final (PEN)";
-    if (short === "NS") return "No iniciado";
-    if (short === "HT") return "Medio tiempo";
-    if (short === "PST") return "Pospuesto";
-    if (short === "CANC") return "Cancelado";
-    if (short === "ABD") return "Abandonado";
-    if (short === "AWD") return "Adjudicado";
-    if (short === "WO") return "Walkover";
-    if (short === "NF") return "No encontrado";
-    return short;
-  }
-
   const grouped = useMemo(() => {
     const groups = new Map<string, MatchRow[]>();
     for (const m of rows) {
@@ -86,49 +70,6 @@ export function ParticipantMatchdayPicksClient(props: {
     setRows(data.matches ?? []);
   }
 
-  function TeamPickCard(props: { side: "HOME" | "AWAY"; name: string; logoUrl?: string | null; selected: boolean }) {
-    return (
-      <div
-        className={cn(
-          "w-full rounded-xl border p-3",
-          props.selected ? "border-red-500 bg-red-50 dark:bg-red-950/30" : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black",
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-14 overflow-hidden rounded-md border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/30">
-            {props.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={props.logoUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-500 dark:text-zinc-400">{props.name.slice(0, 2).toUpperCase()}</div>
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{props.name}</p>
-            <p className={cn("mt-1 w-fit rounded-md px-2 py-1 text-xs", props.selected ? "bg-red-600 text-white" : "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200")}>
-              {props.side === "HOME" ? "Local" : "Visita"}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  function DrawPickCard(props: { selected: boolean }) {
-    return (
-      <div
-        className={cn(
-          "flex h-full w-full flex-col items-center justify-center rounded-xl border p-3",
-          props.selected ? "border-red-500 bg-red-50 dark:bg-red-950/30" : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black",
-        )}
-      >
-        <p className="text-xl font-bold text-zinc-700 dark:text-zinc-200">X</p>
-        <p className={cn("mt-2 w-full rounded-md px-2 py-1 text-center text-xs", props.selected ? "bg-red-600 text-white" : "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200")}>
-          Empate
-        </p>
-      </div>
-    );
-  }
 
   const closesAtMs = useMemo(() => new Date(props.initial.matchday.closesAtUtc).getTime(), [props.initial.matchday.closesAtUtc]);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -189,4 +130,3 @@ export function ParticipantMatchdayPicksClient(props: {
     </div>
   );
 }
-

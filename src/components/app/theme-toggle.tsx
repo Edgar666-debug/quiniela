@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Laptop, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 
-import {
-  applyThemeClass,
-  getThemeServerSnapshot,
-  getThemeSnapshot,
-  setStoredTheme,
-  subscribeTheme,
-  type ThemeMode,
-} from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
+type ThemeMode = "system" | "light" | "dark";
 const MODES: ThemeMode[] = ["system", "light", "dark"];
 
 function modeIcon(mode: ThemeMode) {
@@ -30,14 +24,12 @@ function modeLabel(mode: ThemeMode) {
 
 export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "right" }) {
   const [open, setOpen] = useState(false);
-  const mode = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
-
   useEffect(() => {
-    applyThemeClass(mode);
-  }, [mode]);
+    setTimeout(() => setMounted(true), 0);
+  }, []);
 
   const items = useMemo(
     () =>
@@ -45,17 +37,18 @@ export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "righ
         mode: m,
         label: modeLabel(m),
         icon: modeIcon(m),
-        active: m === mode,
+        active: m === theme,
       })),
-    [mode],
+    [theme],
   );
 
-  function setTheme(next: ThemeMode) {
-    setStoredTheme(next);
+  function setThemeAndClose(next: ThemeMode) {
+    setTheme(next);
     setOpen(false);
   }
 
-  const safeMode: ThemeMode = mounted ? mode : "system";
+  const safeMode: ThemeMode =
+    mounted && (theme === "system" || theme === "light" || theme === "dark") ? (theme as ThemeMode) : "system";
 
   return (
     <div className="relative">
@@ -86,7 +79,7 @@ export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "righ
                 "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900",
                 i.active ? "font-medium" : "text-zinc-700 dark:text-zinc-200",
               )}
-              onClick={() => setTheme(i.mode)}
+              onClick={() => setThemeAndClose(i.mode)}
             >
               {i.icon}
               <span className="flex-1">{i.label}</span>

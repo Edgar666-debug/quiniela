@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { InlineAlert } from "@/components/app/inline-alert";
+import { statusLabel } from "@/lib/football";
 
 type LeagueRow = { id: number; name: string; type: string; countryName: string; seasonYears: number[]; currentSeasons: number[] };
 type FixtureRow = { id: number; dateUtc: string; homeTeam: string; awayTeam: string; statusShort: string };
@@ -17,21 +18,6 @@ type FixtureRow = { id: number; dateUtc: string; homeTeam: string; awayTeam: str
 function toLocalDateTimeInputValue(date: Date) {
   const tzOffsetMs = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - tzOffsetMs).toISOString().slice(0, 16);
-}
-
-function statusLabel(short: string) {
-  if (short === "FT") return "Final";
-  if (short === "AET") return "Final (ET)";
-  if (short === "PEN") return "Final (PEN)";
-  if (short === "NS") return "No iniciado";
-  if (short === "HT") return "Medio tiempo";
-  if (short === "PST") return "Pospuesto";
-  if (short === "CANC") return "Cancelado";
-  if (short === "ABD") return "Abandonado";
-  if (short === "AWD") return "Adjudicado";
-  if (short === "WO") return "Walkover";
-  if (short === "NF") return "No encontrado";
-  return short;
 }
 
 const DAY_MS = 24 * 60 * 60_000;

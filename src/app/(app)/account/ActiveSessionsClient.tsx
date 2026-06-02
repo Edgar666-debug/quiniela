@@ -5,6 +5,7 @@ import { Laptop, Loader2, RefreshCw, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { formatUtcDateTime } from "@/lib/date";
 
 export type SessionItem = {
   id: string;
@@ -15,16 +16,6 @@ export type SessionItem = {
   expiresAtUtc: string;
   isCurrent: boolean;
 };
-
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(d.getUTCDate()).padStart(2, "0");
-  const hh = String(d.getUTCHours()).padStart(2, "0");
-  const mm = String(d.getUTCMinutes()).padStart(2, "0");
-  return `${y}-${m}-${day} ${hh}:${mm} UTC`;
-}
 
 function parseBrowser(ua: string | null) {
   if (!ua) return "Unknown";
@@ -110,7 +101,7 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
                     <p className="text-xs text-zinc-600 dark:text-zinc-400">{parseOS(s.userAgent)}</p>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400">IP: {s.ipAddress ?? "—"}</p>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                      Last active: {formatDate(s.updatedAtUtc)} • Expires: {formatDate(s.expiresAtUtc)}
+                      Last active: {formatUtcDateTime(s.updatedAtUtc)} • Expires: {formatUtcDateTime(s.expiresAtUtc)}
                     </p>
                   </div>
                 </div>

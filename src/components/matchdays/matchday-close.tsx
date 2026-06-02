@@ -4,17 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Lock, Timer } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-
-function formatUtc(iso: string) {
-  // deterministic (no locale), avoids hydration mismatch
-  const d = new Date(iso);
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(d.getUTCDate()).padStart(2, "0");
-  const hh = String(d.getUTCHours()).padStart(2, "0");
-  const mm = String(d.getUTCMinutes()).padStart(2, "0");
-  return `${y}-${m}-${day} ${hh}:${mm} UTC`;
-}
+import { formatUtcDateTime } from "@/lib/date";
 
 function formatRemaining(ms: number) {
   if (ms <= 0) return "00:00:00";
@@ -47,7 +37,7 @@ export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; c
         {isClosed ? <Lock className="h-3.5 w-3.5 text-zinc-500" /> : <Timer className="h-3.5 w-3.5 text-emerald-500" />}
         <span className={cn(isClosed ? "text-zinc-500" : "text-emerald-400")}>{isClosed ? "Cerrada" : "Abierta"}</span>
         <span className="text-zinc-600 dark:text-zinc-400">•</span>
-        <span className="text-zinc-600 dark:text-zinc-400">{formatUtc(props.closesAtUtc)}</span>
+        <span className="text-zinc-600 dark:text-zinc-400">{formatUtcDateTime(props.closesAtUtc)}</span>
       </div>
     );
   }
@@ -68,11 +58,10 @@ export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; c
           {isClosed ? "Cerrada" : "Abierta"}
         </span>
       </div>
-      <p className="text-xs text-zinc-600 dark:text-zinc-400">Cierre: {formatUtc(props.closesAtUtc)}</p>
+      <p className="text-xs text-zinc-600 dark:text-zinc-400">Cierre: {formatUtcDateTime(props.closesAtUtc)}</p>
       {isClosed ? null : (
         <p className="text-xs text-zinc-600 dark:text-zinc-400">Tiempo restante: {formatRemaining(remainingMs)}</p>
       )}
     </div>
   );
 }
-

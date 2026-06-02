@@ -81,3 +81,13 @@ export const SheetDescription = React.forwardRef<
   />
 ));
 SheetDescription.displayName = DialogPrimitive.Description.displayName;
+
+export function SheetA11yHeader(props: { title: React.ReactNode; description: React.ReactNode; srOnly?: boolean; className?: string }) {
+  const hidden = props.srOnly ? "sr-only" : undefined;
+  return (
+    <SheetHeader className={props.className}>
+      <SheetTitle className={hidden}>{props.title}</SheetTitle>
+      <SheetDescription className={hidden}>{props.description}</SheetDescription>
+    </SheetHeader>
+  );
+}

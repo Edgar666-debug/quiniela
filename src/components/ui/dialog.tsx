@@ -80,3 +80,12 @@ export const DialogDescription = React.forwardRef<
 ));
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
+export function DialogA11yHeader(props: { title: React.ReactNode; description: React.ReactNode; srOnly?: boolean; className?: string }) {
+  const hidden = props.srOnly ? "sr-only" : undefined;
+  return (
+    <DialogHeader className={props.className}>
+      <DialogTitle className={hidden}>{props.title}</DialogTitle>
+      <DialogDescription className={hidden}>{props.description}</DialogDescription>
+    </DialogHeader>
+  );
+}

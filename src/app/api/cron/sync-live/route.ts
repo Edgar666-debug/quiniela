@@ -14,7 +14,6 @@ const VOID = new Set(["PST", "CANC", "ABD", "AWD", "WO", "NF"]);
 export async function POST(req: Request) {
   const startedAtMs = Date.now();
   const runId = `sync_${startedAtMs}_${Math.random().toString(16).slice(2, 8)}`;
-  const url = new URL(req.url);
   const auth = req.headers.get("authorization") ?? "";
   const bearer = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
   const token = bearer || req.headers.get("x-cron-secret") || "";

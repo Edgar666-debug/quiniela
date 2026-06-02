@@ -85,3 +85,17 @@ export const AlertDialogAction = React.forwardRef<
 ));
 AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName;
 
+export function AlertDialogA11yHeader(props: {
+  title: React.ReactNode;
+  description: React.ReactNode;
+  srOnly?: boolean;
+  className?: string;
+}) {
+  const hidden = props.srOnly ? "sr-only" : undefined;
+  return (
+    <AlertDialogHeader className={props.className}>
+      <AlertDialogTitle className={hidden}>{props.title}</AlertDialogTitle>
+      <AlertDialogDescription className={hidden}>{props.description}</AlertDialogDescription>
+    </AlertDialogHeader>
+  );
+}
