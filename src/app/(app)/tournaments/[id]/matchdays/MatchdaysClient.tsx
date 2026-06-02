@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { CalendarDays, Loader2, Plus, RefreshCw } from "lucide-react";
 
@@ -27,8 +27,8 @@ export function MatchdaysClient(props: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canManage = useMemo(() => props.role === "OWNER" || props.role === "ORGANIZER", [props.role]);
-  const canCreateMatchday = useMemo(() => canManage && props.tournamentStatus === "ACTIVE", [canManage, props.tournamentStatus]);
+  const canManage = props.role === "OWNER" || props.role === "ORGANIZER";
+  const canCreateMatchday = canManage && props.tournamentStatus === "ACTIVE";
 
   async function refresh() {
     setLoading(true);

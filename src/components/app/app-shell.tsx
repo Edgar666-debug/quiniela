@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -72,10 +72,9 @@ function Sidebar(props: {
 }) {
   const pathname = usePathname();
 
-  const currentTournament = useMemo(
-    () => (props.currentTournamentId ? props.tournaments.find((t) => t.id === props.currentTournamentId) ?? null : null),
-    [props.currentTournamentId, props.tournaments],
-  );
+  const currentTournament = props.currentTournamentId
+    ? props.tournaments.find((t) => t.id === props.currentTournamentId) ?? null
+    : null;
 
   const canManageInvites =
     (currentTournament?.role === "OWNER" || currentTournament?.role === "ORGANIZER") && currentTournament?.status === "ACTIVE";
@@ -205,15 +204,11 @@ function Sidebar(props: {
 
 export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; children: React.ReactNode }) {
   const pathname = usePathname();
-  const currentTournamentId = useMemo(() => {
-    const m = pathname.match(/^\/tournaments\/([^/]+)/);
-    return m?.[1] ?? null;
-  }, [pathname]);
+  const currentTournamentId = pathname.match(/^\/tournaments\/([^/]+)/)?.[1] ?? null;
 
-  const currentTournament = useMemo(
-    () => (currentTournamentId ? props.tournaments.find((t) => t.id === currentTournamentId) ?? null : null),
-    [currentTournamentId, props.tournaments],
-  );
+  const currentTournament = currentTournamentId
+    ? props.tournaments.find((t) => t.id === currentTournamentId) ?? null
+    : null;
 
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;

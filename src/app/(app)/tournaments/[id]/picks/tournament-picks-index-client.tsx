@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Lock } from "lucide-react";
 
@@ -17,17 +17,17 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
   const [query, setQuery] = useState("");
   const closedOnly = true;
 
-  const matchdaysClosedFirst = useMemo(() => {
+  const matchdaysClosedFirst = (() => {
     const closed = props.matchdays.filter((m) => m.isClosed);
     const open = props.matchdays.filter((m) => !m.isClosed);
     return closedOnly ? closed : [...closed, ...open];
-  }, [props.matchdays, closedOnly]);
+  })();
 
-  const filteredMembers = useMemo(() => {
+  const filteredMembers = (() => {
     const q = query.trim().toLowerCase();
     if (!q) return props.members;
     return props.members.filter((m) => (m.name ?? "").toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
-  }, [props.members, query]);
+  })();
 
   return (
     <div className="grid gap-4">

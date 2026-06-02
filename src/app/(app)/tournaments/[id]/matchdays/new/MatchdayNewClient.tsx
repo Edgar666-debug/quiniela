@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "lucide-react";
 
@@ -17,12 +17,12 @@ export function MatchdayNewClient(props: { tournamentId: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const closesAtUtcPreview = useMemo(() => {
+  const closesAtUtcPreview = (() => {
     if (!closesAtLocal) return null;
     const d = new Date(closesAtLocal);
     if (Number.isNaN(d.getTime())) return null;
     return d.toISOString().replace("T", " ").slice(0, 16);
-  }, [closesAtLocal]);
+  })();
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">

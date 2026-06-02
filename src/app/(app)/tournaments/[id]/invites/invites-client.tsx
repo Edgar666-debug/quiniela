@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Clipboard, Loader2, Plus, Ticket } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,8 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const hasAvailable = useMemo(() => invites.some((i) => i.uses < i.maxUses), [invites]);
-  const canGenerate = useMemo(() => props.tournamentStatus === "ACTIVE", [props.tournamentStatus]);
+  const hasAvailable = invites.some((i) => i.uses < i.maxUses);
+  const canGenerate = props.tournamentStatus === "ACTIVE";
 
   async function generate() {
     setMessage(null);

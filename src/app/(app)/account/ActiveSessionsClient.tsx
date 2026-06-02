@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Laptop, Loader2, RefreshCw, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -44,7 +44,7 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const currentId = useMemo(() => sessions.find((s) => s.isCurrent)?.id ?? null, [sessions]);
+  const currentId = sessions.find((s) => s.isCurrent)?.id ?? null;
 
   async function refresh() {
     setError(null);

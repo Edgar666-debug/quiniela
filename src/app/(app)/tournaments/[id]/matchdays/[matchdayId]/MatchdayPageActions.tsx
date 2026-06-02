@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -12,7 +12,7 @@ export function MatchdayPageActions(props: {
   role: "OWNER" | "ORGANIZER" | "PLAYER";
   closesAtUtc: string;
 }) {
-  const closesAtMs = useMemo(() => new Date(props.closesAtUtc).getTime(), [props.closesAtUtc]);
+  const closesAtMs = new Date(props.closesAtUtc).getTime();
   const [nowMs, setNowMs] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 30_000);

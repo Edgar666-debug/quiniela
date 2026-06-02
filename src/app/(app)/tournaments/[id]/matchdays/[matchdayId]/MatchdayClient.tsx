@@ -36,13 +36,13 @@ export function MatchdayClient(props: {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const closesAtMs = useMemo(() => new Date(props.initial.matchday.closesAtUtc).getTime(), [props.initial.matchday.closesAtUtc]);
+  const closesAtMs = new Date(props.initial.matchday.closesAtUtc).getTime();
   const [nowMs, setNowMs] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
-  const isClosed = useMemo(() => nowMs >= closesAtMs, [nowMs, closesAtMs]);
+  const isClosed = nowMs >= closesAtMs;
 
   const formatKickoff = useMemo(
     () =>

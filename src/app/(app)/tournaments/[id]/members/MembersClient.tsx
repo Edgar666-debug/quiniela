@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Loader2, LogOut, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
   const [error, setError] = useState<string | null>(null);
   const rows = localRows?.source === props.initial ? localRows.value : props.initial;
 
-  const canManage = useMemo(() => props.myRole === "OWNER" || props.myRole === "ORGANIZER", [props.myRole]);
+  const canManage = props.myRole === "OWNER" || props.myRole === "ORGANIZER";
 
   function canRemove(target: MemberRow) {
     if (!canManage) return false;

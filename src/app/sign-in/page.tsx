@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { KeyRound, Loader2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 
@@ -23,11 +23,8 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const title = useMemo(() => {
-    if (mode === "otp") return "Iniciar sesión con código";
-    if (mode === "passkey") return "Iniciar sesión con passkey";
-    return "Iniciar sesión";
-  }, [mode]);
+  const title =
+    mode === "otp" ? "Iniciar sesiÃ³n con cÃ³digo" : mode === "passkey" ? "Iniciar sesiÃ³n con passkey" : "Iniciar sesiÃ³n";
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-1px)] max-w-md items-center px-6 py-16">
@@ -101,18 +98,18 @@ export default function SignInPage() {
                 setLoading(true);
                 const { error } = await authClient.signIn.email({ email, password });
                 setLoading(false);
-                if (error) return setError(error.message ?? "No se pudo iniciar sesión");
+                if (error) return setError(error.message ?? "No se pudo iniciar sesiÃ³n");
                 window.location.href = "/dashboard";
               }}
             >
               <div className="grid gap-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label htmlFor="password">ContraseÃ±a</Label>
                 <div className="relative">
                   <KeyRound className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-zinc-500" />
                   <Input
                     id="password"
                     className="pl-10"
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     type="password"
@@ -146,12 +143,12 @@ export default function SignInPage() {
                   }}
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Enviar código
+                  Enviar cÃ³digo
                 </Button>
               ) : (
                 <>
                   <div className="grid gap-2">
-                    <Label htmlFor="otp">Código</Label>
+                    <Label htmlFor="otp">CÃ³digo</Label>
                     <InputOTP
                       id="otp"
                       maxLength={6}
@@ -194,7 +191,7 @@ export default function SignInPage() {
                         ...(name ? { name } : {}),
                       });
                       setLoading(false);
-                      if (error) return setError(error.message ?? "No se pudo iniciar sesión con OTP");
+                      if (error) return setError(error.message ?? "No se pudo iniciar sesiÃ³n con OTP");
                       window.location.href = "/dashboard";
                     }}
                   >
@@ -210,7 +207,7 @@ export default function SignInPage() {
                       setOtpSent(false);
                     }}
                   >
-                    Enviar otro código
+                    Enviar otro cÃ³digo
                   </Button>
                 </>
               )}
@@ -239,7 +236,7 @@ export default function SignInPage() {
                     },
                   });
                   setLoading(false);
-                  if (error) return setError(error.message ?? "No se pudo iniciar sesión con passkey");
+                  if (error) return setError(error.message ?? "No se pudo iniciar sesiÃ³n con passkey");
                 }}
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -247,7 +244,7 @@ export default function SignInPage() {
               </Button>
               {error ? <p className="text-sm text-red-600">{error}</p> : null}
               <p className="text-xs text-zinc-500">
-                Para registrar una passkey primero inicia sesión y luego agrega una desde el dashboard.
+                Para registrar una passkey primero inicia sesiÃ³n y luego agrega una desde el dashboard.
               </p>
             </div>
           ) : null}
@@ -255,7 +252,7 @@ export default function SignInPage() {
           <Separator />
 
           <p className="text-sm text-zinc-600">
-            ¿No tienes cuenta?{" "}
+            Â¿No tienes cuenta?{" "}
             <Link className="underline underline-offset-4" href="/sign-up">
               Crea una
             </Link>

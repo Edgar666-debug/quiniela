@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Archive, Flag } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,9 @@ import {
 export function TournamentAdminClient(props: { tournamentId: string; status: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isActive = useMemo(() => props.status === "ACTIVE", [props.status]);
-  const isFinished = useMemo(() => props.status === "FINISHED", [props.status]);
-  const isArchived = useMemo(() => props.status === "ARCHIVED", [props.status]);
+  const isActive = props.status === "ACTIVE";
+  const isFinished = props.status === "FINISHED";
+  const isArchived = props.status === "ARCHIVED";
 
   return (
     <div className="flex flex-col gap-3">

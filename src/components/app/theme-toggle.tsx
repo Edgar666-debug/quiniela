@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Laptop, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -31,16 +31,12 @@ export function ThemeToggle(props: { collapsed?: boolean; align?: "left" | "righ
     setTimeout(() => setMounted(true), 0);
   }, []);
 
-  const items = useMemo(
-    () =>
-      MODES.map((m) => ({
-        mode: m,
-        label: modeLabel(m),
-        icon: modeIcon(m),
-        active: m === theme,
-      })),
-    [theme],
-  );
+  const items = MODES.map((m) => ({
+    mode: m,
+    label: modeLabel(m),
+    icon: modeIcon(m),
+    active: m === theme,
+  }));
 
   function setThemeAndClose(next: ThemeMode) {
     setTheme(next);

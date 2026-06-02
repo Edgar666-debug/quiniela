@@ -72,14 +72,14 @@ export function ParticipantMatchdayPicksClient(props: {
   }
 
 
-  const closesAtMs = useMemo(() => new Date(props.initial.matchday.closesAtUtc).getTime(), [props.initial.matchday.closesAtUtc]);
+  const closesAtMs = new Date(props.initial.matchday.closesAtUtc).getTime();
   const [nowMs, setNowMs] = useState(() => Date.now());
   useEffect(() => {
     const tick = () => setNowMs(Date.now());
     const id = setInterval(tick, 30_000);
     return () => clearInterval(id);
   }, []);
-  const isClosed = useMemo(() => nowMs >= closesAtMs, [nowMs, closesAtMs]);
+  const isClosed = nowMs >= closesAtMs;
 
   return (
     <div className="flex flex-col gap-4">

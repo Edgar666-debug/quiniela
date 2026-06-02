@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Lock, Timer } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ function formatRemaining(ms: number) {
 }
 
 export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; className?: string }) {
-  const closesAtMs = useMemo(() => new Date(props.closesAtUtc).getTime(), [props.closesAtUtc]);
+  const closesAtMs = new Date(props.closesAtUtc).getTime();
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {

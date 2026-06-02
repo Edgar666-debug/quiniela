@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 
 import { useStandingsRealtime } from "@/hooks/useStandingsRealtime";
@@ -35,7 +35,7 @@ export function StandingsLive(props: { tournamentId: string; initial: StandingRo
 
   useStandingsRealtime(props.tournamentId, refresh);
 
-  const maxPoints = useMemo(() => Math.max(0, ...rows.map((r) => r.points)), [rows]);
+  const maxPoints = Math.max(0, ...rows.map((r) => r.points));
 
   return (
     <Card>

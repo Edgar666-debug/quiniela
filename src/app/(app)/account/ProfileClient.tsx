@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Image as ImageIcon, Loader2, Save, User as UserIcon, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const imageUrl = useMemo(() => (image.trim() ? image.trim() : null), [image]);
+  const imageUrl = image.trim() ? image.trim() : null;
 
   async function save() {
     setMessage(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Loader2, Plus, RefreshCw, Search } from "lucide-react";
 
@@ -40,8 +40,8 @@ export function MatchNewClient(props: {
   role: "OWNER" | "ORGANIZER" | "PLAYER";
 }) {
   const router = useRouter();
-  const canManage = useMemo(() => props.role === "OWNER" || props.role === "ORGANIZER", [props.role]);
-  const closesAtMs = useMemo(() => new Date(props.matchdayClosesAtUtc).getTime(), [props.matchdayClosesAtUtc]);
+  const canManage = props.role === "OWNER" || props.role === "ORGANIZER";
+  const closesAtMs = new Date(props.matchdayClosesAtUtc).getTime();
   const [nowMs, setNowMs] = useState(0);
   useEffect(() => {
     const tick = () => setNowMs(Date.now());
@@ -49,7 +49,7 @@ export function MatchNewClient(props: {
     const id = setInterval(tick, 30_000);
     return () => clearInterval(id);
   }, []);
-  const isClosed = useMemo(() => nowMs >= closesAtMs, [nowMs, closesAtMs]);
+  const isClosed = nowMs >= closesAtMs;
 
   const [fixtureId, setFixtureId] = useState("");
   const [startsAtLocal, setStartsAtLocal] = useState("");
@@ -75,13 +75,13 @@ export function MatchNewClient(props: {
   const [fixturesError, setFixturesError] = useState<string | null>(null);
   const [fixtures, setFixtures] = useState<FixtureRow[]>([]);
 
-  const startsAtUtcMs = useMemo(() => {
+  const startsAtUtcMs = (() => {
     if (!startsAtLocal) return null;
     const d = new Date(startsAtLocal);
     const t = d.getTime();
     return Number.isNaN(t) ? null : t;
-  }, [startsAtLocal]);
-  const violatesCloseRule = useMemo(() => (startsAtUtcMs != null ? startsAtUtcMs < closesAtMs : false), [startsAtUtcMs, closesAtMs]);
+  })();
+  const violatesCloseRule = startsAtUtcMs != null ? startsAtUtcMs < closesAtMs : false;
 
   if (!canManage) {
     return (

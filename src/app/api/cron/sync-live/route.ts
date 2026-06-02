@@ -58,59 +58,89 @@ export async function POST(req: Request) {
   }
 
   const fixtureIds = Array.from(matchesByFixtureId.keys());
+  const chunks = [];
   for (let i = 0; i < fixtureIds.length; i += 20) {
-    const chunk = fixtureIds.slice(i, i + 20);
-    const fixtures = await fetchFixturesByIds(chunk);
+    chunks.push(fixtureIds.slice(i, i + 20));
+  }
 
-    for (const fixtureId of chunk) {
-      const fixture = fixtures.get(fixtureId);
-      const relatedMatches = matchesByFixtureId.get(fixtureId) ?? [];
+  const fixturesByChunk = await Promise.all(chunks.map((chunk) => fetchFixturesByIds(chunk)));
 
-      // If API-Football didn't return this fixture, increment syncMisses.
-      // After 3 misses, mark it as terminal "NF" (not found) to stop re-checking.
-      if (!fixture) {
-        await prisma.$transaction(
-          relatedMatches.map((match) =>
-            prisma.match.update({
-              where: { id: match.id },
-              data: {
-                syncMisses: match.syncMisses + 1,
-                statusShort: match.syncMisses + 1 >= 3 ? "NF" : undefined,
-              },
+  const chunkResults = await Promise.all(
+    chunks.map(async (chunk, index) => {
+      const fixtures = fixturesByChunk[index];
+      const touchedIds = new Set<string>();
+      const updatedCounts = new Map<string, number>();
+      let updated = 0;
+
+      await Promise.all(
+        chunk.map(async (fixtureId) => {
+          const fixture = fixtures.get(fixtureId);
+          const relatedMatches = matchesByFixtureId.get(fixtureId) ?? [];
+
+          if (!fixture) {
+            await prisma.$transaction(
+              relatedMatches.map((match) =>
+                prisma.match.update({
+                  where: { id: match.id },
+                  data: {
+                    syncMisses: match.syncMisses + 1,
+                    statusShort: match.syncMisses + 1 >= 3 ? "NF" : undefined,
+                  },
+                }),
+              ),
+            );
+            return;
+          }
+
+          const results = await Promise.all(
+            relatedMatches.map(async (match) => {
+              const result = await prisma.match.updateMany({
+                where: { id: match.id },
+                data: {
+                  startsAtUtc: fixture.dateUtc,
+                  statusShort: fixture.statusShort,
+                  scoreHome: fixture.scoreHome,
+                  scoreAway: fixture.scoreAway,
+                  homeTeam: fixture.homeTeam,
+                  awayTeam: fixture.awayTeam,
+                  homeLogoUrl: fixture.homeLogoUrl ?? null,
+                  awayLogoUrl: fixture.awayLogoUrl ?? null,
+                  syncMisses: 0,
+                },
+              });
+
+              return { match, count: result.count };
             }),
-          ),
-        );
-        continue;
-      }
+          );
 
-      for (const match of relatedMatches) {
-        const result = await prisma.match.updateMany({
-          where: { id: match.id },
-          data: {
-            startsAtUtc: fixture.dateUtc,
-            statusShort: fixture.statusShort,
-            scoreHome: fixture.scoreHome,
-            scoreAway: fixture.scoreAway,
-            homeTeam: fixture.homeTeam,
-            awayTeam: fixture.awayTeam,
-            homeLogoUrl: fixture.homeLogoUrl ?? null,
-            awayLogoUrl: fixture.awayLogoUrl ?? null,
-            syncMisses: 0,
-          },
-        });
+          for (const result of results) {
+            if (result.count > 0) {
+              updated += 1;
+              touchedIds.add(result.match.matchday.tournamentId);
+              updatedCounts.set(
+                result.match.matchday.tournamentId,
+                (updatedCounts.get(result.match.matchday.tournamentId) ?? 0) + 1,
+              );
+            }
+          }
+        }),
+      );
 
-        if (result.count > 0) {
-          updatedMatches += 1;
-          touchedTournamentIds.add(match.matchday.tournamentId);
-          updatedByTournamentId.set(match.matchday.tournamentId, (updatedByTournamentId.get(match.matchday.tournamentId) ?? 0) + 1);
-        }
-      }
+      return { touchedIds, updatedCounts, updated };
+    }),
+  );
+
+  for (const chunkResult of chunkResults) {
+    updatedMatches += chunkResult.updated;
+    for (const tournamentId of chunkResult.touchedIds) {
+      touchedTournamentIds.add(tournamentId);
+    }
+    for (const [tournamentId, count] of chunkResult.updatedCounts) {
+      updatedByTournamentId.set(tournamentId, (updatedByTournamentId.get(tournamentId) ?? 0) + count);
     }
   }
 
-  for (const tournamentId of touchedTournamentIds) {
-    await recalculateStandingsForTournament(tournamentId);
-  }
+  await Promise.all(Array.from(touchedTournamentIds, (tournamentId) => recalculateStandingsForTournament(tournamentId)));
 
   const tournamentIds = Array.from(checkedByTournamentId.keys());
   if (tournamentIds.length > 0) {
