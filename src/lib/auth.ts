@@ -11,9 +11,7 @@ import { prisma } from "@/lib/prisma";
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
-  // When using a tunnel (ngrok, Cloudflare Tunnel, etc.), add the public URL origin here.
-  // Example:
-  // trustedOrigins: ["http://localhost:3000", "https://your-subdomain.ngrok-free.app"],
+  trustedOrigins: [env.BETTER_AUTH_URL],
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   user: {
     changeEmail: {
