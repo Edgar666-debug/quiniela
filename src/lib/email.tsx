@@ -7,6 +7,7 @@ import { VerificationEmail } from "@/emails/verification-email";
 import { env } from "@/lib/env";
 
 const resend = new Resend(env.RESEND_API_KEY);
+const isDev = process.env.NODE_ENV !== "production";
 
 async function sendEmail(props: {
   to: string;
@@ -18,6 +19,15 @@ async function sendEmail(props: {
     | ReturnType<typeof PasswordResetEmail>;
 }) {
   const text = await render(props.react, { plainText: true });
+
+  if (isDev) {
+    console.log("\n📧 [EMAIL — dev only, not sent]");
+    console.log(`  To:      ${props.to}`);
+    console.log(`  Subject: ${props.subject}`);
+    console.log(`  Body:\n${text}\n`);
+    return;
+  }
+
   const result = await resend.emails.send({
     from: env.EMAIL_FROM,
     to: [props.to],
