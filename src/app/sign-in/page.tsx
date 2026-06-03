@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description: "Accede a tus torneos y quinielas.",
 };
 
-export default function SignInPage() {
-  return <SignInForm />;
+export default async function SignInPage(props: { searchParams: Promise<{ next?: string }> }) {
+  const { next } = await props.searchParams;
+  return <SignInForm next={next} />;
 }

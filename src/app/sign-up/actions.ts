@@ -15,6 +15,7 @@ export async function signUpWithEmail(_prev: AuthActionState, formData: FormData
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const next = String(formData.get("next") ?? "").trim();
 
   if (!name || !email || !password) {
     return { error: "Nombre, email y contraseña son obligatorios." };
@@ -32,5 +33,7 @@ export async function signUpWithEmail(_prev: AuthActionState, formData: FormData
     return { error: "No se pudo crear la cuenta" };
   }
 
-  redirect("/dashboard");
+  // Only allow internal paths as redirect targets
+  const destination = next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  redirect(destination);
 }

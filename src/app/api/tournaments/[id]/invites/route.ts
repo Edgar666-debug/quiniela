@@ -2,8 +2,8 @@ import { randomBytes } from "crypto";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
 import { auth } from "@/lib/auth";
+import { sendInviteEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 const bodySchema = z.object({
   maxUses: z.number().int().min(1).max(10).default(1),
   expiresAtUtc: z.iso.datetime().optional(),
+  email: z.email().optional(),
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -32,11 +33,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { status: true },
+    select: { status: true, name: true },
   });
   if (!tournament) return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
   if (tournament.status !== "ACTIVE") {
-    return NextResponse.json({ error: "Tournament is not active" }, { status: 409 });
+    return NextResponse.json({ error: "El torneo no está activo" }, { status: 409 });
   }
 
   const memberCount = await prisma.tournamentMember.count({ where: { tournamentId } });
@@ -54,9 +55,19 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       maxUses: body.data.maxUses,
       expiresAt: body.data.expiresAtUtc ? new Date(body.data.expiresAtUtc) : null,
       createdByUserId: session.user.id,
+      recipientEmail: body.data.email ?? null,
     },
     select: { token: true, maxUses: true, uses: true, expiresAt: true },
   });
+
+  if (body.data.email) {
+    await sendInviteEmail({
+      email: body.data.email,
+      tournamentName: tournament.name,
+      inviterName: session.user.name,
+      token,
+    });
+  }
 
   return NextResponse.json({ invite });
 }

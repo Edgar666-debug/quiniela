@@ -3,7 +3,6 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { Mail, User, KeyRound, Loader2 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { signUpWithEmail, type AuthActionState } from "./actions";
 
-export function SignUpForm() {
+export function SignUpForm({ next }: { next?: string }) {
   const [formState, formAction, pending] = useActionState<AuthActionState, FormData>(signUpWithEmail, {});
 
   const error = formState.error;
@@ -25,6 +24,7 @@ export function SignUpForm() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <form action={formAction} className="flex flex-col gap-4">
+            {next ? <input type="hidden" name="next" value={next} /> : null}
             <div className="grid gap-2">
               <Label htmlFor="name">Nombre</Label>
               <div className="relative">
@@ -69,7 +69,7 @@ export function SignUpForm() {
 
           <p className="text-sm text-zinc-600">
             ¿Ya tienes cuenta?{" "}
-            <Link className="underline underline-offset-4" href="/sign-in">
+            <Link className="underline underline-offset-4" href={next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in"}>
               Inicia sesión
             </Link>
             .

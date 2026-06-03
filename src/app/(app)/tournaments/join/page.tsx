@@ -7,7 +7,9 @@ export const metadata: Metadata = {
   title: "Unirme a un torneo",
 };
 
-export default function JoinTournamentPage() {
+export default async function JoinTournamentPage(props: { searchParams: Promise<{ token?: string }> }) {
+  const { token } = await props.searchParams;
+
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
       <div className="space-y-1">
@@ -19,7 +21,7 @@ export default function JoinTournamentPage() {
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Pega el token que te compartió el organizador.</p>
       </div>
 
-      <JoinTournamentClient />
+      <JoinTournamentClient initialToken={token} />
     </main>
   );
 }
