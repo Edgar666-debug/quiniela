@@ -4,7 +4,7 @@ import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { emailOTP } from "better-auth/plugins";
 
-import { sendOtpEmail, sendVerificationLinkEmail } from "@/lib/email";
+import { sendOtpEmail, sendPasswordResetEmail, sendVerificationLinkEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
@@ -13,6 +13,11 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: [env.BETTER_AUTH_URL],
   database: prismaAdapter(prisma, { provider: "postgresql" }),
+  rateLimit: {
+    enabled: true,
+    window: 10,
+    max: 100,
+  },
   user: {
     changeEmail: {
       enabled: true,
@@ -26,8 +31,20 @@ export const auth = betterAuth({
         url,
       });
     },
+    sendOnSignIn: true,
   },
-  emailAndPassword: { enabled: true },
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+    requireEmailVerification: true,
+    async sendResetPassword({ user, url }) {
+      await sendPasswordResetEmail({
+        email: user.email,
+        name: user.name,
+        url,
+      });
+    },
+  },
   plugins: [
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {

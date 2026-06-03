@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
-const AUTH_PATHS = ["/sign-in", "/sign-up"];
+const AUTH_PATHS = ["/sign-in", "/sign-up", "/forgot-password", "/reset-password"];
 
 // Optimistic cookie check — NOT a security boundary.
 // Full session validation happens in each page/route handler.
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = getSessionCookie(request);
 
@@ -30,5 +30,4 @@ export const config = {
     // Match all routes except static files and Better Auth API
     "/((?!_next/static|_next/image|favicon.ico|api/auth|api/cron).*)",
   ],
-  runtime: "nodejs",
 };

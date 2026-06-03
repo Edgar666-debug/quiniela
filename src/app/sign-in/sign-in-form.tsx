@@ -144,6 +144,13 @@ export function SignInForm({ next }: { next?: string }) {
               </Button>
 
               {passwordError ? <p className="text-sm text-red-600">{passwordError}</p> : null}
+
+              <Link
+                href="/forgot-password"
+                className="text-center text-sm text-zinc-500 underline underline-offset-4 hover:text-zinc-700"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
             </form>
           ) : null}
 
