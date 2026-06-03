@@ -1,6 +1,6 @@
 import { Section, Text } from "react-email";
 
-import { EmailLayout } from "@/emails/components/email-layout";
+import { EmailLayout } from "./components/email-layout";
 
 export type InviteEmailProps = {
   tournamentName: string;
@@ -32,6 +32,8 @@ InviteEmail.PreviewProps = {
   inviterName: "Edgar",
   joinUrl: "https://quiniela-beige-one.vercel.app/tournaments/join?token=abc123",
 } satisfies InviteEmailProps;
+
+export default InviteEmail;
 
 const helpText = {
   color: "#374151",
