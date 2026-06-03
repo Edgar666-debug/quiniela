@@ -12,13 +12,13 @@ export function VerificationEmail(props: VerificationEmailProps) {
 
   return (
     <EmailLayout
-      preview="Confirm your Quiniela account"
-      title="Confirm your email"
-      intro={`Hi ${name}, open the link below to confirm your Quiniela account.`}
-      actionLabel="Confirm email"
+      preview="Confirma tu cuenta de Quiniela"
+      title="Confirma tu email"
+      intro={`Hola ${name}, abre el siguiente enlace para confirmar tu cuenta de Quiniela.`}
+      actionLabel="Confirmar email"
       actionUrl={props.verificationUrl}
     >
-      <Text style={helpText}>If the button does not work, copy and paste this URL into your browser:</Text>
+      <Text style={helpText}>Si el botón no funciona, copia y pega este enlace en tu navegador:</Text>
       <Section style={urlBox}>
         <Text style={urlText}>{props.verificationUrl}</Text>
       </Section>

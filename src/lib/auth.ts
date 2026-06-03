@@ -16,8 +16,6 @@ export const auth = betterAuth({
   user: {
     changeEmail: {
       enabled: true,
-      // Keep the current behavior until a full change-email verification flow is added.
-      updateEmailWithoutVerification: true,
     },
   },
   emailVerification: {

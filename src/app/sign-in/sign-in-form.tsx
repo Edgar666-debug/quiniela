@@ -2,6 +2,7 @@
 
 import { useActionState, useReducer } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { KeyRound, Loader2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
@@ -64,9 +65,11 @@ function signInReducer(state: SignInState, action: SignInAction): SignInState {
   }
 }
 
-export function SignInForm() {
+export function SignInForm({ next }: { next?: string }) {
+  const router = useRouter();
   const [state, dispatch] = useReducer(signInReducer, initialState);
   const [passwordState, passwordAction, passwordPending] = useActionState<AuthActionState, FormData>(signInWithPassword, {});
+  const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
 
   const title =
     state.mode === "otp" ? "Iniciar sesión con código" : state.mode === "passkey" ? "Iniciar sesión con passkey" : "Iniciar sesión";
@@ -110,6 +113,7 @@ export function SignInForm() {
 
           {state.mode === "password" ? (
             <form action={passwordAction} className="flex flex-col gap-4">
+              {next ? <input type="hidden" name="next" value={next} /> : null}
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -219,7 +223,7 @@ export function SignInForm() {
                         ...(state.name ? { name: state.name } : {}),
                       });
                       if (error) return dispatch({ type: "SUBMIT_ERROR", error: error.message ?? "No se pudo iniciar sesión con OTP" });
-                      window.location.href = "/dashboard";
+                      router.push(destination);
                     }}
                   >
                     {state.loading ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -257,7 +261,7 @@ export function SignInForm() {
                     autoFill: true,
                     fetchOptions: {
                       onSuccess() {
-                        window.location.href = "/dashboard";
+                        router.push(destination);
                       },
                     },
                   });
@@ -279,7 +283,7 @@ export function SignInForm() {
 
           <p className="text-sm text-zinc-600">
             ¿No tienes cuenta?{" "}
-            <Link className="underline underline-offset-4" href="/sign-up">
+            <Link className="underline underline-offset-4" href={next ? `/sign-up?next=${encodeURIComponent(next)}` : "/sign-up"}>
               Crea una
             </Link>
             .

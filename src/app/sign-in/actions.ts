@@ -3,7 +3,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { APIError } from "better-auth/api";
-
 import { auth } from "@/lib/auth";
 
 export type AuthActionState = { error?: string };
@@ -14,6 +13,7 @@ export async function signInWithPassword(_prev: AuthActionState, formData: FormD
 
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const next = String(formData.get("next") ?? "").trim();
 
   if (!email || !password) {
     return { error: "Email y contraseña son obligatorios." };
@@ -31,5 +31,7 @@ export async function signInWithPassword(_prev: AuthActionState, formData: FormD
     return { error: "No se pudo iniciar sesión" };
   }
 
-  redirect("/dashboard");
+  // Only allow internal paths as redirect targets
+  const destination = next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  redirect(destination);
 }

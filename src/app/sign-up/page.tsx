@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description: "Regístrate para crear o unirte a torneos.",
 };
 
-export default function SignUpPage() {
-  return <SignUpForm />;
+export default async function SignUpPage(props: { searchParams: Promise<{ next?: string }> }) {
+  const { next } = await props.searchParams;
+  return <SignUpForm next={next} />;
 }

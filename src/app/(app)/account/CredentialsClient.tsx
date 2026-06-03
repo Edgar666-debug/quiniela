@@ -44,7 +44,7 @@ function credentialsReducer(state: CredentialsState, action: CredentialsAction):
       return {
         ...state,
         loading: false,
-        message: "Listo: revisa tu correo para confirmar el cambio (por ahora lo verás en consola del servidor).",
+        message: `Te enviamos un enlace de confirmación a ${action.value}. Revisa tu correo para completar el cambio.`,
         emailOverride: { source: action.source, value: action.value },
         newEmail: "",
       };
@@ -130,7 +130,7 @@ export function CredentialsClient(props: { currentEmail: string }) {
             value={state.currentPassword}
             onChange={(e) => dispatch({ type: "SET_CURRENT_PASSWORD", value: e.target.value })}
           />
-        </div>
+        </div> 
 
         <div className="grid gap-2">
           <Label htmlFor="newPassword">Nueva contraseña</Label>

@@ -119,6 +119,7 @@ model Invite {
   createdAt       DateTime   @default(now())
   tournamentId    String
   createdByUserId String?
+  recipientEmail  String?
   createdBy       User?      @relation("InviteCreatedBy", fields: [createdByUserId], references: [id])
   tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 

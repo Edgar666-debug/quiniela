@@ -9,9 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function JoinTournamentClient() {
+export function JoinTournamentClient(props: { initialToken?: string }) {
   const router = useRouter();
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(props.initialToken ?? "");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
