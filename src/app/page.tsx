@@ -1,9 +1,11 @@
-import type { Metadata } from "next"; 
+import type { Metadata } from "next";
+import { headers } from "next/headers";
 import {
   ArrowRight,
   BarChart3,
   Bell,
   CheckCircle2,
+  LayoutDashboard,
   Lock,
   Mail,
   Trophy,
@@ -16,6 +18,7 @@ import { ThemeToggle } from "@/components/app/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Quiniela — Torneos de fútbol simples y rápidos",
@@ -62,7 +65,10 @@ const steps = [
   { step: "04", title: "Compite y sigue el ranking", description: "Cada participante hace sus picks y el ranking se actualiza solo." },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const displayName = session?.user.name ?? session?.user.email?.split("@")[0] ?? null;
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Nav */}
@@ -73,15 +79,31 @@ export default function Home() {
             <span>Quiniela</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/sign-in">Iniciar sesión</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link href="/sign-up">
-                Crear cuenta <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-            < ThemeToggle collapsed align="right" />
+            {session ? (
+              <>
+                <span className="hidden text-sm text-zinc-600 dark:text-zinc-400 sm:inline">
+                  Hola, {displayName}
+                </span>
+                <Button asChild size="sm">
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="size-4" />
+                    Dashboard
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/sign-in">Iniciar sesión</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link href="/sign-up">
+                    Crear cuenta <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+              </>
+            )}
+            <ThemeToggle collapsed align="right" />
           </div>
         </div>
       </header>
@@ -100,16 +122,29 @@ export default function Home() {
           <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-zinc-600 dark:text-zinc-400">
             Crea torneos privados, cierra jornadas por horario y lleva el ranking en vivo. Sin complicaciones, solo fútbol.
           </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg">
-              <Link href="/sign-up">
-                Empieza gratis <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/sign-in">Ya tengo cuenta</Link>
-            </Button>
-          </div>
+          {session ? (
+            <div className="mt-8 flex flex-col items-center gap-4">
+              <p className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200">
+                Ya tienes sesión activa como <span className="font-medium">{displayName}</span>
+              </p>
+              <Button asChild size="lg">
+                <Link href="/dashboard">
+                  Ir al dashboard <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Button asChild size="lg">
+                <Link href="/sign-up">
+                  Empieza gratis <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/sign-in">Ya tengo cuenta</Link>
+              </Button>
+            </div>
+          )}
         </section>
 
         <Separator />
@@ -168,11 +203,19 @@ export default function Home() {
               Crea tu cuenta gratis, arma tu torneo y reta a tus amigos hoy mismo.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg">
-                <Link href="/sign-up">
-                  Crear cuenta gratis <ArrowRight className="size-4" />
-                </Link>
-              </Button>
+              {session ? (
+                <Button asChild size="lg">
+                  <Link href="/dashboard">
+                    Ir al dashboard <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button asChild size="lg">
+                  <Link href="/sign-up">
+                    Crear cuenta gratis <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+              )}
             </div>
             <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-zinc-500">
               {["Sin tarjeta de crédito", "Sin publicidad", "Cancela cuando quieras"].map((item) => (

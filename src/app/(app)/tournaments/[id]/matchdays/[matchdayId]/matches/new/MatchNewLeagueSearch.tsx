@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineAlert } from "@/components/app/inline-alert";
 import { cn } from "@/lib/utils";
+import { formatUtcToLocal } from "@/lib/format";
 import { statusLabel } from "@/lib/football";
 import {
   createDefaultSearchDates,
@@ -389,7 +390,7 @@ export function MatchNewLeagueSearch(props: { isClosed: boolean; onSelectFixture
             <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
               {state.fixtures.map((f) => {
                 const isSelected = state.selectedFixtureId === f.id;
-                const localDate = new Date(f.dateUtc).toLocaleString(undefined, {
+                const localDate = formatUtcToLocal(f.dateUtc, {
                   month: "short",
                   day: "numeric",
                   hour: "2-digit",

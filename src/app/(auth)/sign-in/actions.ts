@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth";
+import { resolveAuthRedirect } from "@/lib/auth-redirect";
 
 export type AuthActionState = { error?: string };
 
@@ -32,6 +33,5 @@ export async function signInWithPassword(_prev: AuthActionState, formData: FormD
   }
 
   // Only allow internal paths as redirect targets
-  const destination = next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
-  redirect(destination);
+  redirect(resolveAuthRedirect(next));
 }
