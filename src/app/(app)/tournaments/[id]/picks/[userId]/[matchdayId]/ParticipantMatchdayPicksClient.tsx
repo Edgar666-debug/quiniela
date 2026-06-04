@@ -7,7 +7,7 @@ import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
 import { DrawPickCard, TeamPickCard } from "@/components/matches/pick-cards";
-import { kickoffDateFormatter } from "@/lib/format";
+import { groupMatchesByLocalKickoff } from "@/lib/format";
 import { statusLabel, type Outcome } from "@/lib/football";
 
 type MatchRow = {
@@ -35,21 +35,7 @@ export function ParticipantMatchdayPicksClient(props: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const formatKickoff = kickoffDateFormatter;
-
-  const grouped = useMemo(() => {
-    const groups = new Map<string, MatchRow[]>();
-    for (const m of rows) {
-      const d = new Date(m.startsAtUtc);
-      const key = d.toISOString().slice(0, 16);
-      const arr = groups.get(key);
-      if (arr) arr.push(m);
-      else groups.set(key, [m]);
-    }
-    return Array.from(groups.entries())
-      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
-      .map(([k, ms]) => ({ key: k, date: new Date(k + ":00.000Z"), matches: ms }));
-  }, [rows]);
+  const grouped = useMemo(() => groupMatchesByLocalKickoff(rows), [rows]);
 
   async function refresh() {
     setLoading(true);
@@ -92,7 +78,7 @@ export function ParticipantMatchdayPicksClient(props: {
       <div className="flex flex-col gap-6"> 
         {grouped.map((g) => (
           <div key={g.key} className="flex flex-col gap-3">
-            <p className="text-center text-sm font-semibold text-zinc-700 dark:text-zinc-200">{formatKickoff.format(g.date)}</p>
+            <p className="text-center text-sm font-semibold text-zinc-700 dark:text-zinc-200">{g.label}</p>
             <div className="grid gap-4">
               {g.matches.map((m) => (
                 <div key={m.id} className="grid gap-3 rounded-2xl bg-zinc-50/70 p-4 dark:bg-zinc-950/30">

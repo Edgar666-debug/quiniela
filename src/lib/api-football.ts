@@ -1,6 +1,16 @@
 import { env } from "@/lib/env";
 
+type ApiFootballErrors = Record<string, string> | string[] | null | undefined;
+
+function extractApiError(errors: ApiFootballErrors): string | null {
+  if (!errors) return null;
+  if (Array.isArray(errors)) return errors.join(" ") || null;
+  const vals = Object.values(errors);
+  return vals.join(" ") || null;
+}
+
 type ApiFootballFixtureResponse = {
+  errors?: ApiFootballErrors;
   response: Array<{
     fixture: {
       id: number;
@@ -17,10 +27,27 @@ type ApiFootballFixtureResponse = {
 };
 
 type ApiFootballLeaguesResponse = {
+  errors?: ApiFootballErrors;
   response: Array<{
     league: { id: number; name: string; type: string; logo?: string };
     country: { name: string; code?: string | null; flag?: string | null };
     seasons?: Array<{ year: number; start?: string; end?: string; current?: boolean }>;
+  }>;
+};
+
+type ApiFootballTeamsResponse = {
+  errors?: ApiFootballErrors;
+  response: Array<{
+    team: { id: number; name: string; logo?: string };
+    venue?: { city?: string; country?: string };
+  }>;
+};
+
+type ApiFootballPlayersResponse = {
+  errors?: ApiFootballErrors;
+  response: Array<{
+    player: { id: number; name: string; photo?: string };
+    statistics?: Array<{ team: { name: string; logo?: string } }>;
   }>;
 };
 
@@ -192,6 +219,7 @@ export async function searchFixtures(params: {
   season?: number;
   date?: string; // YYYY-MM-DD
   team?: number;
+  player?: number;
   from?: string; // YYYY-MM-DD
   to?: string; // YYYY-MM-DD
   status?: string;
@@ -202,6 +230,7 @@ export async function searchFixtures(params: {
   if (params.season) url.searchParams.set("season", String(params.season));
   if (params.date) url.searchParams.set("date", params.date);
   if (params.team) url.searchParams.set("team", String(params.team));
+  if (params.player) url.searchParams.set("player", String(params.player));
   if (params.from) url.searchParams.set("from", params.from);
   if (params.to) url.searchParams.set("to", params.to);
   if (params.status) url.searchParams.set("status", params.status);
@@ -215,6 +244,9 @@ export async function searchFixtures(params: {
     }
 
     const json = (await res.json()) as ApiFootballFixtureResponse;
+    const apiErr = extractApiError(json.errors);
+    if (apiErr) throw new Error(apiErr);
+
     const arr: FixtureData[] = [];
     for (const row of json.response ?? []) {
       arr.push({
@@ -287,5 +319,87 @@ export async function searchLeagues(params: { search: string; season?: number; c
   });
 
   const limit = Math.min(Math.max(params.limit ?? 20, 1), 50);
+  return out.slice(0, limit);
+}
+
+export type TeamSearchItem = {
+  id: number;
+  name: string;
+  logoUrl?: string | null;
+  city?: string | null;
+  country?: string | null;
+};
+
+export async function searchTeams(params: { search: string; limit?: number }) {
+  const url = new URL("/teams", env.API_FOOTBALL_BASE_URL);
+  url.searchParams.set("search", params.search);
+
+  const out = await requestJsonCached(url, 60 * 60_000, async () => {
+    const res = await apiFootballRequest(url);
+    if (res.status === 204) return [] as TeamSearchItem[];
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`API-Football error ${res.status}: ${body}`);
+    }
+
+    const json = (await res.json()) as ApiFootballTeamsResponse;
+    const arr: TeamSearchItem[] = [];
+    for (const row of json.response ?? []) {
+      arr.push({
+        id: row.team.id,
+        name: row.team.name,
+        logoUrl: row.team.logo ?? null,
+        city: row.venue?.city ?? null,
+        country: row.venue?.country ?? null,
+      });
+    }
+    return arr;
+  });
+
+  const limit = Math.min(Math.max(params.limit ?? 15, 1), 50);
+  return out.slice(0, limit);
+}
+
+export type PlayerSearchItem = {
+  id: number;
+  name: string;
+  photoUrl?: string | null;
+  teamName?: string | null;
+  teamLogoUrl?: string | null;
+};
+
+export async function searchPlayers(params: { search: string; season?: number; limit?: number }) {
+  const url = new URL("/players", env.API_FOOTBALL_BASE_URL);
+  url.searchParams.set("search", params.search);
+  // Free plan only covers up to 2024; default to 2024 if no season given.
+  url.searchParams.set("season", String(params.season ?? 2024));
+
+  const out = await requestJsonCached(url, 60 * 60_000, async () => {
+    const res = await apiFootballRequest(url);
+    if (res.status === 204) return [] as PlayerSearchItem[];
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`API-Football error ${res.status}: ${body}`);
+    }
+
+    const json = (await res.json()) as ApiFootballPlayersResponse;
+    const apiErr = extractApiError(json.errors);
+    if (apiErr) throw new Error(apiErr);
+
+    const arr: PlayerSearchItem[] = [];
+    for (const row of json.response ?? []) {
+      const stat = row.statistics?.[0];
+      arr.push({
+        id: row.player.id,
+        name: row.player.name,
+        photoUrl: row.player.photo ?? null,
+        teamName: stat?.team.name ?? null,
+        teamLogoUrl: stat?.team.logo ?? null,
+      });
+    }
+    return arr;
+  });
+
+  const limit = Math.min(Math.max(params.limit ?? 15, 1), 50);
   return out.slice(0, limit);
 }

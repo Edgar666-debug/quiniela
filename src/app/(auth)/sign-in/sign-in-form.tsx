@@ -80,7 +80,7 @@ export function SignInForm({ next }: { next?: string }) {
     <main className="mx-auto flex min-h-[calc(100vh-1px)] max-w-md items-center px-6 py-16">
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>{title}</CardTitle>
+          <CardTitle className="text-center text-2xl font-bold">{title}</CardTitle>
           <CardDescription>Accede a tu cuenta para gestionar torneos, picks y ranking.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -144,6 +144,13 @@ export function SignInForm({ next }: { next?: string }) {
               </Button>
 
               {passwordError ? <p className="text-sm text-red-600">{passwordError}</p> : null}
+
+              <Link
+                href="/forgot-password"
+                className="text-center text-sm text-zinc-500 underline underline-offset-4 hover:text-zinc-700"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
             </form>
           ) : null}
 

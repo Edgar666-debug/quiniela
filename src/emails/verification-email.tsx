@@ -1,6 +1,6 @@
 import { Section, Text } from "react-email";
 
-import { EmailLayout } from "@/emails/components/email-layout";
+import { EmailLayout } from "./components/email-layout";
 
 export type VerificationEmailProps = {
   name?: string | null;
@@ -30,6 +30,8 @@ VerificationEmail.PreviewProps = {
   name: "Edgar",
   verificationUrl: "https://quiniela.example.com/verify/token-123",
 } satisfies VerificationEmailProps;
+
+export default VerificationEmail;
 
 const helpText = {
   color: "#374151",

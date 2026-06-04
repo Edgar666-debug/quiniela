@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronUp, LogOut, Mail, Settings } from "lucide-react";
-
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,7 @@ export function UserMenu(props: { user: { email: string; name: string | null }; 
 
   async function signOut() {
     setLoading(true);
-    await fetch("/api/auth/sign-out", { method: "POST" }).catch(() => {});
+    await authClient.signOut();
     setLoading(false);
     router.push("/");
     router.refresh();

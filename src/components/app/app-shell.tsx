@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -210,11 +210,16 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
     ? props.tournaments.find((t) => t.id === currentTournamentId) ?? null
     : null;
 
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("app.sidebar.collapsed") === "1";
-  });
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    if (globalThis.localStorage?.getItem("app.sidebar.collapsed") === "1") {
+      setTimeout(() => {
+        setCollapsed(true);
+      }, 100);
+    }
+  }, []);
 
   function toggleCollapsed() {
     setCollapsed((prev) => {

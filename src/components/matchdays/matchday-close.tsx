@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { Lock, Timer } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { formatUtcDateTime } from "@/lib/date";
+import { formatLocalDateTime, formatUtcDateTime } from "@/lib/date";
+import { getUserTimeZone } from "@/lib/format";
 
 function formatRemaining(ms: number) {
   if (ms <= 0) return "00:00:00";
@@ -37,7 +38,9 @@ export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; c
         {isClosed ? <Lock className="size-3.5 text-zinc-500" /> : <Timer className="size-3.5 text-emerald-500" />}
         <span className={cn(isClosed ? "text-zinc-500" : "text-emerald-400")}>{isClosed ? "Cerrada" : "Abierta"}</span>
         <span className="text-zinc-600 dark:text-zinc-400">•</span>
-        <span className="text-zinc-600 dark:text-zinc-400">{formatUtcDateTime(props.closesAtUtc)}</span>
+        <span className="text-zinc-600 dark:text-zinc-400" title={formatUtcDateTime(props.closesAtUtc)}>
+          {formatLocalDateTime(props.closesAtUtc)}
+        </span>
       </div>
     );
   }
@@ -58,7 +61,10 @@ export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; c
           {isClosed ? "Cerrada" : "Abierta"}
         </span>
       </div>
-      <p className="text-xs text-zinc-600 dark:text-zinc-400">Cierre: {formatUtcDateTime(props.closesAtUtc)}</p>
+      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+        Cierre: {formatLocalDateTime(props.closesAtUtc)} ({getUserTimeZone()})
+      </p>
+      <p className="text-xs text-zinc-500 dark:text-zinc-500">Referencia UTC: {formatUtcDateTime(props.closesAtUtc)}</p>
       {isClosed ? null : (
         <p className="text-xs text-zinc-600 dark:text-zinc-400">Tiempo restante: {formatRemaining(remainingMs)}</p>
       )}

@@ -1,6 +1,6 @@
 import { Section, Text } from "react-email";
 
-import { EmailLayout } from "@/emails/components/email-layout";
+import { EmailLayout } from "./components/email-layout";
 
 export type OtpEmailProps = {
   otp: string;
@@ -25,6 +25,8 @@ OtpEmail.PreviewProps = {
   otp: "482913",
   actionLabel: "sign in",
 } satisfies OtpEmailProps;
+
+export default OtpEmail;
 
 const otpBox = {
   backgroundColor: "#111827",

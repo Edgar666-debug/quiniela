@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
-const AUTH_PATHS = ["/sign-in", "/sign-up"];
+// Routes that are always accessible without a session
+const AUTH_PREFIX_PATHS = ["/sign-in", "/sign-up", "/forgot-password", "/reset-password"];
+const PUBLIC_EXACT_PATHS = ["/"];
 
 // Optimistic cookie check — NOT a security boundary.
 // Full session validation happens in each page/route handler.
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = getSessionCookie(request);
 
-  // Redirect authenticated users away from auth pages
-  if (sessionCookie && AUTH_PATHS.some((p) => pathname.startsWith(p))) {
+  const isAuthPath = AUTH_PREFIX_PATHS.some((p) => pathname.startsWith(p));
+  const isPublicPath = PUBLIC_EXACT_PATHS.includes(pathname);
+
+  // Redirect authenticated users away from auth pages (not from landing)
+  if (sessionCookie && isAuthPath) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   // Redirect unauthenticated users to sign-in, preserving the destination
-  if (!sessionCookie && !AUTH_PATHS.some((p) => pathname.startsWith(p))) {
+  if (!sessionCookie && !isAuthPath && !isPublicPath) {
     const next = pathname + request.nextUrl.search;
     return NextResponse.redirect(
       new URL(`/sign-in?next=${encodeURIComponent(next)}`, request.url),
@@ -30,5 +35,4 @@ export const config = {
     // Match all routes except static files and Better Auth API
     "/((?!_next/static|_next/image|favicon.ico|api/auth|api/cron).*)",
   ],
-  runtime: "nodejs",
 };

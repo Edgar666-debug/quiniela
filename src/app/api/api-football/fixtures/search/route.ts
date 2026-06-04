@@ -17,6 +17,7 @@ const querySchema = z.object({
   season: z.coerce.number().int().min(1900).max(2100).optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   team: z.coerce.number().int().positive().optional(),
+  player: z.coerce.number().int().positive().optional(),
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   status: z.string().min(1).max(8).optional(),
@@ -41,9 +42,16 @@ export async function GET(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid query" }, { status: 400 });
 
   const q = parsed.data;
-  const key = `fixtures:${q.league ?? ""}:${q.season ?? ""}:${q.date ?? ""}:${q.from ?? ""}:${q.to ?? ""}:${q.team ?? ""}:${q.status ?? ""}:${q.limit ?? ""}`;
-  // Short TTL to protect API quota. Users can always hit refresh/search again.
-  const fixtures = await cache.getOrSet(key, 30_000, () => searchFixtures(q));
+  const key = `fixtures:${q.league ?? ""}:${q.season ?? ""}:${q.date ?? ""}:${q.from ?? ""}:${q.to ?? ""}:${q.team ?? ""}:${q.player ?? ""}:${q.status ?? ""}:${q.limit ?? ""}`;
+
+  let fixtures: Awaited<ReturnType<typeof searchFixtures>>;
+  try {
+    // Short TTL to protect API quota. Users can always hit refresh/search again.
+    fixtures = await cache.getOrSet(key, 30_000, () => searchFixtures({ ...q, player: q.player }));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error al buscar fixtures.";
+    return NextResponse.json({ error: message }, { status: 422 });
+  }
 
   return NextResponse.json({
     fixtures: fixtures.map((f) => ({
