@@ -7,12 +7,32 @@ export type LeagueRow = {
   currentSeasons: number[];
 };
 
+export type TeamRow = {
+  id: number;
+  name: string;
+  logoUrl?: string | null;
+  city?: string | null;
+  country?: string | null;
+};
+
+export type PlayerRow = {
+  id: number;
+  name: string;
+  photoUrl?: string | null;
+  teamName?: string | null;
+  teamLogoUrl?: string | null;
+};
+
 export type FixtureRow = {
   id: number;
   dateUtc: string;
   homeTeam: string;
   awayTeam: string;
   statusShort: string;
+  homeLogoUrl?: string | null;
+  awayLogoUrl?: string | null;
+  leagueName?: string | null;
+  round?: string | null;
 };
 
 export function toLocalDateTimeInputValue(date: Date) {

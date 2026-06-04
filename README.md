@@ -1,4 +1,4 @@
-# Quiniela (Next.js + Better Auth + Supabase + API-Football)
+# Quiniela (Next.js + Better Auth + Supabase + API-Football) 
 
 MVP:
 - Torneos por invitación (máx 10 participantes).

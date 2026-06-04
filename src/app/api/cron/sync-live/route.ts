@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   if (token !== env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
+  console.info("[cron/sync-live] Starting sync", { runId });
   const now = new Date();
   const lookbackMs = 72 * 60 * 60_000; // 72h
   const from = new Date(now.getTime() - lookbackMs);
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     },
     take: 200,
   });
-
+  console.info("[cron/sync-live] Found matches", { runId, matches: matches.length });
   const checkedByTournamentId = new Map<string, number>();
   for (const match of matches) {
     checkedByTournamentId.set(match.matchday.tournamentId, (checkedByTournamentId.get(match.matchday.tournamentId) ?? 0) + 1);
