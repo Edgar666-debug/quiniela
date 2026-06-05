@@ -19,9 +19,11 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { AppBackButton } from "@/components/app/back-button";
 import { AppBreadcrumbs } from "@/components/app/app-breadcrumbs";
 import { ThemeToggle } from "@/components/app/theme-toggle";
 import { UserMenu } from "@/components/app/user-menu";
+import { buildAppCrumbs } from "@/lib/app-nav";
 
 type TournamentLink = { id: string; name: string; status: "ACTIVE" | "FINISHED" | "ARCHIVED"; role: "OWNER" | "ORGANIZER" | "PLAYER" };
 type AppUser = { email: string; name: string | null };
@@ -239,12 +241,13 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
         <div className="min-w-0">
           <header className="sticky top-0 z-40 hidden border-b border-zinc-200 bg-white/80 px-6 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80 md:block">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex min-w-0 items-center gap-3">
+              <div className="flex min-w-0 items-center gap-2">
                 <Button variant="ghost" size="icon" type="button" onClick={toggleCollapsed} aria-label="Alternar menú">
                   <PanelLeft className="size-4" />
                 </Button>
+                <AppBackButton tournamentId={currentTournamentId} tournamentName={currentTournament?.name ?? null} />
                 <div className="min-w-0">
-                  <AppBreadcrumbs items={buildCrumbs(pathname, currentTournament?.name ?? null, currentTournamentId)} />
+                  <AppBreadcrumbs items={buildAppCrumbs(pathname, currentTournament?.name ?? null, currentTournamentId)} />
                 </div>
               </div>
               <ThemeToggle collapsed align="right" />
@@ -253,9 +256,16 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
 
           <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 p-4 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80 md:hidden">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Trophy className="size-5" />
-                <span className="text-sm font-semibold">Quiniela</span>
+              <div className="flex min-w-0 items-center gap-2">
+                <AppBackButton
+                  compact
+                  tournamentId={currentTournamentId}
+                  tournamentName={currentTournament?.name ?? null}
+                />
+                <div className="flex min-w-0 items-center gap-2">
+                  <Trophy className="size-5 shrink-0" />
+                  <span className="truncate text-sm font-semibold">Quiniela</span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <ThemeToggle collapsed align="right" />
@@ -290,33 +300,4 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
       </div>
     </div>
   );
-}
-
-function buildCrumbs(pathname: string, tournamentName: string | null, tournamentId: string | null) {
-  if (pathname === "/dashboard") return [{ label: "Dashboard" }];
-  if (pathname === "/tournaments") return [{ label: "Dashboard", href: "/dashboard" }, { label: "Torneos" }];
-  if (pathname === "/tournaments/new")
-    return [{ label: "Dashboard", href: "/dashboard" }, { label: "Torneos", href: "/tournaments" }, { label: "Crear" }];
-  if (pathname === "/tournaments/join")
-    return [{ label: "Dashboard", href: "/dashboard" }, { label: "Torneos", href: "/tournaments" }, { label: "Unirme" }];
-  if (pathname === "/account") return [{ label: "Dashboard", href: "/dashboard" }, { label: "Mi cuenta" }];
-  if (pathname.startsWith("/account/"))
-    return [{ label: "Dashboard", href: "/dashboard" }, { label: "Mi cuenta", href: "/account" }, { label: "Seguridad" }];
-
-  if (pathname.startsWith("/tournaments/") && tournamentId) {
-    const base = [
-      { label: "Dashboard", href: "/dashboard" },
-      { label: "Torneos", href: "/tournaments" },
-      { label: tournamentName ?? "Torneo", href: `/tournaments/${tournamentId}` },
-    ];
-    if (pathname === `/tournaments/${tournamentId}`) return base.map((c, idx) => (idx === base.length - 1 ? { label: c.label } : c));
-    if (pathname.startsWith(`/tournaments/${tournamentId}/matchdays`)) return [...base, { label: "Jornadas" }];
-    if (pathname.startsWith(`/tournaments/${tournamentId}/standings`)) return [...base, { label: "Ranking" }];
-    if (pathname.startsWith(`/tournaments/${tournamentId}/members`)) return [...base, { label: "Participantes" }];
-    if (pathname.startsWith(`/tournaments/${tournamentId}/picks`)) return [...base, { label: "Picks" }];
-    if (pathname.startsWith(`/tournaments/${tournamentId}/invites`)) return [...base, { label: "Invitaciones" }];
-    return base;
-  }
-
-  return [{ label: "Dashboard", href: "/dashboard" }, { label: "App" }];
 }
