@@ -75,6 +75,7 @@ export async function sendPasswordResetEmail(props: { email: string; name?: stri
 export async function sendInviteEmail(props: {
   email: string;
   tournamentName: string;
+  tournamentLogoUrl?: string | null;
   inviterName?: string | null;
   token: string;
 }) {
@@ -82,6 +83,11 @@ export async function sendInviteEmail(props: {
   await sendEmail({
     to: props.email,
     subject: `Te invitaron a "${props.tournamentName}" en Quiniela`,
-    react: InviteEmail({ tournamentName: props.tournamentName, inviterName: props.inviterName, joinUrl }),
+    react: InviteEmail({
+      tournamentName: props.tournamentName,
+      tournamentLogoUrl: props.tournamentLogoUrl,
+      inviterName: props.inviterName,
+      joinUrl,
+    }),
   });
 }

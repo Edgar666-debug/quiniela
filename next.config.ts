@@ -1,12 +1,15 @@
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === "development";
+const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+  : null;
 
 const cspHeader = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data: https://media.api-sports.io",
+  `img-src 'self' blob: data: https://media.api-sports.io${supabaseHost ? ` https://${supabaseHost}` : ""}`,
   "font-src 'self'",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
   "object-src 'none'",
@@ -34,6 +37,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "media.api-sports.io",
       },
+      ...(supabaseHost
+        ? [
+            {
+              protocol: "https" as const,
+              hostname: supabaseHost,
+            },
+          ]
+        : []),
     ],
   },
   async headers() {

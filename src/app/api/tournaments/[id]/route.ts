@@ -4,6 +4,8 @@ import { z } from "zod";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getManagedTournamentLogoObjectPath, TOURNAMENT_LOGOS_BUCKET } from "@/lib/supabase/storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +13,7 @@ export const dynamic = "force-dynamic";
 const bodySchema = z.object({
   status: z.enum(["ACTIVE", "FINISHED", "ARCHIVED"]).optional(),
   name: z.string().min(1).max(80).optional(),
+  logoUrl: z.string().trim().url().max(500).nullable().optional(),
 });
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -20,7 +23,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   const { id: tournamentId } = await ctx.params;
   const body = bodySchema.safeParse(await req.json().catch(() => null));
   if (!body.success) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-  if (!body.data.status && !body.data.name) return NextResponse.json({ error: "No changes" }, { status: 400 });
+  if (body.data.status === undefined && body.data.name === undefined && body.data.logoUrl === undefined) {
+    return NextResponse.json({ error: "No changes" }, { status: 400 });
+  }
 
   const membership = await prisma.tournamentMember.findUnique({
     where: { tournamentId_userId: { tournamentId, userId: session.user.id } },
@@ -30,7 +35,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
   const current = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { status: true },
+    select: { status: true, logoUrl: true },
   });
   if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -51,9 +56,16 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     data: {
       status: body.data.status,
       name: body.data.name,
+      logoUrl: body.data.logoUrl,
     },
-    select: { id: true, name: true, status: true },
+    select: { id: true, name: true, status: true, logoUrl: true },
   });
+
+  const previousManagedPath = getManagedTournamentLogoObjectPath(current.logoUrl);
+  const nextManagedPath = getManagedTournamentLogoObjectPath(tournament.logoUrl);
+  if (previousManagedPath && previousManagedPath !== nextManagedPath) {
+    await supabaseAdmin.storage.from(TOURNAMENT_LOGOS_BUCKET).remove([previousManagedPath]).catch(() => {});
+  }
 
   return NextResponse.json({ tournament });
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays, KeyRound, PlusCircle, Ticket, Trophy, Users } from "lucide-react";
 
@@ -9,6 +10,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 type MyTournament = {
   tournamentId: string;
   name: string;
+  logoUrl?: string | null;
   role: "OWNER" | "ORGANIZER" | "PLAYER";
 };
 
@@ -42,12 +44,14 @@ export function DashboardClient(props: { initialTournaments: MyTournament[] }) {
         description={
           lastTournament ? `Ir a jornadas de “${lastTournament.name}”.` : "Selecciona un torneo para ver sus jornadas."
         }
+        badge={lastTournament ? <TournamentBadge name={lastTournament.name} logoUrl={lastTournament.logoUrl} /> : null}
       />
       <FeatureCard
         href={lastTournament ? `/tournaments/${lastTournament.tournamentId}/standings` : "/tournaments"}
         icon={<Users className="size-6 text-emerald-600" />}
         title="Ranking en vivo"
         description="Consulta el ranking y empates (múltiples ganadores)."
+        badge={lastTournament ? <TournamentBadge name={lastTournament.name} logoUrl={lastTournament.logoUrl} /> : null}
       />
       <FeatureCard
         href="/account/passkeys"
@@ -59,7 +63,7 @@ export function DashboardClient(props: { initialTournaments: MyTournament[] }) {
   );
 }
 
-function FeatureCard(props: { href: string; icon: React.ReactNode; title: string; description: string }) {
+function FeatureCard(props: { href: string; icon: React.ReactNode; title: string; description: string; badge?: React.ReactNode }) {
   return (
     <Link href={props.href} className="group">
       <Card
@@ -72,9 +76,25 @@ function FeatureCard(props: { href: string; icon: React.ReactNode; title: string
           <div className="min-w-0 space-y-1">
             <CardTitle className="truncate text-base">{props.title}</CardTitle>
             <CardDescription className="text-sm">{props.description}</CardDescription>
+            {props.badge}
           </div>
         </CardHeader>
       </Card>
     </Link>
+  );
+}
+
+function TournamentBadge(props: { name: string; logoUrl?: string | null }) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-300">
+      <span className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
+        {props.logoUrl ? (
+          <Image src={props.logoUrl} alt="" width={20} height={20} className="h-full w-full object-cover" unoptimized />
+        ) : (
+          <Trophy className="size-3 text-zinc-500" />
+        )}
+      </span>
+      <span className="max-w-44 truncate">{props.name}</span>
+    </div>
   );
 }

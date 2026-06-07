@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { Image as ImageIcon, Loader2, Save, User as UserIcon, X } from "lucide-react";
 
+import { supabase } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,8 +23,10 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
   const image = activeDraft?.image ?? props.initial.image ?? "";
 
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const imageUrl = image.trim() ? image.trim() : null;
 
@@ -49,6 +52,68 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
       name: data.user?.name ?? "",
       image: data.user?.image ?? "",
     });
+  }
+
+  async function uploadAvatar(file: File) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("Formato no soportado. Usa JPG, PNG o WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("El avatar no debe exceder 5 MB.");
+      return;
+    }
+
+    setMessage(null);
+    setError(null);
+    setUploadingAvatar(true);
+
+    const signedRes = await fetch("/api/me/avatar/upload-url", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ contentType: file.type, fileSize: file.size }),
+    });
+    const signedData = (await signedRes.json().catch(() => ({}))) as {
+      path?: string;
+      token?: string;
+      publicUrl?: string;
+      error?: string;
+    };
+
+    if (!signedRes.ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
+      setUploadingAvatar(false);
+      setError(signedData.error ?? "No se pudo preparar la carga del avatar.");
+      return;
+    }
+
+    const upload = await supabase.storage.from("avatars").uploadToSignedUrl(signedData.path, signedData.token, file);
+    if (upload.error) {
+      setUploadingAvatar(false);
+      setError(upload.error.message ?? "No se pudo subir el avatar.");
+      return;
+    }
+
+    const imageUrlWithVersion = `${signedData.publicUrl}?v=${Date.now()}`;
+    const res = await fetch("/api/me/profile", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ image: imageUrlWithVersion }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { user?: { name: string | null; image: string | null }; error?: string };
+    setUploadingAvatar(false);
+
+    if (!res.ok) {
+      setError(data.error ?? "No se pudo guardar el avatar.");
+      return;
+    }
+
+    setDraft({
+      sourceName: props.initial.name,
+      sourceImage: props.initial.image,
+      name,
+      image: data.user?.image ?? imageUrlWithVersion,
+    });
+    setMessage("Avatar actualizado.");
   }
 
   return (
@@ -106,14 +171,34 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="button" onClick={save} disabled={loading}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void uploadAvatar(file);
+            event.currentTarget.value = "";
+          }}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          disabled={loading || uploadingAvatar}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {uploadingAvatar ? <Loader2 className="size-4 animate-spin" /> : <ImageIcon className="size-4" />}
+          Subir avatar
+        </Button>
+        <Button type="button" onClick={save} disabled={loading || uploadingAvatar}>
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           Guardar
         </Button>
         <Button
           type="button"
           variant="outline"
-          disabled={loading || !image.trim()}
+          disabled={loading || uploadingAvatar || !image.trim()}
           onClick={() =>
             setDraft({
               sourceName: props.initial.name,
@@ -128,7 +213,7 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
         </Button>
         <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">
           <ImageIcon className="size-4" />
-          URL pública
+          Storage o URL pública
         </div>
       </div>
 

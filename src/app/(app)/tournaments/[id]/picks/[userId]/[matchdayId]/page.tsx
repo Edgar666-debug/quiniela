@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CalendarDays, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/lib/auth";
+import { TournamentPageHeader } from "@/components/app/tournament-page-header";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +29,7 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
 
   const participant = await prisma.tournamentMember.findUnique({
     where: { tournamentId_userId: { tournamentId, userId } },
-    select: { user: { select: { name: true, email: true } } },
+    select: { user: { select: { name: true, email: true } }, tournament: { select: { name: true, logoUrl: true } } },
   });
   if (!participant) redirect(`/tournaments/${tournamentId}/picks`);
 
@@ -76,25 +77,25 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <CalendarDays className="size-4" />
-            <span className="text-sm">Jornada {matchday.number}</span>
-          </div>
+      <TournamentPageHeader
+        name={participant.tournament.name}
+        logoUrl={participant.tournament.logoUrl}
+        eyebrow={`Jornada ${matchday.number}`}
+        description={`Picks de ${participant.user.name ?? participant.user.email}`}
+        meta={
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        }
+        actions={
           <Button asChild variant="outline" size="sm">
             <Link href={`/tournaments/${tournamentId}/picks`}>
               <Eye className="size-4" />
               Participantes
             </Link>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <Card>
         <CardHeader>

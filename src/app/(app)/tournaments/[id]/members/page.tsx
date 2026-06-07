@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Users } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { TournamentPageHeader } from "@/components/app/tournament-page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MembersClient } from "./MembersClient";
 
@@ -25,7 +25,7 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { name: true },
+    select: { name: true, logoUrl: true },
   });
   if (!tournament) redirect("/dashboard");
 
@@ -41,16 +41,12 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <Users className="size-4" />
-            <span className="text-sm">Participantes</span>
-          </div>
-          <h1 className="text-2xl font-semibold">{tournament.name}</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">{members.length} / 10 participantes</p>
-        </div>
-      </div>
+      <TournamentPageHeader
+        name={tournament.name}
+        logoUrl={tournament.logoUrl}
+        eyebrow="Participantes"
+        description={`${members.length} / 10 participantes`}
+      />
 
       <Card>
         <CardHeader>

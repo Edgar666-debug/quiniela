@@ -8,10 +8,19 @@ import { sendOtpEmail, sendPasswordResetEmail, sendVerificationLinkEmail } from 
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
+function getTrustedOrigins() {
+  const extras = (env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")
+    .split(/[,\n]/)
+    .map((value: string) => value.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set([env.BETTER_AUTH_URL, ...extras]));
+}
+
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
-  trustedOrigins: [env.BETTER_AUTH_URL],
+  trustedOrigins: getTrustedOrigins(),
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   rateLimit: {
     enabled: true,

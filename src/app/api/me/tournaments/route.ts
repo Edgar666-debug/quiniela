@@ -13,7 +13,7 @@ export async function GET() {
 
   const memberships = await prisma.tournamentMember.findMany({
     where: { userId: session.user.id },
-    select: { role: true, tournament: { select: { id: true, name: true, status: true } } },
+    select: { role: true, tournament: { select: { id: true, name: true, status: true, logoUrl: true } } },
     orderBy: { joinedAt: "desc" },
   });
 
@@ -21,6 +21,7 @@ export async function GET() {
     tournaments: memberships.map((m) => ({
       tournamentId: m.tournament.id,
       name: m.tournament.name,
+      logoUrl: m.tournament.logoUrl,
       role: m.role,
       status: m.tournament.status,
     })),

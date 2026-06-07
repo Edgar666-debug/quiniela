@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -25,7 +26,7 @@ import { ThemeToggle } from "@/components/app/theme-toggle";
 import { UserMenu } from "@/components/app/user-menu";
 import { buildAppCrumbs } from "@/lib/app-nav";
 
-type TournamentLink = { id: string; name: string; status: "ACTIVE" | "FINISHED" | "ARCHIVED"; role: "OWNER" | "ORGANIZER" | "PLAYER" };
+type TournamentLink = { id: string; name: string; logoUrl?: string | null; status: "ACTIVE" | "FINISHED" | "ARCHIVED"; role: "OWNER" | "ORGANIZER" | "PLAYER" };
 type AppUser = { email: string; name: string | null };
 
 function SectionLabel(props: { children: React.ReactNode; collapsed: boolean }) {
@@ -129,13 +130,26 @@ function Sidebar(props: {
         <div className={cn("flex flex-col gap-1", props.collapsed ? "items-center" : "")}>
           <SectionLabel collapsed={props.collapsed}>Torneo</SectionLabel>
           {props.collapsed ? (
-            <div className="size-10 rounded-xl border border-zinc-200 p-2 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200">
-              <Trophy className="size-5" />
+            <div className="flex size-10 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 p-2 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-200">
+              {currentTournament.logoUrl ? (
+                <Image src={currentTournament.logoUrl} alt="" width={40} height={40} className="h-full w-full object-cover" unoptimized />
+              ) : (
+                <Trophy className="size-5" />
+              )}
             </div>
           ) : (
-            <div className="px-2">
-              <p className="truncate text-sm font-semibold">{currentTournament.name}</p>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">Rol: {currentTournament.role}</p>
+            <div className="flex items-center gap-3 px-2">
+              <div className="flex size-11 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+                {currentTournament.logoUrl ? (
+                  <Image src={currentTournament.logoUrl} alt="" width={44} height={44} className="h-full w-full object-cover" unoptimized />
+                ) : (
+                  <Trophy className="size-5 text-zinc-500" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{currentTournament.name}</p>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">Rol: {currentTournament.role}</p>
+              </div>
             </div>
           )}
 
@@ -263,8 +277,23 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
                   tournamentName={currentTournament?.name ?? null}
                 />
                 <div className="flex min-w-0 items-center gap-2">
-                  <Trophy className="size-5 shrink-0" />
-                  <span className="truncate text-sm font-semibold">Quiniela</span>
+                  {currentTournament ? (
+                    <>
+                      <div className="flex size-8 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+                        {currentTournament.logoUrl ? (
+                          <Image src={currentTournament.logoUrl} alt="" width={32} height={32} className="h-full w-full object-cover" unoptimized />
+                        ) : (
+                          <Trophy className="size-4 shrink-0" />
+                        )}
+                      </div>
+                      <span className="truncate text-sm font-semibold">{currentTournament.name}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trophy className="size-5 shrink-0" />
+                      <span className="truncate text-sm font-semibold">Quiniela</span>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">

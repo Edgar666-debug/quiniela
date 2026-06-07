@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Eye, Users } from "lucide-react";
+import { Eye } from "lucide-react";
 
 import { auth } from "@/lib/auth";
+import { TournamentPageHeader } from "@/components/app/tournament-page-header";
 import { formatUtcShort } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +29,7 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { id: true, name: true },
+    select: { id: true, name: true, logoUrl: true },
   });
   if (!tournament) redirect("/dashboard");
 
@@ -64,19 +65,13 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <Users className="size-4" />
-            <span className="text-sm">Torneo</span>
-          </div>
-          <h1 className="text-2xl font-semibold">Picks por participante</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Selecciona un participante y luego una jornada cerrada para ver sus picks.
-          </p>
-        </div>
-        {membership.role === "OWNER" ? <SyncLiveButton tournamentId={tournamentId} /> : null}
-      </div>
+      <TournamentPageHeader
+        name={tournament.name}
+        logoUrl={tournament.logoUrl}
+        eyebrow="Picks"
+        description="Selecciona un participante y luego una jornada cerrada para ver sus picks."
+        actions={membership.role === "OWNER" ? <SyncLiveButton tournamentId={tournamentId} /> : null}
+      />
 
       <Card>
         <CardHeader>

@@ -16,7 +16,7 @@ export default async function DashboardPage() {
 
   const memberships = await prisma.tournamentMember.findMany({
     where: { userId: session.user.id },
-    select: { role: true, tournament: { select: { id: true, name: true } } },
+    select: { role: true, tournament: { select: { id: true, name: true, logoUrl: true } } },
     orderBy: { joinedAt: "desc" },
   });
 
@@ -30,6 +30,7 @@ export default async function DashboardPage() {
         initialTournaments={memberships.map((m) => ({
           tournamentId: m.tournament.id,
           name: m.tournament.name,
+          logoUrl: m.tournament.logoUrl,
           role: m.role,
         }))}
       />

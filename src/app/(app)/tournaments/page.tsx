@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Trophy } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -19,7 +20,7 @@ export default async function TournamentsIndexPage() {
 
   const memberships = await prisma.tournamentMember.findMany({
     where: { userId: session.user.id },
-    select: { role: true, tournament: { select: { id: true, name: true, status: true } } },
+    select: { role: true, tournament: { select: { id: true, name: true, status: true, logoUrl: true } } },
     orderBy: { joinedAt: "desc" },
   });
 
@@ -52,18 +53,28 @@ export default async function TournamentsIndexPage() {
               <CardTitle>Sin torneos</CardTitle>
               <CardDescription>Crea o únete usando las opciones de arriba o desde el dashboard.</CardDescription>
             </CardHeader>
-            <CardContent>
-            </CardContent>
+            <CardContent />
           </Card>
         ) : (
           memberships.map((m) => (
             <Card key={m.tournament.id}>
               <CardHeader>
-                <CardTitle className="truncate">{m.tournament.name}</CardTitle>
-                <CardDescription>
-                  Rol: {m.role}
-                  {m.tournament.status !== "ACTIVE" ? ` • ${m.tournament.status}` : ""}
-                </CardDescription>
+                <div className="flex items-start gap-3">
+                  <div className="flex size-12 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+                    {m.tournament.logoUrl ? (
+                      <Image src={m.tournament.logoUrl} alt="" width={48} height={48} className="h-full w-full object-cover" unoptimized />
+                    ) : (
+                      <Trophy className="size-5 text-zinc-500" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <CardTitle className="truncate">{m.tournament.name}</CardTitle>
+                    <CardDescription>
+                      Rol: {m.role}
+                      {m.tournament.status !== "ACTIVE" ? ` • ${m.tournament.status}` : ""}
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="flex gap-2">
                 <Button asChild>

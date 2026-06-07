@@ -8,7 +8,10 @@ import { prisma } from "@/lib/prisma";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const bodySchema = z.object({ name: z.string().min(1).max(80) });
+const bodySchema = z.object({
+  name: z.string().min(1).max(80),
+  logoUrl: z.string().trim().url().max(500).nullable().optional(),
+});
 
 export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -20,6 +23,7 @@ export async function POST(req: Request) {
   const tournament = await prisma.tournament.create({
     data: {
       name: body.data.name,
+      logoUrl: body.data.logoUrl ?? null,
       ownerId: session.user.id,
       members: {
         create: { userId: session.user.id, role: "OWNER" },
@@ -28,9 +32,8 @@ export async function POST(req: Request) {
         create: { userId: session.user.id, points: 0 },
       },
     },
-    select: { id: true, name: true },
+    select: { id: true, name: true, logoUrl: true },
   });
 
   return NextResponse.json({ tournament });
 }
-

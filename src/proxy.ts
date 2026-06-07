@@ -32,7 +32,8 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all routes except static files and Better Auth API
-    "/((?!_next/static|_next/image|favicon.ico|api/auth|api/cron).*)",
+    // Match UI routes only. Route handlers validate auth/authorization themselves
+    // and should return JSON 401/403 instead of HTML redirects.
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };

@@ -33,7 +33,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { status: true, name: true },
+    select: { status: true, name: true, logoUrl: true },
   });
   if (!tournament) return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
   if (tournament.status !== "ACTIVE") {
@@ -64,6 +64,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     await sendInviteEmail({
       email: body.data.email,
       tournamentName: tournament.name,
+      tournamentLogoUrl: tournament.logoUrl,
       inviterName: session.user.name,
       token,
     });

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CalendarDays, Eye, Trophy, Users } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -29,20 +30,29 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { name: true, status: true },
+    select: { name: true, status: true, logoUrl: true },
   });
   if (!tournament) redirect("/dashboard");
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
       <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <Trophy className="size-4" />
-            <span className="text-sm">Torneo</span>
+        <div className="flex items-start gap-4">
+          <div className="flex size-14 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+            {tournament.logoUrl ? (
+              <Image src={tournament.logoUrl} alt="" width={56} height={56} className="h-full w-full object-cover" unoptimized />
+            ) : (
+              <Trophy className="size-6 text-zinc-500" />
+            )}
           </div>
-          <h1 className="text-2xl font-semibold">{tournament.name}</h1>
-          {tournament.status !== "ACTIVE" ? <InlineAlert variant="info" message={`Estado: ${tournament.status}`} className="mt-2" /> : null}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
+              <Trophy className="size-4" />
+              <span className="text-sm">Torneo</span>
+            </div>
+            <h1 className="text-2xl font-semibold">{tournament.name}</h1>
+            {tournament.status !== "ACTIVE" ? <InlineAlert variant="info" message={`Estado: ${tournament.status}`} className="mt-2" /> : null}
+          </div>
         </div>
       </div>
 
@@ -111,10 +121,15 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
           <Card>
             <CardHeader>
               <CardTitle>Administración</CardTitle>
-              <CardDescription>Archiva el torneo para evitar cambios.</CardDescription>
+              <CardDescription>Actualiza identidad del torneo y controla su estado.</CardDescription>
             </CardHeader>
             <CardContent>
-              <TournamentAdminClient tournamentId={tournamentId} status={tournament.status} />
+              <TournamentAdminClient
+                tournamentId={tournamentId}
+                status={tournament.status}
+                currentName={tournament.name}
+                currentLogoUrl={tournament.logoUrl}
+              />
             </CardContent>
           </Card>
         ) : null}

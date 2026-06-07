@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CalendarDays } from "lucide-react";
 import { auth } from "@/lib/auth";
+import { TournamentPageHeader } from "@/components/app/tournament-page-header";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MatchdayClient } from "./MatchdayClient";
@@ -23,6 +23,12 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
     select: { role: true },
   });
   if (!membership) redirect("/dashboard");
+
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { name: true, logoUrl: true },
+  });
+  if (!tournament) redirect("/dashboard");
 
   const matchday = await prisma.matchday.findUnique({
     where: { id: matchdayId },
@@ -68,23 +74,24 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-            <CalendarDays className="size-4" />
-            <span className="text-sm">Jornada {matchday.number}</span>
-          </div>
+      <TournamentPageHeader
+        name={tournament.name}
+        logoUrl={tournament.logoUrl}
+        eyebrow={`Jornada ${matchday.number}`}
+        meta={
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
           </p>
-        </div>
-        <MatchdayPageActions
-          tournamentId={tournamentId}
-          matchdayId={matchdayId}
-          role={membership.role}
-          closesAtUtc={matchday.closesAtUtc.toISOString()}
-        />
-      </div>
+        }
+        actions={
+          <MatchdayPageActions
+            tournamentId={tournamentId}
+            matchdayId={matchdayId}
+            role={membership.role}
+            closesAtUtc={matchday.closesAtUtc.toISOString()}
+          />
+        }
+      />
 
       <Card>
         <CardHeader>
