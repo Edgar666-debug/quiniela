@@ -2,19 +2,28 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { fetchFixtureById } from "@/lib/api-football";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { fetchFixtureById } from "@/lib/api-football";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const bodySchema = z.object({
+const matchInputSchema = z.object({
   externalFixtureId: z.number().int().positive().optional(),
   startsAtUtc: z.iso.datetime(),
   homeTeam: z.string().min(1).max(80),
   awayTeam: z.string().min(1).max(80),
 });
+
+const bodySchema = z.union([
+  matchInputSchema,
+  z.object({
+    matches: z.array(matchInputSchema).min(1).max(30),
+  }),
+]);
+
+type NormalizedMatchInput = z.infer<typeof matchInputSchema>;
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -23,6 +32,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const { id: matchdayId } = await ctx.params;
   const body = bodySchema.safeParse(await req.json().catch(() => null));
   if (!body.success) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+
+  const inputs: NormalizedMatchInput[] = "matches" in body.data ? body.data.matches : [body.data];
 
   const matchday = await prisma.matchday.findUnique({
     where: { id: matchdayId },
@@ -46,55 +57,90 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let createData = {
-    matchdayId,
-    externalFixtureId: body.data.externalFixtureId ?? null,
-    startsAtUtc: new Date(body.data.startsAtUtc),
-    homeTeam: body.data.homeTeam,
-    awayTeam: body.data.awayTeam,
-    homeLogoUrl: null as string | null,
-    awayLogoUrl: null as string | null,
-  };
+  const externalFixtureIds = inputs
+    .map((item) => item.externalFixtureId)
+    .filter((value): value is number => value !== undefined);
 
-  if (body.data.externalFixtureId) {
-    const fixture = await fetchFixtureById(body.data.externalFixtureId);
-    if (fixture) {
-      createData = {
-        ...createData,
-        startsAtUtc: fixture.dateUtc,
-        homeTeam: fixture.homeTeam,
-        awayTeam: fixture.awayTeam,
-        homeLogoUrl: fixture.homeLogoUrl ?? null,
-        awayLogoUrl: fixture.awayLogoUrl ?? null,
-      };
+  if (new Set(externalFixtureIds).size !== externalFixtureIds.length) {
+    return NextResponse.json({ error: "No puedes enviar el mismo fixture más de una vez en la misma solicitud." }, { status: 400 });
+  }
+
+  if (externalFixtureIds.length > 0) {
+    const existingMatches = await prisma.match.findMany({
+      where: { externalFixtureId: { in: externalFixtureIds } },
+      select: { externalFixtureId: true },
+    });
+    if (existingMatches.length > 0) {
+      const duplicateIds = existingMatches.map((item) => item.externalFixtureId).filter((value): value is number => value !== null);
+      return NextResponse.json(
+        { error: `Algunos fixtures ya existen en la base de datos: ${duplicateIds.join(", ")}.` },
+        { status: 409 },
+      );
     }
   }
 
-  // Regla: el cierre debe ser antes de que inicie el primer partido.
-  // Por lo tanto, no permitimos crear partidos que inicien antes del cierre.
-  if (createData.startsAtUtc.getTime() < matchday.closesAtUtc.getTime()) {
-    return NextResponse.json(
-      {
-        error:
-          "El partido inicia antes del cierre de la jornada (UTC). Ajusta el cierre para que sea antes del primer partido o elige otro fixture.",
-      },
-      { status: 409 },
-    );
-  }
+  const preparedMatches = await Promise.all(
+    inputs.map(async (input) => {
+      let createData = {
+        matchdayId,
+        externalFixtureId: input.externalFixtureId ?? null,
+        startsAtUtc: new Date(input.startsAtUtc),
+        homeTeam: input.homeTeam,
+        awayTeam: input.awayTeam,
+        homeLogoUrl: null as string | null,
+        awayLogoUrl: null as string | null,
+      };
 
-  const match = await prisma.match.create({
-    data: {
-      matchdayId: createData.matchdayId,
-      externalFixtureId: createData.externalFixtureId,
-      startsAtUtc: createData.startsAtUtc,
-      homeTeam: createData.homeTeam,
-      awayTeam: createData.awayTeam,
-      homeLogoUrl: createData.homeLogoUrl,
-      awayLogoUrl: createData.awayLogoUrl,
-      createdByUserId: session.user.id,
-    },
-    select: { id: true },
+      if (input.externalFixtureId) {
+        const fixture = await fetchFixtureById(input.externalFixtureId);
+        if (fixture) {
+          createData = {
+            ...createData,
+            startsAtUtc: fixture.dateUtc,
+            homeTeam: fixture.homeTeam,
+            awayTeam: fixture.awayTeam,
+            homeLogoUrl: fixture.homeLogoUrl ?? null,
+            awayLogoUrl: fixture.awayLogoUrl ?? null,
+          };
+        }
+      }
+
+      if (createData.startsAtUtc.getTime() < matchday.closesAtUtc.getTime()) {
+        throw new Error(
+          `El fixture ${createData.externalFixtureId ?? `${createData.homeTeam} vs ${createData.awayTeam}`} inicia antes del cierre de la jornada (UTC).`,
+        );
+      }
+
+      return createData;
+    }),
+  ).catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : "No se pudieron preparar los partidos.";
+    return NextResponse.json({ error: message }, { status: 409 });
   });
 
-  return NextResponse.json({ match });
+  if (preparedMatches instanceof NextResponse) return preparedMatches;
+
+  const matches = await prisma.$transaction(
+    preparedMatches.map((item) =>
+      prisma.match.create({
+        data: {
+          matchdayId: item.matchdayId,
+          externalFixtureId: item.externalFixtureId,
+          startsAtUtc: item.startsAtUtc,
+          homeTeam: item.homeTeam,
+          awayTeam: item.awayTeam,
+          homeLogoUrl: item.homeLogoUrl,
+          awayLogoUrl: item.awayLogoUrl,
+          createdByUserId: session.user.id,
+        },
+        select: { id: true },
+      }),
+    ),
+  );
+
+  if ("matches" in body.data) {
+    return NextResponse.json({ matches, count: matches.length });
+  }
+
+  return NextResponse.json({ match: matches[0] });
 }

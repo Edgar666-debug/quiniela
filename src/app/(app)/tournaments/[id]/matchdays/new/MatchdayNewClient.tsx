@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "lucide-react";
 
+import { InlineAlert } from "@/components/app/inline-alert";
+import { MatchdayFormFields } from "@/components/matchdays/matchday-form-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { InlineAlert } from "@/components/app/inline-alert";
+import { datetimeLocalToIso } from "@/lib/matchday-form";
 
 export function MatchdayNewClient(props: { tournamentId: string }) {
   const router = useRouter();
@@ -16,13 +16,6 @@ export function MatchdayNewClient(props: { tournamentId: string }) {
   const [closesAtLocal, setClosesAtLocal] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const closesAtUtcPreview = (() => {
-    if (!closesAtLocal) return null;
-    const d = new Date(closesAtLocal);
-    if (Number.isNaN(d.getTime())) return null;
-    return d.toISOString().replace("T", " ").slice(0, 16);
-  })();
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
@@ -39,17 +32,12 @@ export function MatchdayNewClient(props: { tournamentId: string }) {
           <CardDescription>El cierre es el “cutoff” para picks. Se usa para bloquear edición y picks.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="grid gap-2">
-              <Label htmlFor="number">Número</Label>
-              <Input id="number" inputMode="numeric" placeholder="1" value={number} onChange={(e) => setNumber(e.target.value)} />
-            </div>
-            <div className="grid gap-2 md:col-span-2">
-              <Label htmlFor="closesAt">Cierre (hora local)</Label>
-              <Input id="closesAt" type="datetime-local" value={closesAtLocal} onChange={(e) => setClosesAtLocal(e.target.value)} />
-              {closesAtUtcPreview ? <p className="text-xs text-zinc-600 dark:text-zinc-400">Se guardará como UTC: {closesAtUtcPreview}</p> : null}
-            </div>
-          </div>
+          <MatchdayFormFields
+            number={number}
+            closesAtLocal={closesAtLocal}
+            onNumberChange={setNumber}
+            onClosesAtChange={setClosesAtLocal}
+          />
 
           {error ? <InlineAlert variant="error" message={error} /> : null}
 
@@ -60,7 +48,7 @@ export function MatchdayNewClient(props: { tournamentId: string }) {
               onClick={async () => {
                 setError(null);
                 setLoading(true);
-                const closesAtUtc = new Date(closesAtLocal).toISOString();
+                const closesAtUtc = datetimeLocalToIso(closesAtLocal);
                 const res = await fetch(`/api/tournaments/${props.tournamentId}/matchdays`, {
                   method: "POST",
                   headers: { "content-type": "application/json" },

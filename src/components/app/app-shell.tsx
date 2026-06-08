@@ -10,6 +10,7 @@ import {
   ListChecks,
   Menu,
   PanelLeft,
+  Settings,
   Ticket,
   Trophy,
   User,
@@ -81,6 +82,9 @@ function Sidebar(props: {
 
   const canManageInvites =
     (currentTournament?.role === "OWNER" || currentTournament?.role === "ORGANIZER") && currentTournament?.status === "ACTIVE";
+  const canManageTournamentNav =
+    currentTournament?.role === "OWNER" || currentTournament?.role === "ORGANIZER";
+  const canEditTournamentNav = currentTournament?.role === "OWNER";
 
   return (
     <nav className={cn("flex h-full flex-col gap-3", props.collapsed ? "items-center" : "")}>
@@ -161,6 +165,26 @@ function Sidebar(props: {
             collapsed={props.collapsed}
             onNavigate={props.onNavigate}
           />
+          {canManageTournamentNav ? (
+            <NavItem
+              href={`/tournaments/${currentTournament.id}/manage`}
+              icon={<LayoutDashboard className="size-4" />}
+              label="Gestión"
+              active={pathname.startsWith(`/tournaments/${currentTournament.id}/manage`)}
+              collapsed={props.collapsed}
+              onNavigate={props.onNavigate}
+            />
+          ) : null}
+          {canEditTournamentNav ? (
+            <NavItem
+              href={`/tournaments/${currentTournament.id}/admin`}
+              icon={<Settings className="size-4" />}
+              label="Editar torneo"
+              active={pathname.startsWith(`/tournaments/${currentTournament.id}/admin`)}
+              collapsed={props.collapsed}
+              onNavigate={props.onNavigate}
+            />
+          ) : null}
           <NavItem
             href={`/tournaments/${currentTournament.id}/matchdays`}
             icon={<CalendarDays className="size-4" />}

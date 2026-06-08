@@ -1,0 +1,17 @@
+export function isoToDatetimeLocalValue(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function datetimeLocalToIso(local: string) {
+  return new Date(local).toISOString();
+}
+
+export function previewUtcFromDatetimeLocal(local: string) {
+  if (!local) return null;
+  const d = new Date(local);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().replace("T", " ").slice(0, 16);
+}

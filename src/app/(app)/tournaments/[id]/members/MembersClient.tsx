@@ -5,6 +5,7 @@ import { Loader2, LogOut, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { InlineAlert } from "@/components/app/inline-alert";
+import { Badge } from "@/components/ui/badge";
 
 type MemberRow = {
   role: "OWNER" | "ORGANIZER" | "PLAYER";
@@ -60,7 +61,7 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
             <p className="truncate text-xs text-zinc-600 dark:text-zinc-400">{m.user.email}</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full border border-zinc-200 px-2 py-1 text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">{m.role}</span>
+            <Badge variant="outline">{m.role}</Badge>
             {canRemove(m) ? (
               <Button
                 size="sm"

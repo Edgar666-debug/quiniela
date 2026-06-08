@@ -6,6 +6,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { useStandingsRealtime } from "@/hooks/useStandingsRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type StandingRow = {
   points: number;
@@ -51,32 +52,32 @@ export function StandingsLive(props: { tournamentId: string; initial: StandingRo
       </CardHeader>
       <CardContent>
         <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-zinc-50 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium">Participante</th>
-                <th className="px-4 py-3 text-right font-medium">Puntos</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader className="border-b bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+              <TableRow className="hover:bg-transparent dark:hover:bg-transparent">
+                <TableHead className="px-4 py-3">Participante</TableHead>
+                <TableHead className="px-4 py-3 text-right">Puntos</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.map((r, i) => {
                 const medal = medalForIndex(i);
                 const width = maxPoints > 0 ? Math.round((r.points / maxPoints) * 100) : 0;
                 return (
-                  <tr key={r.user.id} className="border-b last:border-b-0 dark:border-zinc-800">
-                    <td className="relative px-4 py-3">
+                  <TableRow key={r.user.id}>
+                    <TableCell className="relative px-4 py-3">
                       <div className="absolute inset-y-0 left-0 -z-10 bg-zinc-50 dark:bg-zinc-900/30" style={{ width: `${width}%` }} />
                       <div className="flex items-center gap-2">
                         <span className="w-6 text-center text-sm">{medal ?? i + 1}</span>
                         <span className="truncate font-medium">{r.user.name ?? r.user.email}</span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold tabular-nums">{r.points}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-right font-semibold tabular-nums">{r.points}</TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>

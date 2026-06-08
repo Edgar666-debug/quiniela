@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CalendarDays, Eye, Trophy, Users } from "lucide-react";
+import { CalendarDays, Eye, LayoutDashboard, Settings, Trophy, Users } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 import { auth } from "@/lib/auth";
+import { canEditTournament, canManageTournament } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InlineAlert } from "@/components/app/inline-alert";
-import { TournamentAdminClient } from "./tournament-admin-client";
 
 export const metadata: Metadata = {
   title: "Resumen del torneo",
@@ -117,19 +117,36 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
           </CardContent>
         </Card>
 
-        {membership.role === "OWNER" ? (
+        {canManageTournament(membership.role) ? (
           <Card>
             <CardHeader>
-              <CardTitle>Administración</CardTitle>
-              <CardDescription>Actualiza identidad del torneo y controla su estado.</CardDescription>
+              <CardTitle>Gestión</CardTitle>
+              <CardDescription>Panel para jornadas, participantes e invitaciones.</CardDescription>
             </CardHeader>
             <CardContent>
-              <TournamentAdminClient
-                tournamentId={tournamentId}
-                status={tournament.status}
-                currentName={tournament.name}
-                currentLogoUrl={tournament.logoUrl}
-              />
+              <Button asChild>
+                <Link href={`/tournaments/${tournamentId}/manage`}>
+                  <LayoutDashboard className="size-4" />
+                  Abrir panel de gestión
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {canEditTournament(membership.role) ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Editar torneo</CardTitle>
+              <CardDescription>Nombre, logo y estado del torneo.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline">
+                <Link href={`/tournaments/${tournamentId}/admin`}>
+                  <Settings className="size-4" />
+                  Configuración del torneo
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         ) : null}

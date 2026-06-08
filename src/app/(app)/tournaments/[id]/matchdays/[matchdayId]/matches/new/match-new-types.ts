@@ -42,6 +42,10 @@ export function toLocalDateTimeInputValue(date: Date) {
 
 const DAY_MS = 24 * 60 * 60_000;
 
+export function createSeasonOptions(currentYear = new Date().getUTCFullYear(), span = 8) {
+  return Array.from({ length: span + 1 }, (_, index) => String(currentYear - index));
+}
+
 export function createDefaultSearchDates() {
   const now = Date.now();
   return {

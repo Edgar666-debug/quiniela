@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, Users } from "lucide-react";
+import { Pencil, Plus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ export function MatchdayPageActions(props: {
   tournamentId: string;
   matchdayId: string;
   role: "OWNER" | "ORGANIZER" | "PLAYER";
+  tournamentStatus: "ACTIVE" | "FINISHED" | "ARCHIVED";
   closesAtUtc: string;
 }) {
   const closesAtMs = new Date(props.closesAtUtc).getTime();
@@ -24,6 +25,14 @@ export function MatchdayPageActions(props: {
 
   return (
     <div className="flex flex-wrap gap-2">
+      {canManage && props.tournamentStatus === "ACTIVE" ? (
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}/edit`}>
+            <Pencil className="size-4" />
+            Editar jornada
+          </Link>
+        </Button>
+      ) : null}
       {!isClosed && canManage ? (
         <Button asChild size="sm">
           <Link href={`/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}/matches/new`}>

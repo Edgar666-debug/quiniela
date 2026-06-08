@@ -18,8 +18,7 @@ export function MatchNewClient(props: {
   const canManage = props.role === "OWNER" || props.role === "ORGANIZER";
   const closesAtMs = new Date(props.matchdayClosesAtUtc).getTime();
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [selectedFixture, setSelectedFixture] = useState<FixtureSelection | null>(null);
-  const [selectedFixtureKey, setSelectedFixtureKey] = useState(0);
+  const [selectedFixtures, setSelectedFixtures] = useState<FixtureSelection[]>([]);
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 30_000);
@@ -28,9 +27,16 @@ export function MatchNewClient(props: {
 
   const isClosed = nowMs >= closesAtMs;
 
-  function handleSelectFixture(fixture: FixtureSelection) {
-    setSelectedFixture(fixture);
-    setSelectedFixtureKey((k) => k + 1);
+  function handleToggleFixture(fixture: FixtureSelection) {
+    setSelectedFixtures((current) => {
+      const exists = current.some((item) => item.id === fixture.id);
+      if (exists) return current.filter((item) => item.id !== fixture.id);
+      return [...current, fixture];
+    });
+  }
+
+  function handleRemoveFixture(fixtureId: number) {
+    setSelectedFixtures((current) => current.filter((item) => item.id !== fixtureId));
   }
 
   if (!canManage) {
@@ -59,14 +65,18 @@ export function MatchNewClient(props: {
         </div>
       </div>
 
-      <MatchNewLeagueSearch isClosed={isClosed} onSelectFixture={handleSelectFixture} />
+      <MatchNewLeagueSearch
+        isClosed={isClosed}
+        selectedFixtureIds={selectedFixtures.map((fixture) => fixture.id)}
+        onToggleFixture={handleToggleFixture}
+      />
       <MatchNewConfirmForm
         tournamentId={props.tournamentId}
         matchdayId={props.matchdayId}
         closesAtMs={closesAtMs}
         isClosed={isClosed}
-        selectedFixture={selectedFixture}
-        selectedFixtureKey={selectedFixtureKey}
+        selectedFixtures={selectedFixtures}
+        onRemoveFixture={handleRemoveFixture}
       />
     </main>
   );
