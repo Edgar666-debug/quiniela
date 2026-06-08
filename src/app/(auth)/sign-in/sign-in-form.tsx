@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { signInWithPassword, type AuthActionState } from "./actions";
 
 type SignInMode = "password" | "otp" | "passkey";
@@ -84,34 +85,23 @@ export function SignInForm({ next }: { next?: string }) {
           <CardDescription>Accede a tu cuenta para gestionar torneos, picks y ranking.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="grid grid-cols-3 gap-2">
-            <Button
-              type="button"
-              variant={state.mode === "password" ? "secondary" : "outline"}
-              onClick={() => dispatch({ type: "SET_MODE", mode: "password" })}
-            >
-              <LockKeyhole className="size-4" />
-              Password
-            </Button>
-            <Button
-              type="button"
-              variant={state.mode === "otp" ? "secondary" : "outline"}
-              onClick={() => dispatch({ type: "SET_MODE", mode: "otp" })}
-            >
-              <Mail className="size-4" />
-              OTP
-            </Button>
-            <Button
-              type="button"
-              variant={state.mode === "passkey" ? "secondary" : "outline"}
-              onClick={() => dispatch({ type: "SET_MODE", mode: "passkey" })}
-            >
-              <ShieldCheck className="size-4" />
-              Passkey
-            </Button>
-          </div>
+          <Tabs value={state.mode} onValueChange={(value) => dispatch({ type: "SET_MODE", mode: value as SignInMode })}>
+            <TabsList className="grid grid-cols-3">
+              <TabsTrigger value="password">
+                <LockKeyhole className="size-4" />
+                Password
+              </TabsTrigger>
+              <TabsTrigger value="otp">
+                <Mail className="size-4" />
+                OTP
+              </TabsTrigger>
+              <TabsTrigger value="passkey">
+                <ShieldCheck className="size-4" />
+                Passkey
+              </TabsTrigger>
+            </TabsList>
 
-          {state.mode === "password" ? (
+            <TabsContent value="password" className="mt-4">
             <form action={passwordAction} className="flex flex-col gap-4">
               {next ? <input type="hidden" name="next" value={next} /> : null}
               <div className="grid gap-2">
@@ -152,9 +142,9 @@ export function SignInForm({ next }: { next?: string }) {
                 ¿Olvidaste tu contraseña?
               </Link>
             </form>
-          ) : null}
+            </TabsContent>
 
-          {state.mode === "otp" ? (
+            <TabsContent value="otp" className="mt-4">
             <div className="flex flex-col gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="email-otp">Email</Label>
@@ -188,7 +178,9 @@ export function SignInForm({ next }: { next?: string }) {
               ) : (
                 <>
                   <div className="grid gap-2">
-                    <Label htmlFor="otp">Código</Label>
+                    <Label htmlFor="otp" className="text-center">
+                      Código
+                    </Label>
                     <InputOTP
                       id="otp"
                       maxLength={6}
@@ -196,6 +188,7 @@ export function SignInForm({ next }: { next?: string }) {
                       onChange={(value) => dispatch({ type: "SET_FIELD", field: "otp", value })}
                       autoComplete="one-time-code"
                       inputMode="numeric"
+                      containerClassName="justify-center"
                     >
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />
@@ -255,9 +248,9 @@ export function SignInForm({ next }: { next?: string }) {
                 En local/dev el OTP se imprime en la consola del servidor (pendiente integrar proveedor de email).
               </p>
             </div>
-          ) : null}
+            </TabsContent>
 
-          {state.mode === "passkey" ? (
+            <TabsContent value="passkey" className="mt-4">
             <div className="flex flex-col gap-3">
               <Button
                 disabled={state.loading}
@@ -284,7 +277,8 @@ export function SignInForm({ next }: { next?: string }) {
                 Para registrar una passkey primero inicia sesión y luego agrega una desde el dashboard.
               </p>
             </div>
-          ) : null}
+            </TabsContent>
+          </Tabs>
 
           <Separator />
 

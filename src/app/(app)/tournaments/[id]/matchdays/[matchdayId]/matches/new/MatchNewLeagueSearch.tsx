@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { formatUtcToLocal } from "@/lib/format";
 import { statusLabel } from "@/lib/football";
 import { cn } from "@/lib/utils";
@@ -248,24 +251,16 @@ export function MatchNewLeagueSearch(props: {
       <CardContent className="flex flex-col gap-4">
         {props.isClosed ? <InlineAlert variant="error" message="La jornada está cerrada. Ya no puedes agregar partidos." /> : null}
 
-        <div className="flex gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900">
-          {TABS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => dispatch({ type: "set_tab", tab: item.id })}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                state.tab === item.id
-                  ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
-                  : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50",
-              )}
-            >
-              <item.icon className="size-3.5" />
-              {item.label}
-            </button>
-          ))}
-        </div>
+        <Tabs value={state.tab} onValueChange={(value) => dispatch({ type: "set_tab", tab: value as SearchTab })}>
+          <TabsList>
+            {TABS.map((item) => (
+              <TabsTrigger key={item.id} value={item.id}>
+                <item.icon className="size-3.5" />
+                {item.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
         <div className="flex flex-col gap-2">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">{tab.hint}</p>
@@ -381,18 +376,18 @@ export function MatchNewLeagueSearch(props: {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="search-season">Temporada {hasSelectedEntity ? "*" : "(opcional)"}</Label>
-            <select
-              id="search-season"
-              value={state.searchSeason}
-              onChange={(event) => dispatch({ type: "set_season", value: event.target.value })}
-              className="flex h-10 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] dark:border-zinc-800"
-            >
-              {seasonOptions.map((season) => (
-                <option key={season} value={season}>
-                  {season}
-                </option>
-              ))}
-            </select>
+            <Select value={state.searchSeason} onValueChange={(value) => dispatch({ type: "set_season", value })}>
+              <SelectTrigger id="search-season">
+                <SelectValue placeholder="Selecciona temporada" />
+              </SelectTrigger>
+              <SelectContent>
+                {seasonOptions.map((season) => (
+                  <SelectItem key={season} value={season}>
+                    {season}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {hasSelectedEntity ? "Obligatoria cuando eliges liga, equipo o jugador." : "Si no seleccionas entidad, no se enviará al backend."}
             </p>
@@ -400,23 +395,16 @@ export function MatchNewLeagueSearch(props: {
 
           <div className="grid gap-2">
             <Label>Modo de fecha</Label>
-            <div className="flex gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900">
-              {(["date", "range"] as const).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => dispatch({ type: "set_mode", mode })}
-                  className={cn(
-                    "flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                    state.searchMode === mode
-                      ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
-                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50",
-                  )}
-                >
-                  {mode === "date" ? "Fecha exacta" : "Rango"}
-                </button>
-              ))}
-            </div>
+            <ToggleGroup
+              type="single"
+              value={state.searchMode}
+              onValueChange={(value) => {
+                if (value) dispatch({ type: "set_mode", mode: value as SearchMode });
+              }}
+            >
+              <ToggleGroupItem value="date">Fecha exacta</ToggleGroupItem>
+              <ToggleGroupItem value="range">Rango</ToggleGroupItem>
+            </ToggleGroup>
           </div>
         </div>
 

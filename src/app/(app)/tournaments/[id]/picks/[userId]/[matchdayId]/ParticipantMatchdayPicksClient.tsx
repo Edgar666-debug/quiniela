@@ -6,7 +6,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
-import { DrawPickCard, TeamPickCard } from "@/components/matches/pick-cards";
+import { MatchPickGroup, type PickValue } from "@/components/matches/pick-cards";
 import { groupMatchesByLocalKickoff } from "@/lib/format";
 import { statusLabel, type Outcome } from "@/lib/football";
 
@@ -91,11 +91,13 @@ export function ParticipantMatchdayPicksClient(props: {
                     {m.pick ? <p className="text-xs text-zinc-600 dark:text-zinc-400">Pick: {m.pick}</p> : null}
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_120px_1fr]">
-                    <TeamPickCard side="HOME" name={m.homeTeam} logoUrl={m.homeLogoUrl} selected={m.pick === "HOME"} />
-                    <DrawPickCard selected={m.pick === "DRAW"} />
-                    <TeamPickCard side="AWAY" name={m.awayTeam} logoUrl={m.awayLogoUrl} selected={m.pick === "AWAY"} />
-                  </div>
+                  <MatchPickGroup
+                    value={(m.pick as PickValue | null) ?? null}
+                    homeTeam={m.homeTeam}
+                    homeLogoUrl={m.homeLogoUrl}
+                    awayTeam={m.awayTeam}
+                    awayLogoUrl={m.awayLogoUrl}
+                  />
                 </div>
               ))}
             </div>
