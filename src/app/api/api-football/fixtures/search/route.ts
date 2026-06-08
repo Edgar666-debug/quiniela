@@ -42,6 +42,25 @@ export async function GET(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid query" }, { status: 400 });
 
   const q = parsed.data;
+  const hasEntity = q.league !== undefined || q.team !== undefined || q.player !== undefined;
+  const hasDate = q.date !== undefined;
+  const hasFrom = q.from !== undefined;
+  const hasTo = q.to !== undefined;
+  const hasRange = hasFrom || hasTo;
+
+  if (hasEntity && q.season === undefined) {
+    return NextResponse.json({ error: "Season is required when filtering by league, team or player." }, { status: 400 });
+  }
+  if (!hasDate && !hasRange) {
+    return NextResponse.json({ error: "Provide either date or from/to." }, { status: 400 });
+  }
+  if (hasDate && hasRange) {
+    return NextResponse.json({ error: "Use either date or from/to, not both." }, { status: 400 });
+  }
+  if (hasRange && (!hasFrom || !hasTo)) {
+    return NextResponse.json({ error: "Both from and to are required for range searches." }, { status: 400 });
+  }
+
   const key = `fixtures:${q.league ?? ""}:${q.season ?? ""}:${q.date ?? ""}:${q.from ?? ""}:${q.to ?? ""}:${q.team ?? ""}:${q.player ?? ""}:${q.status ?? ""}:${q.limit ?? ""}`;
 
   let fixtures: Awaited<ReturnType<typeof searchFixtures>>;

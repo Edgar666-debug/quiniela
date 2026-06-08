@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useReducer } from "react";
+import { useReducer } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 
+import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { InlineAlert } from "@/components/app/inline-alert";
+import { formatUtcToLocal } from "@/lib/format";
 import { toLocalDateTimeInputValue, type FixtureSelection } from "./match-new-types";
 
 type FormState = {
@@ -27,9 +28,9 @@ type FormAction =
   | { type: "set_starts_at"; value: string }
   | { type: "set_home"; value: string }
   | { type: "set_away"; value: string }
-  | { type: "apply_fixture"; fixtureId: string; startsAtLocal: string; homeTeam: string; awayTeam: string; message: string }
   | { type: "submit_start" }
   | { type: "submit_fail"; error: string }
+  | { type: "submit_success"; message: string }
   | { type: "load_fixture_start" }
   | { type: "load_fixture_fail"; error: string }
   | { type: "load_fixture_ok"; fixtureId: string; startsAtLocal: string; homeTeam: string; awayTeam: string; message: string };
@@ -44,22 +45,14 @@ function formReducer(state: FormState, action: FormAction): FormState {
       return { ...state, homeTeam: action.value };
     case "set_away":
       return { ...state, awayTeam: action.value };
-    case "apply_fixture":
-      return {
-        ...state,
-        fixtureId: action.fixtureId,
-        startsAtLocal: action.startsAtLocal,
-        homeTeam: action.homeTeam,
-        awayTeam: action.awayTeam,
-        message: action.message,
-        error: null,
-      };
     case "submit_start":
     case "load_fixture_start":
       return { ...state, loading: true, error: null, message: null };
     case "submit_fail":
     case "load_fixture_fail":
       return { ...state, loading: false, error: action.error };
+    case "submit_success":
+      return { ...state, loading: false, error: null, message: action.message };
     case "load_fixture_ok":
       return {
         ...state,
@@ -69,6 +62,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
         homeTeam: action.homeTeam,
         awayTeam: action.awayTeam,
         message: action.message,
+        error: null,
       };
     default:
       return state;
@@ -90,31 +84,21 @@ export function MatchNewConfirmForm(props: {
   matchdayId: string;
   closesAtMs: number;
   isClosed: boolean;
-  selectedFixture: FixtureSelection | null;
-  selectedFixtureKey: number;
+  selectedFixtures: FixtureSelection[];
+  onRemoveFixture: (fixtureId: number) => void;
 }) {
   const router = useRouter();
   const [state, dispatch] = useReducer(formReducer, initialFormState);
 
-  useEffect(() => {
-    if (!props.selectedFixture) return;
-    const f = props.selectedFixture;
-    dispatch({
-      type: "apply_fixture",
-      fixtureId: String(f.id),
-      startsAtLocal: toLocalDateTimeInputValue(new Date(f.dateUtc)),
-      homeTeam: f.homeTeam,
-      awayTeam: f.awayTeam,
-      message: `Fixture seleccionado: ${f.id}`,
-    });
-  }, [props.selectedFixtureKey, props.selectedFixture]);
-
-  const startsAtUtcMs = (() => {
+  const manualStartsAtUtcMs = (() => {
     if (!state.startsAtLocal) return null;
-    const t = new Date(state.startsAtLocal).getTime();
-    return Number.isNaN(t) ? null : t;
+    const time = new Date(state.startsAtLocal).getTime();
+    return Number.isNaN(time) ? null : time;
   })();
-  const violatesCloseRule = startsAtUtcMs != null ? startsAtUtcMs < props.closesAtMs : false;
+  const manualViolatesCloseRule = manualStartsAtUtcMs != null ? manualStartsAtUtcMs < props.closesAtMs : false;
+
+  const invalidSelectedFixtures = props.selectedFixtures.filter((fixture) => new Date(fixture.dateUtc).getTime() < props.closesAtMs);
+  const canSubmitBatch = !props.isClosed && props.selectedFixtures.length > 0 && invalidSelectedFixtures.length === 0 && !state.loading;
 
   async function loadFixtureById() {
     const id = state.fixtureId.trim();
@@ -129,19 +113,43 @@ export function MatchNewConfirmForm(props: {
     if (!res.ok) return dispatch({ type: "load_fixture_fail", error: data.error ?? "No se pudo consultar el fixture" });
     if (!data.fixture) return dispatch({ type: "load_fixture_fail", error: "Fixture no encontrado" });
 
-    const dateUtc = new Date(data.fixture.dateUtc);
     dispatch({
       type: "load_fixture_ok",
       fixtureId: id,
-      startsAtLocal: toLocalDateTimeInputValue(dateUtc),
+      startsAtLocal: toLocalDateTimeInputValue(new Date(data.fixture.dateUtc)),
       homeTeam: data.fixture.homeTeam,
       awayTeam: data.fixture.awayTeam,
       message: `Fixture cargado (estado: ${data.fixture.statusShort}).`,
     });
   }
 
-  async function submitMatch() {
-    if (violatesCloseRule) {
+  async function submitSelectedMatches() {
+    dispatch({ type: "submit_start" });
+    const res = await fetch(`/api/matchdays/${props.matchdayId}/matches`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        matches: props.selectedFixtures.map((fixture) => ({
+          externalFixtureId: fixture.id,
+          startsAtUtc: fixture.dateUtc,
+          homeTeam: fixture.homeTeam,
+          awayTeam: fixture.awayTeam,
+        })),
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string; count?: number };
+    if (!res.ok) return dispatch({ type: "submit_fail", error: data.error ?? "No se pudieron crear los partidos" });
+
+    dispatch({
+      type: "submit_success",
+      message: `${data.count ?? props.selectedFixtures.length} partidos agregados correctamente.`,
+    });
+    router.push(`/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}`);
+    router.refresh();
+  }
+
+  async function submitSingleMatch() {
+    if (manualViolatesCloseRule) {
       return dispatch({
         type: "submit_fail",
         error: "El inicio del partido está antes del cierre (UTC). Ajusta el cierre de la jornada o elige otro fixture.",
@@ -163,6 +171,8 @@ export function MatchNewConfirmForm(props: {
     });
     const data = (await res.json().catch(() => ({}))) as { error?: string };
     if (!res.ok) return dispatch({ type: "submit_fail", error: data.error ?? "No se pudo crear el partido" });
+
+    dispatch({ type: "submit_success", message: "Partido agregado correctamente." });
     router.push(`/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}`);
     router.refresh();
   }
@@ -170,16 +180,70 @@ export function MatchNewConfirmForm(props: {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>2) Confirmar partido</CardTitle>
-        <CardDescription>Si quieres, también puedes pegar un Fixture ID y autollenar.</CardDescription>
+        <CardTitle>2) Confirmar partidos</CardTitle>
+        <CardDescription>Selecciona varios fixtures para agregarlos en lote o usa un Fixture ID manual.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {violatesCloseRule ? (
+        {invalidSelectedFixtures.length > 0 ? (
+          <InlineAlert
+            variant="error"
+            message="Uno o más fixtures seleccionados inician antes del cierre de la jornada (UTC). Quítalos o ajusta el cierre."
+          />
+        ) : null}
+
+        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">Selección múltiple</p>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                {props.selectedFixtures.length === 0
+                  ? "No hay fixtures seleccionados todavía."
+                  : `${props.selectedFixtures.length} fixture${props.selectedFixtures.length === 1 ? "" : "s"} listo${props.selectedFixtures.length === 1 ? "" : "s"} para agregar.`}
+              </p>
+            </div>
+            <Button type="button" disabled={!canSubmitBatch} onClick={submitSelectedMatches}>
+              {state.loading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              Agregar {props.selectedFixtures.length > 0 ? props.selectedFixtures.length : ""} partido{props.selectedFixtures.length === 1 ? "" : "s"}
+            </Button>
+          </div>
+
+          {props.selectedFixtures.length > 0 ? (
+            <ul className="mt-4 flex flex-col gap-2">
+              {props.selectedFixtures.map((fixture) => {
+                const violatesCloseRule = new Date(fixture.dateUtc).getTime() < props.closesAtMs;
+                return (
+                  <li key={fixture.id} className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-800">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {fixture.homeTeam} vs {fixture.awayTeam}
+                      </p>
+                      <p className="text-xs text-zinc-500">
+                        Fixture {fixture.id} · {formatUtcToLocal(fixture.dateUtc, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      {violatesCloseRule ? (
+                        <p className="text-xs text-red-600">Inicia antes del cierre de la jornada.</p>
+                      ) : null}
+                    </div>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => props.onRemoveFixture(fixture.id)}>
+                      <Trash2 className="size-4" />
+                      <span className="sr-only">Quitar fixture</span>
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </div>
+
+        <Separator />
+
+        {manualViolatesCloseRule ? (
           <InlineAlert
             variant="error"
             message="Este partido inicia antes del cierre de la jornada (UTC). Ajusta el cierre para que sea antes del primer partido o elige otro fixture."
           />
         ) : null}
+
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="fixture">API-Football Fixture ID (opcional)</Label>
@@ -188,7 +252,7 @@ export function MatchNewConfirmForm(props: {
               inputMode="numeric"
               placeholder="123456"
               value={state.fixtureId}
-              onChange={(e) => dispatch({ type: "set_fixture_id", value: e.target.value })}
+              onChange={(event) => dispatch({ type: "set_fixture_id", value: event.target.value })}
             />
             <Button
               className="w-fit"
@@ -208,16 +272,16 @@ export function MatchNewConfirmForm(props: {
               id="startsAt"
               type="datetime-local"
               value={state.startsAtLocal}
-              onChange={(e) => dispatch({ type: "set_starts_at", value: e.target.value })}
+              onChange={(event) => dispatch({ type: "set_starts_at", value: event.target.value })}
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="home">Local</Label>
-            <Input id="home" placeholder="Equipo local" value={state.homeTeam} onChange={(e) => dispatch({ type: "set_home", value: e.target.value })} />
+            <Input id="home" placeholder="Equipo local" value={state.homeTeam} onChange={(event) => dispatch({ type: "set_home", value: event.target.value })} />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="away">Visita</Label>
-            <Input id="away" placeholder="Equipo visita" value={state.awayTeam} onChange={(e) => dispatch({ type: "set_away", value: e.target.value })} />
+            <Input id="away" placeholder="Equipo visita" value={state.awayTeam} onChange={(event) => dispatch({ type: "set_away", value: event.target.value })} />
           </div>
         </div>
 
@@ -230,10 +294,10 @@ export function MatchNewConfirmForm(props: {
           <Button
             disabled={state.loading || props.isClosed || !state.startsAtLocal || !state.homeTeam.trim() || !state.awayTeam.trim()}
             type="button"
-            onClick={submitMatch}
+            onClick={submitSingleMatch}
           >
             {state.loading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-            Agregar partido
+            Agregar partido manual
           </Button>
         </div>
       </CardContent>
