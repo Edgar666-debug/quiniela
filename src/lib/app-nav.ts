@@ -27,6 +27,9 @@ export function buildAppCrumbs(pathname: string, tournamentName: string | null, 
     if (pathname === `${matchdaysHref}/new`)
       return [...base, { label: "Jornadas", href: matchdaysHref }, { label: "Nueva jornada" }];
 
+    if (pathname === `/tournaments/${tournamentId}/manage`) return [...base, { label: "Gestión" }];
+    if (pathname === `/tournaments/${tournamentId}/admin`) return [...base, { label: "Editar torneo" }];
+
     const matchdayMatch = pathname.match(new RegExp(`^/tournaments/${tournamentId}/matchdays/([^/]+)(?:/(.+))?$`));
     if (matchdayMatch) {
       const matchdayId = matchdayMatch[1];
@@ -34,6 +37,8 @@ export function buildAppCrumbs(pathname: string, tournamentName: string | null, 
       const matchdayHref = `${matchdaysHref}/${matchdayId}`;
 
       if (!rest) return [...base, { label: "Jornadas", href: matchdaysHref }, { label: "Jornada" }];
+      if (rest === "edit")
+        return [...base, { label: "Jornadas", href: matchdaysHref }, { label: "Jornada", href: matchdayHref }, { label: "Editar" }];
       if (rest === "matches/new")
         return [...base, { label: "Jornadas", href: matchdaysHref }, { label: "Jornada", href: matchdayHref }, { label: "Agregar partido" }];
       return [...base, { label: "Jornadas", href: matchdaysHref }, { label: "Jornada", href: matchdayHref }, { label: rest }];

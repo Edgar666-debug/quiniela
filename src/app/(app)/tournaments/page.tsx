@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Trophy } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { TournamentsClient } from "./TournamentsClient";
 
 export const metadata: Metadata = {
   title: "Torneos",
@@ -20,74 +16,34 @@ export default async function TournamentsIndexPage() {
 
   const memberships = await prisma.tournamentMember.findMany({
     where: { userId: session.user.id },
-    select: { role: true, tournament: { select: { id: true, name: true, status: true, logoUrl: true } } },
+    select: {
+      role: true,
+      tournament: {
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          logoUrl: true,
+          _count: { select: { members: true, matchdays: true } },
+        },
+      },
+    },
     orderBy: { joinedAt: "desc" },
   });
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-          <Trophy className="size-4" />
-          <span className="text-sm">Torneos</span>
-        </div>
-        <h1 className="text-2xl font-semibold">Mis torneos</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Selecciona un torneo para navegar por jornadas y ranking.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Button asChild>
-          <Link href="/tournaments/new">Crear torneo</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/tournaments/join">Unirme por invitación</Link>
-        </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {memberships.length === 0 ? (
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Sin torneos</CardTitle>
-              <CardDescription>Crea o únete usando las opciones de arriba o desde el dashboard.</CardDescription>
-            </CardHeader>
-            <CardContent />
-          </Card>
-        ) : (
-          memberships.map((m) => (
-            <Card key={m.tournament.id}>
-              <CardHeader>
-                <div className="flex items-start gap-3">
-                  <div className="flex size-12 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
-                    {m.tournament.logoUrl ? (
-                      <Image src={m.tournament.logoUrl} alt="" width={48} height={48} className="h-full w-full object-cover" unoptimized />
-                    ) : (
-                      <Trophy className="size-5 text-zinc-500" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <CardTitle className="truncate">{m.tournament.name}</CardTitle>
-                    <CardDescription>
-                      Rol: {m.role}
-                      {m.tournament.status !== "ACTIVE" ? ` • ${m.tournament.status}` : ""}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex gap-2">
-                <Button asChild>
-                  <Link href={`/tournaments/${m.tournament.id}`}>Abrir</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href={`/tournaments/${m.tournament.id}/standings`}>Ranking</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+    <main className="mx-auto flex w-full max-w-6xl flex-col px-6 py-10">
+      <TournamentsClient
+        tournaments={memberships.map((m) => ({
+          tournamentId: m.tournament.id,
+          name: m.tournament.name,
+          logoUrl: m.tournament.logoUrl,
+          status: m.tournament.status,
+          role: m.role,
+          membersCount: m.tournament._count.members,
+          matchdaysCount: m.tournament._count.matchdays,
+        }))}
+      />
     </main>
   );
 }

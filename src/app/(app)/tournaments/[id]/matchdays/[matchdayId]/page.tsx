@@ -26,7 +26,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { name: true, logoUrl: true },
+    select: { name: true, logoUrl: true, status: true },
   });
   if (!tournament) redirect("/dashboard");
 
@@ -88,6 +88,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
             tournamentId={tournamentId}
             matchdayId={matchdayId}
             role={membership.role}
+            tournamentStatus={tournament.status}
             closesAtUtc={matchday.closesAtUtc.toISOString()}
           />
         }

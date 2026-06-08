@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, KeyRound, PlusCircle, Ticket, Trophy, Users } from "lucide-react";
+import { CalendarDays, KeyRound, LayoutDashboard, PlusCircle, Ticket, Trophy, Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { canEditTournament, canManageTournament } from "@/lib/permissions";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type MyTournament = {
@@ -16,49 +17,82 @@ type MyTournament = {
 
 export function DashboardClient(props: { initialTournaments: MyTournament[] }) {
   const lastTournament = props.initialTournaments[0] ?? null;
+  const managedTournaments = props.initialTournaments.filter((t) => canManageTournament(t.role));
 
   return (
-    <div className="mt-4 grid gap-4 md:grid-cols-2">
-      <FeatureCard
-        href="/tournaments/new"
-        icon={<PlusCircle className="size-6 text-emerald-600" />}
-        title="Crear torneo"
-        description="Crea un torneo, define jornadas y comparte invitaciones."
-      />
-      <FeatureCard
-        href="/tournaments/join"
-        icon={<Ticket className="size-6 text-emerald-600" />}
-        title="Unirme por invitación"
-        description="Pega el token de invitación y entra a un torneo."
-      />
-      <FeatureCard
-        href="/tournaments"
-        icon={<Trophy className="size-6 text-emerald-600" />}
-        title="Mis torneos"
-        description="Abre un torneo y navega a jornadas, picks y ranking en vivo."
-      />
-      <FeatureCard
-        href={lastTournament ? `/tournaments/${lastTournament.tournamentId}/matchdays` : "/tournaments"}
-        icon={<CalendarDays className="size-6 text-emerald-600" />}
-        title={lastTournament ? "Continuar torneo" : "Jornadas"}
-        description={
-          lastTournament ? `Ir a jornadas de “${lastTournament.name}”.` : "Selecciona un torneo para ver sus jornadas."
-        }
-        badge={lastTournament ? <TournamentBadge name={lastTournament.name} logoUrl={lastTournament.logoUrl} /> : null}
-      />
-      <FeatureCard
-        href={lastTournament ? `/tournaments/${lastTournament.tournamentId}/standings` : "/tournaments"}
-        icon={<Users className="size-6 text-emerald-600" />}
-        title="Ranking en vivo"
-        description="Consulta el ranking y empates (múltiples ganadores)."
-        badge={lastTournament ? <TournamentBadge name={lastTournament.name} logoUrl={lastTournament.logoUrl} /> : null}
-      />
-      <FeatureCard
-        href="/account/passkeys"
-        icon={<KeyRound className="size-6 text-emerald-600" />}
-        title="Passkeys"
-        description="Entra sin contraseña usando passkey (WebAuthn)."
-      />
+    <div className="flex flex-col gap-8">
+      {managedTournaments.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold">Gestión</h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">Torneos donde puedes administrar jornadas y participantes.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {managedTournaments.slice(0, 4).map((t) => (
+              <FeatureCard
+                key={t.tournamentId}
+                href={`/tournaments/${t.tournamentId}/manage`}
+                icon={<LayoutDashboard className="size-6 text-emerald-600" />}
+                title={`Gestionar “${t.name}”`}
+                description={
+                  canEditTournament(t.role)
+                    ? "Jornadas, invitaciones, participantes y enlace a editar torneo."
+                    : "Jornadas, invitaciones y participantes."
+                }
+                badge={<TournamentBadge name={t.name} logoUrl={t.logoUrl} />}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <section className="flex flex-col gap-3">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">Accesos rápidos</h2>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <FeatureCard 
+            href="/tournaments/new"
+            icon={<PlusCircle className="size-6 text-emerald-600" />}
+            title="Crear torneo"
+            description="Crea un torneo, define jornadas y comparte invitaciones."
+          />
+          <FeatureCard
+            href="/tournaments/join"
+            icon={<Ticket className="size-6 text-emerald-600" />}
+            title="Unirme por invitación"
+            description="Pega el token de invitación y entra a un torneo."
+          />
+          <FeatureCard
+            href="/tournaments"
+            icon={<Trophy className="size-6 text-emerald-600" />}
+            title="Mis torneos"
+            description="Abre un torneo y navega a jornadas, picks y ranking en vivo."
+          />
+          <FeatureCard
+            href={lastTournament ? `/tournaments/${lastTournament.tournamentId}/matchdays` : "/tournaments"}
+            icon={<CalendarDays className="size-6 text-emerald-600" />}
+            title={lastTournament ? "Continuar torneo" : "Jornadas"}
+            description={
+              lastTournament ? `Ir a jornadas de “${lastTournament.name}”.` : "Selecciona un torneo para ver sus jornadas."
+            }
+            badge={lastTournament ? <TournamentBadge name={lastTournament.name} logoUrl={lastTournament.logoUrl} /> : null}
+          />
+          <FeatureCard
+            href={lastTournament ? `/tournaments/${lastTournament.tournamentId}/standings` : "/tournaments"}
+            icon={<Users className="size-6 text-emerald-600" />}
+            title="Ranking en vivo"
+            description="Consulta el ranking y empates (múltiples ganadores)."
+            badge={lastTournament ? <TournamentBadge name={lastTournament.name} logoUrl={lastTournament.logoUrl} /> : null}
+          />
+          <FeatureCard
+            href="/account/passkeys"
+            icon={<KeyRound className="size-6 text-emerald-600" />}
+            title="Passkeys"
+            description="Entra sin contraseña usando passkey (WebAuthn)."
+          />
+        </div>
+      </section>
     </div>
   );
 }

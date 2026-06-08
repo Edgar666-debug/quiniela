@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarDays, Loader2, Plus, RefreshCw } from "lucide-react";
+import { CalendarDays, Loader2, Pencil, Plus, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -73,12 +73,22 @@ export function MatchdaysClient(props: {
                 <MatchdayClose closesAtUtc={m.closesAtUtc} compact />
                 <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{m.matchesCount} partido(s)</p>
               </div>
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/tournaments/${props.tournamentId}/matchdays/${m.id}`}>
-                  <CalendarDays className="size-4" />
-                  Abrir
-                </Link>
-              </Button>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                {canManage && props.tournamentStatus === "ACTIVE" ? (
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href={`/tournaments/${props.tournamentId}/matchdays/${m.id}/edit`}>
+                      <Pencil className="size-4" />
+                      Editar
+                    </Link>
+                  </Button>
+                ) : null}
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/tournaments/${props.tournamentId}/matchdays/${m.id}`}>
+                    <CalendarDays className="size-4" />
+                    Abrir
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         ))}
