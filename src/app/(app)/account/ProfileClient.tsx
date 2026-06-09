@@ -1,39 +1,130 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useReducer, useRef } from "react";
 import Image from "next/image";
-import { Image as ImageIcon, Loader2, User as UserIcon, Upload, Trash, SaveIcon } from "lucide-react";
+import { Image as ImageIcon, Loader2, SaveIcon, Trash, Upload, User as UserIcon } from "lucide-react";
 
 import { supabase } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+type DraftState = {
+  sourceName: string | null;
+  sourceImage: string | null;
+  name: string;
+  image: string;
+};
+
+type ProfileState = {
+  draft: DraftState | null;
+  loading: boolean;
+  uploadingAvatar: boolean;
+  message: string | null;
+  error: string | null;
+};
+
+type ProfileAction =
+  | { type: "set_name"; sourceName: string | null; sourceImage: string | null; value: string; image: string }
+  | { type: "set_image"; sourceName: string | null; sourceImage: string | null; name: string; value: string }
+  | { type: "clear_image"; sourceName: string | null; sourceImage: string | null; name: string }
+  | { type: "save_start" }
+  | { type: "save_fail"; error: string }
+  | { type: "save_success"; sourceName: string | null; sourceImage: string | null; name: string; image: string; message: string }
+  | { type: "upload_start" }
+  | { type: "upload_fail"; error: string }
+  | { type: "upload_success"; sourceName: string | null; sourceImage: string | null; name: string; image: string; message: string };
+
+function profileReducer(state: ProfileState, action: ProfileAction): ProfileState {
+  switch (action.type) {
+    case "set_name":
+      return {
+        ...state,
+        draft: {
+          sourceName: action.sourceName,
+          sourceImage: action.sourceImage,
+          name: action.value,
+          image: action.image,
+        },
+      };
+    case "set_image":
+      return {
+        ...state,
+        draft: {
+          sourceName: action.sourceName,
+          sourceImage: action.sourceImage,
+          name: action.name,
+          image: action.value,
+        },
+      };
+    case "clear_image":
+      return {
+        ...state,
+        draft: {
+          sourceName: action.sourceName,
+          sourceImage: action.sourceImage,
+          name: action.name,
+          image: "",
+        },
+      };
+    case "save_start":
+      return { ...state, loading: true, message: null, error: null };
+    case "save_fail":
+      return { ...state, loading: false, uploadingAvatar: false, error: action.error };
+    case "save_success":
+      return {
+        ...state,
+        loading: false,
+        uploadingAvatar: false,
+        message: action.message,
+        error: null,
+        draft: {
+          sourceName: action.sourceName,
+          sourceImage: action.sourceImage,
+          name: action.name,
+          image: action.image,
+        },
+      };
+    case "upload_start":
+      return { ...state, uploadingAvatar: true, message: null, error: null };
+    case "upload_fail":
+      return { ...state, uploadingAvatar: false, error: action.error };
+    case "upload_success":
+      return {
+        ...state,
+        uploadingAvatar: false,
+        message: action.message,
+        error: null,
+        draft: {
+          sourceName: action.sourceName,
+          sourceImage: action.sourceImage,
+          name: action.name,
+          image: action.image,
+        },
+      };
+    default:
+      return state;
+  }
+}
+
 export function ProfileClient(props: { initial: { name: string | null; image: string | null; email: string } }) {
-  const [draft, setDraft] = useState<{
-    sourceName: string | null;
-    sourceImage: string | null;
-    name: string;
-    image: string;
-  } | null>(null);
-
-  const activeDraft =
-    draft?.sourceName === props.initial.name && draft?.sourceImage === props.initial.image ? draft : null;
-  const name = activeDraft?.name ?? props.initial.name ?? "";
-  const image = activeDraft?.image ?? props.initial.image ?? "";
-
-  const [loading, setLoading] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(profileReducer, {
+    draft: null,
+    loading: false,
+    uploadingAvatar: false,
+    message: null,
+    error: null,
+  });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const activeDraft =
+    state.draft?.sourceName === props.initial.name && state.draft?.sourceImage === props.initial.image ? state.draft : null;
+  const name = activeDraft?.name ?? props.initial.name ?? "";
+  const image = activeDraft?.image ?? props.initial.image ?? "";
   const imageUrl = image.trim() ? image.trim() : null;
 
   async function save() {
-    setMessage(null);
-    setError(null);
-    setLoading(true);
+    dispatch({ type: "save_start" });
     const res = await fetch("/api/me/profile", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
@@ -43,30 +134,27 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
       }),
     });
     const data = (await res.json().catch(() => ({}))) as { user?: { name: string | null; image: string | null }; error?: string };
-    setLoading(false);
-    if (!res.ok) return setError(data.error ?? "No se pudo guardar el perfil.");
-    setMessage("Perfil actualizado.");
-    setDraft({
+    if (!res.ok) return dispatch({ type: "save_fail", error: data.error ?? "No se pudo guardar el perfil." });
+
+    dispatch({
+      type: "save_success",
       sourceName: props.initial.name,
       sourceImage: props.initial.image,
       name: data.user?.name ?? "",
       image: data.user?.image ?? "",
+      message: "Perfil actualizado.",
     });
   }
 
   async function uploadAvatar(file: File) {
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setError("Formato no soportado. Usa JPG, PNG o WebP.");
-      return;
+      return dispatch({ type: "upload_fail", error: "Formato no soportado. Usa JPG, PNG o WebP." });
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("El avatar no debe exceder 5 MB.");
-      return;
+      return dispatch({ type: "upload_fail", error: "El avatar no debe exceder 5 MB." });
     }
 
-    setMessage(null);
-    setError(null);
-    setUploadingAvatar(true);
+    dispatch({ type: "upload_start" });
 
     const signedRes = await fetch("/api/me/avatar/upload-url", {
       method: "POST",
@@ -81,16 +169,12 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
     };
 
     if (!signedRes.ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
-      setUploadingAvatar(false);
-      setError(signedData.error ?? "No se pudo preparar la carga del avatar.");
-      return;
+      return dispatch({ type: "upload_fail", error: signedData.error ?? "No se pudo preparar la carga del avatar." });
     }
 
     const upload = await supabase.storage.from("avatars").uploadToSignedUrl(signedData.path, signedData.token, file);
     if (upload.error) {
-      setUploadingAvatar(false);
-      setError(upload.error.message ?? "No se pudo subir el avatar.");
-      return;
+      return dispatch({ type: "upload_fail", error: upload.error.message ?? "No se pudo subir el avatar." });
     }
 
     const imageUrlWithVersion = `${signedData.publicUrl}?v=${Date.now()}`;
@@ -100,20 +184,19 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
       body: JSON.stringify({ image: imageUrlWithVersion }),
     });
     const data = (await res.json().catch(() => ({}))) as { user?: { name: string | null; image: string | null }; error?: string };
-    setUploadingAvatar(false);
 
     if (!res.ok) {
-      setError(data.error ?? "No se pudo guardar el avatar.");
-      return;
+      return dispatch({ type: "upload_fail", error: data.error ?? "No se pudo guardar el avatar." });
     }
 
-    setDraft({
+    dispatch({
+      type: "upload_success",
       sourceName: props.initial.name,
       sourceImage: props.initial.image,
       name,
       image: data.user?.image ?? imageUrlWithVersion,
+      message: "Avatar actualizado.",
     });
-    setMessage("Avatar actualizado.");
   }
 
   return (
@@ -138,11 +221,12 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
           <Input
             id="profileName"
             value={name}
-            onChange={(e) =>
-              setDraft({
+            onChange={(event) =>
+              dispatch({
+                type: "set_name",
                 sourceName: props.initial.name,
                 sourceImage: props.initial.image,
-                name: e.target.value,
+                value: event.target.value,
                 image,
               })
             }
@@ -155,12 +239,13 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
           <Input
             id="profileImage"
             value={image}
-            onChange={(e) =>
-              setDraft({
+            onChange={(event) =>
+              dispatch({
+                type: "set_image",
                 sourceName: props.initial.name,
                 sourceImage: props.initial.image,
                 name,
-                image: e.target.value,
+                value: event.target.value,
               })
             }
             placeholder="https://..."
@@ -186,26 +271,26 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
         <Button
           type="button"
           variant="outline"
-          disabled={loading || uploadingAvatar}
+          disabled={state.loading || state.uploadingAvatar}
           onClick={() => fileInputRef.current?.click()}
         >
-          {uploadingAvatar ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+          {state.uploadingAvatar ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
           Subir
         </Button>
-        <Button type="button" variant="outline" onClick={save} disabled={loading || uploadingAvatar}>
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
+        <Button type="button" variant="outline" onClick={save} disabled={state.loading || state.uploadingAvatar}>
+          {state.loading ? <Loader2 className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
           Guardar
         </Button>
         <Button
           type="button"
           variant="outline"
-          disabled={loading || uploadingAvatar || !image.trim()}
+          disabled={state.loading || state.uploadingAvatar || !image.trim()}
           onClick={() =>
-            setDraft({
+            dispatch({
+              type: "clear_image",
               sourceName: props.initial.name,
               sourceImage: props.initial.image,
               name,
-              image: "",
             })
           }
         >
@@ -217,8 +302,8 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
         </div>
       </div>
 
-      {message ? <p className="text-sm text-green-700">{message}</p> : null}
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {state.message ? <p className="text-sm text-green-700">{state.message}</p> : null}
+      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
     </div>
   );
 }

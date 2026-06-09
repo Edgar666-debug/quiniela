@@ -72,7 +72,7 @@ export function TournamentsClient(props: { tournaments: TournamentRow[] }) {
       return t.name.toLowerCase().includes(q);
     });
 
-    rows = [...rows].sort((a, b) => {
+    rows = rows.toSorted((a, b) => {
       const cmp = a.name.localeCompare(b.name, "es");
       return sortMode === "name-asc" ? cmp : -cmp;
     });

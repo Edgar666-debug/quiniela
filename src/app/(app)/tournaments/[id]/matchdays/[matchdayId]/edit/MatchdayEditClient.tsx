@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useReducer } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
@@ -11,6 +11,38 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { datetimeLocalToIso, isoToDatetimeLocalValue } from "@/lib/matchday-form";
 
+type EditState = {
+  number: string;
+  closesAtLocal: string;
+  loading: boolean;
+  error: string | null;
+  message: string | null;
+};
+
+type EditAction =
+  | { type: "set_number"; value: string }
+  | { type: "set_closes_at"; value: string }
+  | { type: "save_start" }
+  | { type: "save_fail"; error: string }
+  | { type: "save_success"; message: string };
+
+function matchdayEditReducer(state: EditState, action: EditAction): EditState {
+  switch (action.type) {
+    case "set_number":
+      return { ...state, number: action.value };
+    case "set_closes_at":
+      return { ...state, closesAtLocal: action.value };
+    case "save_start":
+      return { ...state, loading: true, error: null, message: null };
+    case "save_fail":
+      return { ...state, loading: false, error: action.error };
+    case "save_success":
+      return { ...state, loading: false, message: action.message, error: null };
+    default:
+      return state;
+  }
+}
+
 export function MatchdayEditClient(props: {
   tournamentId: string;
   matchdayId: string;
@@ -19,11 +51,13 @@ export function MatchdayEditClient(props: {
   matchesCount: number;
 }) {
   const router = useRouter();
-  const [number, setNumber] = useState(String(props.initialNumber));
-  const [closesAtLocal, setClosesAtLocal] = useState(() => isoToDatetimeLocalValue(props.initialClosesAtUtc));
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(matchdayEditReducer, {
+    number: String(props.initialNumber),
+    closesAtLocal: isoToDatetimeLocalValue(props.initialClosesAtUtc),
+    loading: false,
+    error: null,
+    message: null,
+  });
 
   const isClosed = useMemo(() => {
     const closesAtMs = new Date(props.initialClosesAtUtc).getTime();
@@ -42,41 +76,38 @@ export function MatchdayEditClient(props: {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <MatchdayFormFields
-          number={number}
-          closesAtLocal={closesAtLocal}
-          onNumberChange={setNumber}
-          onClosesAtChange={setClosesAtLocal}
+          number={state.number}
+          closesAtLocal={state.closesAtLocal}
+          onNumberChange={(value) => dispatch({ type: "set_number", value })}
+          onClosesAtChange={(value) => dispatch({ type: "set_closes_at", value })}
           numberId="edit-number"
           closesAtId="edit-closesAt"
         />
 
-        {message ? <InlineAlert variant="success" message={message} /> : null}
-        {error ? <InlineAlert variant="error" message={error} /> : null}
+        {state.message ? <InlineAlert variant="success" message={state.message} /> : null}
+        {state.error ? <InlineAlert variant="error" message={state.error} /> : null}
 
         <div className="flex flex-wrap gap-2">
           <Button
-            disabled={loading || !number.trim() || !closesAtLocal}
+            disabled={state.loading || !state.number.trim() || !state.closesAtLocal}
             type="button"
             onClick={async () => {
-              setError(null);
-              setMessage(null);
-              setLoading(true);
+              dispatch({ type: "save_start" });
               const res = await fetch(`/api/matchdays/${props.matchdayId}`, {
                 method: "PATCH",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                  number: Number(number),
-                  closesAtUtc: datetimeLocalToIso(closesAtLocal),
+                  number: Number(state.number),
+                  closesAtUtc: datetimeLocalToIso(state.closesAtLocal),
                 }),
               });
               const data = (await res.json().catch(() => ({}))) as { error?: string };
-              setLoading(false);
-              if (!res.ok) return setError(data.error ?? "No se pudo actualizar la jornada");
-              setMessage("Jornada actualizada.");
+              if (!res.ok) return dispatch({ type: "save_fail", error: data.error ?? "No se pudo actualizar la jornada" });
+              dispatch({ type: "save_success", message: "Jornada actualizada." });
               router.refresh();
             }}
           >
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {state.loading ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             Guardar cambios
           </Button>
           <Button asChild variant="outline" type="button">

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Eye } from "lucide-react";
+import Image from "next/image";
+import { Eye, Trophy } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/lib/auth";
-import { TournamentPageHeader } from "@/components/app/tournament-page-header";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,25 +77,36 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
-      <TournamentPageHeader
-        name={participant.tournament.name}
-        logoUrl={participant.tournament.logoUrl}
-        eyebrow={`Jornada ${matchday.number}`}
-        description={`Picks de ${participant.user.name ?? participant.user.email}`}
-        meta={
-          <p className="text-muted-ui text-sm">
-            Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
-          </p>
-        }
-        actions={
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="tournament-logo-frame size-14">
+            {participant.tournament.logoUrl ? (
+              <Image src={participant.tournament.logoUrl} alt="" width={56} height={56} className="h-full w-full object-cover" unoptimized />
+            ) : (
+              <Trophy className="size-6 text-zinc-500" />
+            )}
+          </div>
+          <div className="space-y-1">
+            <div className="text-muted-ui flex items-center gap-2">
+              <Trophy className="size-4" />
+              <span className="text-sm">{`Jornada ${matchday.number}`}</span>
+            </div>
+            <h1 className="text-2xl font-semibold">{participant.tournament.name}</h1>
+            <p className="text-muted-ui text-sm">{`Picks de ${participant.user.name ?? participant.user.email}`}</p>
+            <p className="text-muted-ui text-sm">
+              Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
             <Link href={`/tournaments/${tournamentId}/picks`}>
               <Eye className="size-4" />
               Participantes
             </Link>
           </Button>
-        }
-      />
+        </div>
+      </div>
 
       <Card>
         <CardHeader>

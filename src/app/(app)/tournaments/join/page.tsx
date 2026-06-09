@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   title: "Unirme a un torneo",
 };
 
+const joinTournamentEyebrow = (
+  <>
+    <Ticket className="size-4" />
+    <span className="text-sm">Invitaciones</span>
+  </>
+);
+
 export default async function JoinTournamentPage(props: { searchParams: Promise<{ token?: string }> }) {
   const { token } = await props.searchParams;
 
@@ -16,12 +23,7 @@ export default async function JoinTournamentPage(props: { searchParams: Promise<
       <PageIntro
         title="Unirme a un torneo"
         description="Pega el token que te compartió el organizador."
-        eyebrow={
-          <>
-          <Ticket className="size-4" />
-          <span className="text-sm">Invitaciones</span>
-          </>
-        }
+        eyebrow={joinTournamentEyebrow}
       />
 
       <JoinTournamentClient initialToken={token} />

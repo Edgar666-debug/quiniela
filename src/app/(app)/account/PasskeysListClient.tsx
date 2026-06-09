@@ -18,7 +18,8 @@ type PasskeyItem = {
 
 export function PasskeysListClient({ passkeys: initial }: { passkeys: PasskeyItem[] }) {
   const router = useRouter();
-  const [passkeys, setPasskeys] = useState(initial);
+  const [localPasskeys, setLocalPasskeys] = useState<{ source: PasskeyItem[]; value: PasskeyItem[] } | null>(null);
+  const passkeys = localPasskeys?.source === initial ? localPasskeys.value : initial;
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +35,10 @@ export function PasskeysListClient({ passkeys: initial }: { passkeys: PasskeyIte
       return;
     }
 
-    setPasskeys((prev) => prev.filter((p) => p.id !== id));
+    setLocalPasskeys({
+      source: initial,
+      value: passkeys.filter((p) => p.id !== id),
+    });
     setDeletingId(null);
     router.refresh();
   }

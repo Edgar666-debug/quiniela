@@ -1,20 +1,21 @@
 "use client";
 
-import * as React from "react";
+import { createContext, use, useMemo, type ComponentPropsWithRef } from "react";
 import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
 import { type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
-import { toggleVariants } from "@/components/ui/toggle";
+import { toggleVariants } from "@/components/ui/toggle-variants";
 
-const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({
+const ToggleGroupVariantContext = createContext<VariantProps<typeof toggleVariants>>({
   size: "default",
   variant: "default",
 });
 
-type ToggleGroupProps = React.ComponentPropsWithRef<typeof ToggleGroupPrimitive.Root> & VariantProps<typeof toggleVariants>;
+type ToggleGroupProps = ComponentPropsWithRef<typeof ToggleGroupPrimitive.Root> & VariantProps<typeof toggleVariants>;
 
 export function ToggleGroup({ className, variant, size, children, ref, ...props }: ToggleGroupProps) {
+  const contextValue = useMemo(() => ({ variant, size }), [size, variant]);
   return (
     <ToggleGroupPrimitive.Root
       ref={ref}
@@ -24,16 +25,16 @@ export function ToggleGroup({ className, variant, size, children, ref, ...props 
       )}
       {...props}
     >
-      <ToggleGroupContext.Provider value={{ variant, size }}>{children}</ToggleGroupContext.Provider>
+      <ToggleGroupVariantContext.Provider value={contextValue}>{children}</ToggleGroupVariantContext.Provider>
     </ToggleGroupPrimitive.Root>
   );
 }
 ToggleGroup.displayName = ToggleGroupPrimitive.Root.displayName;
 
-type ToggleGroupItemProps = React.ComponentPropsWithRef<typeof ToggleGroupPrimitive.Item> & VariantProps<typeof toggleVariants>;
+type ToggleGroupItemProps = ComponentPropsWithRef<typeof ToggleGroupPrimitive.Item> & VariantProps<typeof toggleVariants>;
 
 export function ToggleGroupItem({ className, children, variant, size, ref, ...props }: ToggleGroupItemProps) {
-  const context = React.useContext(ToggleGroupContext);
+  const context = use(ToggleGroupVariantContext);
 
   return (
     <ToggleGroupPrimitive.Item
