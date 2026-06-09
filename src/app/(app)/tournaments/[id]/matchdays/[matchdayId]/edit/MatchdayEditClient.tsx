@@ -20,7 +20,7 @@ export function MatchdayEditClient(props: {
 }) {
   const router = useRouter();
   const [number, setNumber] = useState(String(props.initialNumber));
-  const [closesAtLocal, setClosesAtLocal] = useState(isoToDatetimeLocalValue(props.initialClosesAtUtc));
+  const [closesAtLocal, setClosesAtLocal] = useState(() => isoToDatetimeLocalValue(props.initialClosesAtUtc));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);

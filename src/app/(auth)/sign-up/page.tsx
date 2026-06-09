@@ -12,8 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function SignUpPage(props: { searchParams: Promise<{ next?: string }> }) {
-  const { next } = await props.searchParams;
-  const session = await auth.api.getSession({ headers: await headers() });
+  const [params, session] = await Promise.all([
+    props.searchParams,
+    headers().then((requestHeaders) => auth.api.getSession({ headers: requestHeaders })),
+  ]);
+  const { next } = params;
   if (session) redirect(resolveAuthRedirect(next));
 
   return <SignUpForm next={next} />;

@@ -26,9 +26,10 @@ export function NewTournamentClient() {
   const [uploadedPreviewUrl, setUploadedPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    const previewUrl = uploadedPreviewUrlRef.current;
     return () => {
-      if (uploadedPreviewUrlRef.current) {
-        URL.revokeObjectURL(uploadedPreviewUrlRef.current);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
       }
     };
   }, []);
@@ -174,12 +175,13 @@ export function NewTournamentClient() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={(event) => {
+        <input
+          ref={fileInputRef}
+          type="file"
+          aria-label="Seleccionar logo del torneo"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(event) => {
               const file = event.target.files?.[0] ?? null;
               event.currentTarget.value = "";
 

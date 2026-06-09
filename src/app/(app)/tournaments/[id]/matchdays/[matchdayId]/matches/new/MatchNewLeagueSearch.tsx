@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { formatUtcToLocal } from "@/lib/format";
+import { formatUtcToLocalShort } from "@/lib/format";
 import { statusLabel } from "@/lib/football";
 import { cn } from "@/lib/utils";
 import {
@@ -451,12 +451,7 @@ export function MatchNewLeagueSearch(props: {
             <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
               {state.fixtures.map((fixture) => {
                 const isSelected = props.selectedFixtureIds.includes(fixture.id);
-                const localDate = formatUtcToLocal(fixture.dateUtc, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
+                const localDate = formatUtcToLocalShort(fixture.dateUtc);
 
                 return (
                   <li

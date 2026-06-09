@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { formatUtcToLocal } from "@/lib/format";
+import { formatUtcToLocalShort } from "@/lib/format";
 import { toLocalDateTimeInputValue, type FixtureSelection } from "./match-new-types";
 
 type FormState = {
@@ -218,7 +218,7 @@ export function MatchNewConfirmForm(props: {
                         {fixture.homeTeam} vs {fixture.awayTeam}
                       </p>
                       <p className="text-subtle-ui text-xs">
-                        Fixture {fixture.id} · {formatUtcToLocal(fixture.dateUtc, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        Fixture {fixture.id} · {formatUtcToLocalShort(fixture.dateUtc)}
                       </p>
                       {violatesCloseRule ? (
                         <p className="text-xs text-red-600">Inicia antes del cierre de la jornada.</p>

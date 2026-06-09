@@ -256,11 +256,15 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
+    let timeoutId: number | null = null;
     if (globalThis.localStorage?.getItem("app.sidebar.collapsed") === "1") {
-      setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         setCollapsed(true);
       }, 100);
     }
+    return () => {
+      if (timeoutId != null) window.clearTimeout(timeoutId);
+    };
   }, []);
 
   function toggleCollapsed() {

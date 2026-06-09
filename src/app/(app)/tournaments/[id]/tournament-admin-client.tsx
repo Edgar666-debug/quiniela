@@ -196,12 +196,13 @@ export function TournamentAdminClient(props: {
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={(event) => {
+        <input
+          ref={fileInputRef}
+          type="file"
+          aria-label="Seleccionar logo del torneo"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) void uploadLogo(file);
               event.currentTarget.value = "";

@@ -232,7 +232,7 @@ export default async function Home() {
 
       {/* Footer */}
       <footer className="border-subtle-ui border-t">
-        <div className="text-subtle-ui mx-auto flex max-w-5xl items-center justify-between px-6 py-6 text-sm">
+        <div className="text-subtle-ui mx-auto flex max-w-5xl items-center justify-between p-6 text-sm">
           <div className="flex items-center gap-2">
             <Trophy className="size-4" />
             <span>Quiniela</span>

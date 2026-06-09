@@ -41,9 +41,35 @@ export const kickoffLocalFormatter = new Intl.DateTimeFormat("es-MX", {
   minute: "2-digit",
 });
 
+export const localDateTimeFormatter = new Intl.DateTimeFormat("es-MX", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+export const localShortFormatter = new Intl.DateTimeFormat("es-MX", {
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+export const localDefaultFormatter = new Intl.DateTimeFormat("es-MX");
+
 /** Formats a UTC ISO instant in the user's local timezone. */
-export function formatUtcToLocal(iso: string, options?: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat("es-MX", options).format(new Date(iso));
+export function formatUtcToLocal(iso: string) {
+  return localDefaultFormatter.format(new Date(iso));
+}
+
+export function formatUtcToLocalDateTime(iso: string) {
+  return localDateTimeFormatter.format(new Date(iso));
+}
+
+export function formatUtcToLocalShort(iso: string) {
+  return localShortFormatter.format(new Date(iso));
 }
 
 /** Long kickoff label in local time, e.g. for matchday group headers. */

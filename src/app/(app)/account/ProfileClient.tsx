@@ -174,6 +174,7 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
         <input
           ref={fileInputRef}
           type="file"
+          aria-label="Seleccionar avatar"
           accept="image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={(event) => {
