@@ -1,5 +1,13 @@
 export type Outcome = "HOME" | "DRAW" | "AWAY";
 
+export const FINISHED_STATUSES = new Set(["FT", "AET", "PEN"]);
+
+export function outcomeFromScore(scoreHome: number, scoreAway: number): Outcome {
+  if (scoreHome > scoreAway) return "HOME";
+  if (scoreHome < scoreAway) return "AWAY";
+  return "DRAW";
+}
+
 export function statusLabel(short: string) {
   if (short === "FT") return "Final";
   if (short === "AET") return "Final (ET)";

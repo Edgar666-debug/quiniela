@@ -33,7 +33,7 @@ export function MatchdayPageActions(props: {
         </Button>
       ) : null}
       {!isClosed && canManage ? (
-        <Button asChild size="sm">
+        <Button asChild variant="outline" size="sm">
           <Link href={`/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}/matches/new`}>
             <Plus className="size-4" />
           </Link>

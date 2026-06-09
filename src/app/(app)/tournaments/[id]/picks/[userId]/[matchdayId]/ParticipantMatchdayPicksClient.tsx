@@ -6,9 +6,9 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
-import { MatchPickGroup, type PickValue } from "@/components/matches/pick-cards";
+import { MatchPickGroup, PickLegend, type PickValue } from "@/components/matches/pick-cards";
 import { groupMatchesByLocalKickoff } from "@/lib/format";
-import { statusLabel, type Outcome } from "@/lib/football";
+import { FINISHED_STATUSES, outcomeFromScore, statusLabel, type Outcome } from "@/lib/football";
 
 type MatchRow = {
   id: string;
@@ -36,6 +36,9 @@ export function ParticipantMatchdayPicksClient(props: {
   const [error, setError] = useState<string | null>(null);
 
   const grouped = useMemo(() => groupMatchesByLocalKickoff(rows), [rows]);
+  const hasFinishedMatch = rows.some(
+    (m) => FINISHED_STATUSES.has(m.statusShort) && m.scoreHome != null && m.scoreAway != null,
+  );
 
   async function refresh() {
     setLoading(true);
@@ -75,6 +78,8 @@ export function ParticipantMatchdayPicksClient(props: {
         </Button>
       </div>
 
+      {hasFinishedMatch ? <PickLegend /> : null}
+
       <div className="flex flex-col gap-6"> 
         {grouped.map((g) => (
           <div key={g.key} className="flex flex-col gap-3">
@@ -93,6 +98,11 @@ export function ParticipantMatchdayPicksClient(props: {
 
                   <MatchPickGroup
                     value={(m.pick as PickValue | null) ?? null}
+                    result={
+                      FINISHED_STATUSES.has(m.statusShort) && m.scoreHome != null && m.scoreAway != null
+                        ? outcomeFromScore(m.scoreHome, m.scoreAway)
+                        : null
+                    }
                     homeTeam={m.homeTeam}
                     homeLogoUrl={m.homeLogoUrl}
                     awayTeam={m.awayTeam}

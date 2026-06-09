@@ -63,7 +63,7 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
             <CardDescription>Tabla de posiciones en vivo.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild>
+            <Button asChild variant="outline">
               <Link href={`/tournaments/${tournamentId}/standings`}>
                 <Trophy className="size-4" />
                 Ver ranking
@@ -124,7 +124,7 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
               <CardDescription>Panel para jornadas, participantes e invitaciones.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild>
+              <Button asChild variant="outline">
                 <Link href={`/tournaments/${tournamentId}/manage`}>
                   <LayoutDashboard className="size-4" />
                   Abrir panel de gestión
