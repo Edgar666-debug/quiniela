@@ -8,6 +8,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "email": "email dev --dir src/emails --port 3001",
     "doctor": "react-doctor . --offline --no-dead-code -y",
     "doctor:ci": "react-doctor . --offline --no-dead-code -y --fail-on error"
   },
