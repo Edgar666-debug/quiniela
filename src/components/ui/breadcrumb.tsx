@@ -8,7 +8,7 @@ export function Breadcrumb(props: React.ComponentProps<"nav">) {
 }
 
 export function BreadcrumbList(props: React.ComponentProps<"ol">) {
-  return <ol {...props} className={cn("flex flex-wrap items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-400", props.className)} />;
+  return <ol {...props} className={cn("text-muted-ui flex flex-wrap items-center gap-1.5 text-sm", props.className)} />;
 }
 
 export function BreadcrumbItem(props: React.ComponentProps<"li">) {
@@ -30,4 +30,3 @@ export function BreadcrumbPage(props: React.ComponentProps<"span">) {
 export function BreadcrumbSeparator(props: React.ComponentProps<"span">) {
   return <span {...props} role="presentation" className={cn("select-none text-zinc-400 dark:text-zinc-600", props.className)} />;
 }
-

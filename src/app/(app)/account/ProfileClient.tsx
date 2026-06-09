@@ -119,16 +119,16 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-4">
-        <div className="flex size-12 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+        <div className="avatar-frame-ui size-12">
           {imageUrl ? (
             <Image src={imageUrl} alt="" width={48} height={48} className="h-full w-full object-cover" unoptimized />
           ) : (
-            <UserIcon className="size-5 text-zinc-500" />
+            <UserIcon className="icon-muted-ui size-5" />
           )}
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{name.trim() || "Sin nombre"}</p>
-          <p className="truncate text-xs text-zinc-600 dark:text-zinc-400">{props.initial.email}</p>
+          <p className="text-muted-ui truncate text-xs">{props.initial.email}</p>
         </div>
       </div>
 
@@ -210,7 +210,7 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
         >
           <Trash className="size-4" /> Quitar
         </Button>
-        <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">
+        <div className="icon-muted-ui ml-auto flex items-center gap-2 text-xs">
           <ImageIcon className="size-4" />
           Storage o URL pública
         </div>

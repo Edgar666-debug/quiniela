@@ -43,7 +43,7 @@ export function MatchdaysClient(props: {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{rows.length} jornada(s)</p>
+        <p className="text-muted-ui text-sm">{rows.length} jornada(s)</p>
         <Button variant="outline" size="sm" type="button" onClick={refresh} disabled={loading}>
           {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           Refrescar
@@ -66,12 +66,12 @@ export function MatchdaysClient(props: {
 
       <div className="grid gap-3 md:grid-cols-2">
         {rows.map((m) => (
-          <div key={m.id} className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div key={m.id} className="list-card-ui bg-white dark:bg-zinc-950/20">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-semibold">Jornada {m.number}</p>
                 <MatchdayClose closesAtUtc={m.closesAtUtc} compact />
-                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{m.matchesCount} partido(s)</p>
+                <p className="text-muted-ui mt-1 text-xs">{m.matchesCount} partido(s)</p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
                 <Button asChild variant="outline" size="sm">

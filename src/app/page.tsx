@@ -74,7 +74,7 @@ export default async function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Nav */}
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
+      <header className="shell-topbar-ui sticky top-0 z-40">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2 font-semibold">
             <Trophy className="size-5 text-zinc-700 dark:text-zinc-300" />
@@ -83,7 +83,7 @@ export default async function Home() {
           <div className="flex items-center gap-2">
             {session ? (
               <>
-                <span className="hidden text-sm text-zinc-600 dark:text-zinc-400 sm:inline">
+                <span className="text-muted-ui hidden text-sm sm:inline">
                   Hola, {displayName}
                 </span>
                 <Button asChild size="sm" variant="outline">
@@ -120,7 +120,7 @@ export default async function Home() {
             Quinielas de fútbol{" "}
             <span className="text-zinc-500">simples y rápidas</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-zinc-600 dark:text-zinc-400">
+          <p className="text-muted-ui mx-auto mt-6 max-w-2xl text-balance text-lg">
             Crea torneos privados, cierra jornadas por horario y lleva el ranking en vivo. Sin complicaciones, solo fútbol.
           </p>
           {session ? (
@@ -154,18 +154,18 @@ export default async function Home() {
         <section className="mx-auto max-w-5xl px-6 py-20">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold tracking-tight">Todo lo que necesitas</h2>
-            <p className="mt-3 text-zinc-600 dark:text-zinc-400">Sin configuración compleja. Listo para jugar en minutos.</p>
+            <p className="text-muted-ui mt-3">Sin configuración compleja. Listo para jugar en minutos.</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
-              <Card key={f.title} className="border-zinc-200 dark:border-zinc-800">
+              <Card key={f.title} className="surface-panel-hover-ui">
                 <CardHeader className="pb-3">
                   <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
                     <f.icon className="size-4 text-zinc-700 dark:text-zinc-300" />
                   </div>
                   <CardTitle className="text-base">{f.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-zinc-600 dark:text-zinc-400">
+                <CardContent className="text-muted-ui text-sm">
                   {f.description}
                 </CardContent>
               </Card>
@@ -180,14 +180,14 @@ export default async function Home() {
           <div className="mx-auto max-w-5xl">
             <div className="mb-12 text-center">
               <h2 className="text-3xl font-bold tracking-tight">¿Cómo funciona?</h2>
-              <p className="mt-3 text-zinc-600 dark:text-zinc-400">Cuatro pasos y estás jugando.</p>
+              <p className="text-muted-ui mt-3">Cuatro pasos y estás jugando.</p>
             </div>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               {steps.map((s) => (
                 <div key={s.step} className="flex flex-col gap-3">
                   <span className="text-4xl font-bold text-zinc-200 dark:text-zinc-700">{s.step}</span>
                   <h3 className="font-semibold">{s.title}</h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">{s.description}</p>
+                  <p className="text-muted-ui text-sm">{s.description}</p>
                 </div>
               ))}
             </div>
@@ -200,7 +200,7 @@ export default async function Home() {
         <section className="mx-auto max-w-5xl px-6 py-24 text-center">
           <div className="mx-auto max-w-xl">
             <h2 className="text-3xl font-bold tracking-tight">¿Listo para jugar?</h2>
-            <p className="mt-4 text-zinc-600 dark:text-zinc-400">
+            <p className="text-muted-ui mt-4">
               Crea tu cuenta gratis, arma tu torneo y reta a tus amigos hoy mismo.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -231,8 +231,8 @@ export default async function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200 dark:border-zinc-800">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6 text-sm text-zinc-500">
+      <footer className="border-subtle-ui border-t">
+        <div className="text-subtle-ui mx-auto flex max-w-5xl items-center justify-between px-6 py-6 text-sm">
           <div className="flex items-center gap-2">
             <Trophy className="size-4" />
             <span>Quiniela</span>

@@ -37,8 +37,8 @@ export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; c
       <div className={cn("flex items-center gap-2 text-xs", props.className)}>
         {isClosed ? <Lock className="size-3.5 text-zinc-500" /> : <Timer className="size-3.5 text-emerald-500" />}
         <span className={cn(isClosed ? "text-zinc-500" : "text-emerald-400")}>{isClosed ? "Cerrada" : "Abierta"}</span>
-        <span className="text-zinc-600 dark:text-zinc-400">•</span>
-        <span className="text-zinc-600 dark:text-zinc-400" title={formatUtcDateTime(props.closesAtUtc)}>
+        <span className="text-muted-ui">•</span>
+        <span className="text-muted-ui" title={formatUtcDateTime(props.closesAtUtc)}>
           {formatLocalDateTime(props.closesAtUtc)}
         </span>
       </div>
@@ -46,7 +46,7 @@ export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; c
   }
 
   return (
-    <div className={cn("flex flex-col gap-1 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800", props.className)}>
+    <div className={cn("list-row-ui flex flex-col gap-1", props.className)}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           {isClosed ? <Lock className="size-4 text-zinc-500" /> : <Timer className="size-4 text-emerald-500" />}
@@ -61,12 +61,12 @@ export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; c
           {isClosed ? "Cerrada" : "Abierta"}
         </span>
       </div>
-      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+      <p className="text-muted-ui text-xs">
         Cierre: {formatLocalDateTime(props.closesAtUtc)} ({getUserTimeZone()})
       </p>
-      <p className="text-xs text-zinc-500 dark:text-zinc-500">Referencia UTC: {formatUtcDateTime(props.closesAtUtc)}</p>
+      <p className="text-subtle-ui text-xs">Referencia UTC: {formatUtcDateTime(props.closesAtUtc)}</p>
       {isClosed ? null : (
-        <p className="text-xs text-zinc-600 dark:text-zinc-400">Tiempo restante: {formatRemaining(remainingMs)}</p>
+        <p className="text-muted-ui text-xs">Tiempo restante: {formatRemaining(remainingMs)}</p>
       )}
     </div>
   );

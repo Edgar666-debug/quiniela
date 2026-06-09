@@ -74,7 +74,7 @@ function FeatureCard(props: { href: string; icon: React.ReactNode; title: string
     <Link href={props.href} className="group">
       <Card
         className={cn(
-          "h-full border-zinc-200 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-950/40",
+          "border-subtle-ui h-full transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-950/40",
         )}
       >
         <CardHeader className="flex-row gap-4 space-y-0">
@@ -92,12 +92,12 @@ function FeatureCard(props: { href: string; icon: React.ReactNode; title: string
 
 function TournamentBadge(props: { name: string; logoUrl?: string | null }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-300">
+    <div className="soft-pill-ui text-muted-ui inline-flex items-center gap-2 px-2.5 py-1 text-xs dark:text-zinc-300">
       <span className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
         {props.logoUrl ? (
           <Image src={props.logoUrl} alt="" width={20} height={20} className="h-full w-full object-cover" unoptimized />
         ) : (
-          <Trophy className="size-3 text-zinc-500" />
+          <Trophy className="icon-muted-ui size-3" />
         )}
       </span>
       <span className="max-w-44 truncate">{props.name}</span>

@@ -37,7 +37,7 @@ export function SheetContent({ className, children, side = "left", ref, ...props
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed z-50 h-full w-80 max-w-[90vw] border border-zinc-200 bg-white p-4 shadow-lg outline-none dark:border-zinc-800 dark:bg-black",
+          "surface-panel-ui fixed z-50 h-full w-80 max-w-[90vw] p-4 shadow-lg outline-none",
           side === "left" ? "inset-y-0 left-0" : "inset-y-0 right-0",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-200",
           side === "left"
@@ -74,7 +74,7 @@ export function SheetDescription({ className, ref, ...props }: SheetDescriptionP
   return (
     <DialogPrimitive.Description
       ref={ref}
-      className={cn("text-sm text-zinc-600 dark:text-zinc-400", className)}
+      className={cn("text-muted-ui text-sm", className)}
       {...props}
     />
   );

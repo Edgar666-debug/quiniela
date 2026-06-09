@@ -79,7 +79,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
         logoUrl={tournament.logoUrl}
         eyebrow={`Jornada ${matchday.number}`}
         meta={
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-muted-ui text-sm">
             Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
           </p>
         }

@@ -54,10 +54,10 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
       </div>
 
       {rows.map((m) => (
-        <div key={m.user.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+        <div key={m.user.id} className="list-row-ui flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{m.user.name ?? m.user.email}</p>
-            <p className="truncate text-xs text-zinc-600 dark:text-zinc-400">{m.user.email}</p>
+            <p className="text-muted-ui truncate text-xs">{m.user.email}</p>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline">{m.role}</Badge>

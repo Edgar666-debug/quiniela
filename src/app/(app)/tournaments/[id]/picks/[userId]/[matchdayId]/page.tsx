@@ -83,7 +83,7 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
         eyebrow={`Jornada ${matchday.number}`}
         description={`Picks de ${participant.user.name ?? participant.user.email}`}
         meta={
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-muted-ui text-sm">
             Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
           </p>
         }

@@ -77,14 +77,14 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
       </div>
 
       {sessions.length === 0 ? (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">No sessions found.</p>
+        <p className="text-muted-ui text-sm">No sessions found.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {sessions.map((s) => (
-            <li key={s.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+            <li key={s.id} className="list-card-ui">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+                  <div className="avatar-frame-ui size-10 text-zinc-700 dark:text-zinc-200">
                     <Laptop className="size-5" />
                   </div>
                   <div className="min-w-0">
@@ -99,9 +99,9 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
                         </span>
                       ) : null}
                     </div>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">{parseOS(s.userAgent)}</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">IP: {s.ipAddress ?? "—"}</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                    <p className="text-muted-ui text-xs">{parseOS(s.userAgent)}</p>
+                    <p className="text-muted-ui text-xs">IP: {s.ipAddress ?? "—"}</p>
+                    <p className="text-muted-ui text-xs">
                       Last active: {formatUtcDateTime(s.updatedAtUtc)} • Expires: {formatUtcDateTime(s.expiresAtUtc)}
                     </p>
                   </div>
@@ -113,7 +113,7 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
                   type="button"
                   disabled={loading || s.isCurrent || s.id === currentId}
                   onClick={() => revoke(s.id)}
-                  className={cn("text-zinc-500 hover:text-red-500", (s.isCurrent || s.id === currentId) ? "opacity-40" : "")}
+                  className={cn("icon-muted-ui hover:text-red-500", (s.isCurrent || s.id === currentId) ? "opacity-40" : "")}
                   aria-label="Cerrar sesión"
                   title={s.isCurrent ? "No puedes cerrar la sesión actual desde aquí." : "Cerrar sesión"}
                 >

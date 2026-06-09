@@ -61,13 +61,7 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
     };
   }, [token]);
 
-  const canJoin = Boolean(
-    token.trim() &&
-      preview &&
-      preview.tournament.status === "ACTIVE" &&
-      !preview.isExpired &&
-      preview.uses < preview.maxUses,
-  );
+  const canJoin = Boolean(token.trim() && preview && preview.tournament.status === "ACTIVE" && !preview.isExpired && preview.uses < preview.maxUses);
 
   return (
     <Card>
@@ -85,8 +79,8 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
             id="inviteToken"
             placeholder="pega-el-token..."
             value={token}
-            onChange={(e) => {
-              const nextValue = e.target.value;
+            onChange={(event) => {
+              const nextValue = event.target.value;
               setMessage(null);
               setError(null);
               if (!nextValue.trim()) setPreview(null);
@@ -99,19 +93,19 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
         {previewLoading ? <InlineAlert variant="info" message="Validando invitación..." /> : null}
 
         {preview ? (
-          <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="border-subtle-ui rounded-xl border p-4">
             <div className="flex items-start gap-3">
-              <div className="flex size-14 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+              <div className="tournament-logo-frame size-14">
                 {preview.tournament.logoUrl ? (
                   <Image src={preview.tournament.logoUrl} alt="" width={56} height={56} className="h-full w-full object-cover" unoptimized />
                 ) : (
-                  <Trophy className="size-6 text-zinc-500" />
+                  <Trophy className="icon-muted-ui size-6" />
                 )}
               </div>
               <div className="min-w-0 space-y-1">
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Vista previa del torneo</p>
+                <p className="text-muted-ui text-sm">Vista previa del torneo</p>
                 <p className="truncate text-lg font-semibold">{preview.tournament.name}</p>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                <p className="text-muted-ui text-sm">
                   Estado: {preview.tournament.status} · Usos: {preview.uses}/{preview.maxUses}
                   {preview.expiresAtUtc ? ` · Expira: ${preview.expiresAtUtc}` : ""}
                 </p>

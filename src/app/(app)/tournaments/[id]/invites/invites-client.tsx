@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Clipboard, Loader2, Mail, Plus, Ticket } from "lucide-react";
+import { EmptyState } from "@/components/app/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -84,7 +85,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
               Generar token
             </Button>
             {hasAvailable ? (
-              <p className="text-xs text-zinc-500">Tip: si ya tienes tokens sin usar, también puedes reutilizarlos.</p>
+              <p className="text-subtle-ui text-xs">Tip: si ya tienes tokens sin usar, también puedes reutilizarlos.</p>
             ) : null}
           </div>
 
@@ -128,15 +129,15 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {invites.length === 0 ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Aún no hay invitaciones.</p>
+            <EmptyState compact description="Aún no hay invitaciones." />
           ) : (
             <ul className="flex flex-col gap-3">
               {invites.map((i) => (
-                <li key={i.token} className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <li key={i.token} className="list-row-ui">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-mono text-sm">{i.token}</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="text-muted-ui text-xs">
                         Usos: {i.uses}/{i.maxUses}
                         {i.expiresAtUtc ? ` • Expira: ${i.expiresAtUtc}` : ""}
                       </p>
@@ -155,7 +156,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
                     </Button>
                   </div>
                   <Separator className="my-2" />
-                  <p className="text-xs text-zinc-500">Creado (UTC): {i.createdAtUtc}</p>
+                  <p className="text-subtle-ui text-xs">Creado (UTC): {i.createdAtUtc}</p>
                 </li>
               ))}
             </ul>

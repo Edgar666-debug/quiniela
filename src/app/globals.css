@@ -5,11 +5,21 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --surface: #ffffff;
+  --surface-soft: rgb(244 244 245);
+  --surface-strong: rgb(241 245 249 / 0.8);
+  --border-subtle: rgb(228 228 231);
+  --foreground-muted: rgb(82 82 91);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-strong: var(--surface-strong);
+  --color-border-subtle: var(--border-subtle);
+  --color-foreground-muted: var(--foreground-muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -17,10 +27,75 @@
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+  --surface: rgb(24 24 27 / 0.6);
+  --surface-soft: rgb(9 9 11 / 0.4);
+  --surface-strong: rgb(24 24 27 / 0.9);
+  --border-subtle: rgb(39 39 42);
+  --foreground-muted: rgb(161 161 170);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@utility text-muted-ui {
+  @apply text-zinc-600 dark:text-zinc-400;
+}
+
+@utility text-subtle-ui {
+  @apply text-zinc-500 dark:text-zinc-400;
+}
+
+@utility border-subtle-ui {
+  @apply border-zinc-200 dark:border-zinc-800;
+}
+
+@utility surface-soft-ui {
+  @apply border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40;
+}
+
+@utility surface-panel-ui {
+  @apply border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/60;
+}
+
+@utility list-row-ui {
+  @apply rounded-xl border border-zinc-200 p-3 dark:border-zinc-800;
+}
+
+@utility list-card-ui {
+  @apply rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40;
+}
+
+@utility match-card-ui {
+  @apply rounded-2xl bg-zinc-50/70 p-4 dark:bg-zinc-950/30;
+}
+
+@utility surface-panel-hover-ui {
+  @apply transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:hover:border-zinc-700 dark:hover:bg-zinc-900;
+}
+
+@utility tournament-logo-frame {
+  @apply flex items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40;
+}
+
+@utility avatar-frame-ui {
+  @apply flex items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40;
+}
+
+@utility icon-muted-ui {
+  @apply text-zinc-500 dark:text-zinc-400;
+}
+
+@utility soft-pill-ui {
+  @apply rounded-full border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950/40;
+}
+
+@utility empty-state-ui {
+  @apply rounded-xl border border-zinc-200 bg-zinc-50 text-center dark:border-zinc-800 dark:bg-zinc-900/50;
+}
+
+@utility shell-topbar-ui {
+  @apply border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80;
 }

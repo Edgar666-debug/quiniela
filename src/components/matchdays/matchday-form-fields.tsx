@@ -35,7 +35,7 @@ export function MatchdayFormFields(props: {
           onChange={(e) => props.onClosesAtChange(e.target.value)}
         />
         {closesAtUtcPreview ? (
-          <p className="text-xs text-zinc-600 dark:text-zinc-400">Se guardará como UTC: {closesAtUtcPreview}</p>
+          <p className="text-muted-ui text-xs">Se guardará como UTC: {closesAtUtcPreview}</p>
         ) : null}
       </div>
     </div>

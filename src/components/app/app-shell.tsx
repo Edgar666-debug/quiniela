@@ -34,7 +34,7 @@ type AppUser = { email: string; name: string | null };
 
 function SectionLabel(props: { children: React.ReactNode; collapsed: boolean }) {
   if (props.collapsed) return null;
-  return <p className="px-2 pt-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">{props.children}</p>;
+  return <p className="text-muted-ui px-2 pt-2 text-xs font-medium">{props.children}</p>;
 }
 
 function NavItem(props: {
@@ -94,7 +94,7 @@ function Sidebar(props: {
         <div
           className={cn(
             "flex items-center gap-2",
-            props.collapsed ? "size-10 justify-center rounded-xl border border-zinc-200 dark:border-zinc-800" : "",
+            props.collapsed ? "border-subtle-ui size-10 justify-center rounded-xl border" : "",
           )}
         >
           <Trophy className="size-5 shrink-0" />
@@ -136,7 +136,7 @@ function Sidebar(props: {
         <div className={cn("flex flex-col gap-1", props.collapsed ? "items-center" : "")}>
           <SectionLabel collapsed={props.collapsed}>Torneo</SectionLabel>
           {props.collapsed ? (
-            <div className="flex size-10 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 p-2 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-200">
+            <div className="tournament-logo-frame size-10 p-2 text-zinc-700 dark:text-zinc-200">
               {currentTournament.logoUrl ? (
                 <Image src={currentTournament.logoUrl} alt="" width={40} height={40} className="h-full w-full object-cover" unoptimized />
               ) : (
@@ -145,7 +145,7 @@ function Sidebar(props: {
             </div>
           ) : (
             <div className="flex items-center gap-3 px-2">
-              <div className="flex size-11 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+              <div className="tournament-logo-frame size-11">
                 {currentTournament.logoUrl ? (
                   <Image src={currentTournament.logoUrl} alt="" width={44} height={44} className="h-full w-full object-cover" unoptimized />
                 ) : (
@@ -154,7 +154,7 @@ function Sidebar(props: {
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold">{currentTournament.name}</p>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">Rol: {currentTournament.role}</p>
+                <p className="text-muted-ui text-xs">Rol: {currentTournament.role}</p>
               </div>
             </div>
           )}
@@ -232,7 +232,7 @@ function Sidebar(props: {
         </div>
       ) : (
         props.collapsed ? null : (
-          <p className="px-2 text-xs text-zinc-600 dark:text-zinc-400">Selecciona un torneo para ver más opciones.</p>
+          <p className="text-muted-ui px-2 text-xs">Selecciona un torneo para ver más opciones.</p>
         )
       )}
 
@@ -274,12 +274,12 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
   return (
     <div className="min-h-screen bg-white text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
       <div className={cn("mx-auto grid max-w-7xl grid-cols-1", collapsed ? "md:grid-cols-[84px_1fr]" : "md:grid-cols-[280px_1fr]")}>
-        <aside className="sticky top-0 hidden h-screen border-r border-zinc-200 p-4 dark:border-zinc-800 md:block">
+        <aside className="border-subtle-ui sticky top-0 hidden h-screen border-r p-4 md:block">
           <Sidebar user={props.user} tournaments={props.tournaments} currentTournamentId={currentTournamentId} collapsed={collapsed} />
         </aside>
 
         <div className="min-w-0">
-          <header className="sticky top-0 z-40 hidden border-b border-zinc-200 bg-white/80 px-6 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80 md:block">
+          <header className="shell-topbar-ui sticky top-0 z-40 hidden px-6 py-3 md:block">
             <div className="flex items-center justify-between gap-4">
               <div className="flex min-w-0 items-center gap-2">
                 <Button variant="ghost" size="icon" type="button" onClick={toggleCollapsed} aria-label="Alternar menú">
@@ -294,7 +294,7 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
             </div>
           </header>
 
-          <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 p-4 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80 md:hidden">
+          <header className="shell-topbar-ui sticky top-0 z-40 p-4 md:hidden">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
                 <AppBackButton
@@ -305,7 +305,7 @@ export function AppShell(props: { user: AppUser; tournaments: TournamentLink[]; 
                 <div className="flex min-w-0 items-center gap-2">
                   {currentTournament ? (
                     <>
-                      <div className="flex size-8 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+                      <div className="surface-soft-ui flex size-8 items-center justify-center overflow-hidden rounded-lg">
                         {currentTournament.logoUrl ? (
                           <Image src={currentTournament.logoUrl} alt="" width={32} height={32} className="h-full w-full object-cover" unoptimized />
                         ) : (

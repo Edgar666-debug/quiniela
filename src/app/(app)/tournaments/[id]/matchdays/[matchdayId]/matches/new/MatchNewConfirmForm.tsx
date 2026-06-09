@@ -191,11 +191,11 @@ export function MatchNewConfirmForm(props: {
           />
         ) : null}
 
-        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="list-card-ui bg-white dark:bg-zinc-950/20">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium">Selección múltiple</p>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+              <p className="text-muted-ui text-xs">
                 {props.selectedFixtures.length === 0
                   ? "No hay fixtures seleccionados todavía."
                   : `${props.selectedFixtures.length} fixture${props.selectedFixtures.length === 1 ? "" : "s"} listo${props.selectedFixtures.length === 1 ? "" : "s"} para agregar.`}
@@ -212,12 +212,12 @@ export function MatchNewConfirmForm(props: {
               {props.selectedFixtures.map((fixture) => {
                 const violatesCloseRule = new Date(fixture.dateUtc).getTime() < props.closesAtMs;
                 return (
-                  <li key={fixture.id} className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-800">
+                  <li key={fixture.id} className="list-row-ui flex items-center justify-between gap-3 rounded-lg px-3 py-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">
                         {fixture.homeTeam} vs {fixture.awayTeam}
                       </p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-subtle-ui text-xs">
                         Fixture {fixture.id} · {formatUtcToLocal(fixture.dateUtc, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </p>
                       {violatesCloseRule ? (

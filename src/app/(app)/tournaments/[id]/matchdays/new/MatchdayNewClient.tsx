@@ -22,7 +22,7 @@ export function MatchdayNewClient(props: { tournamentId: string }) {
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">Crear jornada</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Define el número y el cierre (se guarda en UTC).</p>
+          <p className="text-muted-ui text-sm">Define el número y el cierre (se guarda en UTC).</p>
         </div>
       </div>
 

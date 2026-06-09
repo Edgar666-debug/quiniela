@@ -5,6 +5,7 @@ import { Shield } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/lib/auth";
+import { PageIntro } from "@/components/app/page-intro";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,10 +51,7 @@ export default async function AccountPage() {
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Mi cuenta</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{session.user.email}</p>
-      </div>
+      <PageIntro title="Mi cuenta" description={session.user.email} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="lg:col-span-2">

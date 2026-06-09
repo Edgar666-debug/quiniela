@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { passkeyDateFormatter } from "@/lib/format";
+import { EmptyState } from "@/components/app/empty-state";
 import { Button } from "@/components/ui/button";
 import { InlineAlert } from "@/components/app/inline-alert";
 
@@ -39,7 +40,7 @@ export function PasskeysListClient({ passkeys: initial }: { passkeys: PasskeyIte
   }
 
   if (passkeys.length === 0) {
-    return <p className="text-sm text-zinc-600 dark:text-zinc-400">No hay passkeys registradas.</p>;
+    return <EmptyState compact description="No hay passkeys registradas." />;
   }
 
   return (
@@ -49,18 +50,18 @@ export function PasskeysListClient({ passkeys: initial }: { passkeys: PasskeyIte
         {passkeys.map((p) => (
           <li
             key={p.id}
-            className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800"
+            className="list-row-ui flex items-center justify-between gap-3"
           >
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{p.name ?? "Passkey"}</p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-subtle-ui text-xs">
                 Creada: {passkeyDateFormatter.format(p.createdAt)}
               </p>
             </div>
             <Button
               size="icon"
               variant="ghost"
-              className="shrink-0 text-zinc-400 hover:text-red-500 dark:hover:text-red-400"
+              className="icon-muted-ui shrink-0 hover:text-red-500 dark:hover:text-red-400"
               disabled={deletingId === p.id}
               onClick={() => handleDelete(p.id)}
               aria-label={`Eliminar passkey ${p.name ?? ""}`}

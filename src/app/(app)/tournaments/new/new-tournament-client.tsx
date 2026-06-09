@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, PlusCircle, Trash, Trophy, Upload} from "lucide-react";
+import { Loader2, SaveIcon, Trash, Trophy, Upload} from "lucide-react";
 
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
@@ -129,7 +129,7 @@ export function NewTournamentClient() {
         {error ? <InlineAlert variant="error" message={error} /> : null}
 
         <div className="flex items-center gap-3">
-          <div className="flex size-14 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+          <div className="tournament-logo-frame size-14">
             {previewLogoUrl ? (
               <Image src={previewLogoUrl} alt="" width={56} height={56} className="h-full w-full object-cover" unoptimized />
             ) : (
@@ -138,7 +138,7 @@ export function NewTournamentClient() {
           </div>
           <div>
             <p className="text-sm font-medium">Identidad inicial</p>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Puedes pegar una URL o subir un JPG, PNG o WebP de hasta 5 MB.</p>
+            <p className="text-muted-ui text-xs">Puedes pegar una URL o subir un JPG, PNG o WebP de hasta 5 MB.</p>
           </div>
         </div>
 
@@ -212,6 +212,11 @@ export function NewTournamentClient() {
             Subir
           </Button>
 
+          <Button type="button" variant="outline" disabled={loading || !name.trim()} onClick={() => void createTournament()}>
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
+            Guardar
+          </Button>
+
           <Button
             type="button"
             variant="outline"
@@ -232,10 +237,6 @@ export function NewTournamentClient() {
             Borrar
           </Button>
 
-          <Button disabled={loading || !name.trim()} type="button" onClick={() => void createTournament()}>
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}
-            Crear
-          </Button>
         </div>
       </CardContent>
     </Card>
