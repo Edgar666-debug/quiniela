@@ -12,12 +12,7 @@ export const metadata: Metadata = {
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  // Redirect through /api/auth/clear-session instead of directly to /sign-in.
-  // This ensures the stale session cookie gets deleted before the user reaches
-  // /sign-in, preventing the proxy's optimistic cookie check from looping them
-  // back to /dashboard indefinitely (blank page).
-  if (!session) redirect("/api/auth/clear-session");
-
+  if (!session) redirect("/sign-in");
   const memberships = await prisma.tournamentMember.findMany({
     where: { userId: session.user.id },
     select: { role: true, tournament: { select: { id: true, name: true, logoUrl: true, status: true } } },
