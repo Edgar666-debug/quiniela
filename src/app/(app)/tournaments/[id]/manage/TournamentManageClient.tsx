@@ -47,17 +47,8 @@ export function TournamentManageClient(props: {
     return () => clearInterval(id);
   }, []);
 
-  const openCount = props.matchdays.filter((m) => !isMatchdayClosed(m.closesAtUtc, nowMs)).length;
-  const closedCount = props.matchdays.length - openCount;
-
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Estado" value={props.status} />
-        <StatCard label="Participantes" value={String(props.membersCount)} />
-        <StatCard label="Jornadas abiertas" value={String(openCount)} />
-        <StatCard label="Jornadas cerradas" value={String(closedCount)} />
-      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         {canEditTournament ? (
@@ -154,7 +145,6 @@ export function TournamentManageClient(props: {
                           <Button asChild variant="ghost" size="sm">
                             <Link href={`/tournaments/${props.tournamentId}/matchdays/${m.id}/edit`}>
                               <Pencil className="size-4" />
-                              Editar
                             </Link>
                           </Button>
                         ) : null}
@@ -168,17 +158,6 @@ export function TournamentManageClient(props: {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function StatCard(props: { label: string; value: string }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardDescription>{props.label}</CardDescription>
-        <CardTitle className="text-2xl">{props.value}</CardTitle>
-      </CardHeader>
-    </Card>
   );
 }
 

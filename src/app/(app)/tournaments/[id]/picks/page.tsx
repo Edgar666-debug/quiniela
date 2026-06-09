@@ -77,7 +77,7 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Eye className="size-4" />
-            Participantes
+            Picks
           </CardTitle>
           <CardDescription>Las jornadas se habilitan después del cierre (UTC).</CardDescription>
         </CardHeader>

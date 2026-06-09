@@ -117,7 +117,7 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
                   aria-label="Cerrar sesión"
                   title={s.isCurrent ? "No puedes cerrar la sesión actual desde aquí." : "Cerrar sesión"}
                 >
-                  <Trash2 className="size-4" />
+                  <Trash2 className="size-4" /> 
                 </Button>
               </div>
             </li>

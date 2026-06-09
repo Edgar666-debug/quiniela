@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Lock } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -115,7 +115,7 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
                                   </div>
                                 ) : (
                                   <Button asChild size="sm" variant="outline">
-                                    <Link href={href}>Ver</Link>
+                                    <Link href={href}><Eye className="size-4" /></Link>
                                   </Button>
                                 )}
                               </div>

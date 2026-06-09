@@ -29,7 +29,6 @@ export function MatchdayPageActions(props: {
         <Button asChild variant="outline" size="sm">
           <Link href={`/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}/edit`}>
             <Pencil className="size-4" />
-            Editar jornada
           </Link>
         </Button>
       ) : null}
@@ -37,7 +36,6 @@ export function MatchdayPageActions(props: {
         <Button asChild size="sm">
           <Link href={`/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}/matches/new`}>
             <Plus className="size-4" />
-            Agregar partido
           </Link>
         </Button>
       ) : null}

@@ -15,6 +15,8 @@ import {
   Trophy,
   User,
   Users,
+  Eye,
+  ChartLine
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -159,7 +161,7 @@ function Sidebar(props: {
 
           <NavItem
             href={`/tournaments/${currentTournament.id}`}
-            icon={<Trophy className="size-4" />}
+            icon={<Eye className="size-4" />}
             label="Resumen"
             active={pathname === `/tournaments/${currentTournament.id}`}
             collapsed={props.collapsed}
@@ -195,7 +197,7 @@ function Sidebar(props: {
           />
           <NavItem
             href={`/tournaments/${currentTournament.id}/standings`}
-            icon={<Trophy className="size-4" />}
+            icon={<ChartLine className="size-4" />}
             label="Ranking"
             active={pathname.startsWith(`/tournaments/${currentTournament.id}/standings`)}
             collapsed={props.collapsed}

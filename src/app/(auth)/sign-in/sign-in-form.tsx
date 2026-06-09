@@ -258,7 +258,6 @@ export function SignInForm({ next }: { next?: string }) {
                 onClick={async () => {
                   dispatch({ type: "SUBMIT_START" });
                   const { error } = await authClient.signIn.passkey({
-                    autoFill: true,
                     fetchOptions: {
                       onSuccess() {
                         router.push(destination);

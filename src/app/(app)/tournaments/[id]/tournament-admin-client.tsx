@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { Archive, Flag, Image as ImageIcon, Loader2, Save, Trophy, X } from "lucide-react";
+import { Archive, Flag, Loader2, MoreVertical, RefreshCw, Save, Trophy, Upload, Trash } from "lucide-react";
 
 import { supabase } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function TournamentAdminClient(props: {
   tournamentId: string;
@@ -28,6 +34,7 @@ export function TournamentAdminClient(props: {
   currentLogoUrl: string | null;
 }) {
   const [loading, setLoading] = useState(false);
+  const [openDialog, setOpenDialog] = useState<"archive" | "reactivate" | "finish" | null>(null);
   const [savingDetails, setSavingDetails] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [name, setName] = useState(props.currentName);
@@ -134,9 +141,46 @@ export function TournamentAdminClient(props: {
               <Trophy className="size-6 text-zinc-500" />
             )}
           </div>
-          <div>
+          <div className="flex items-center gap-2 justify-between w-full">
+            <div>
             <p className="text-sm font-medium">Identidad del torneo</p>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Actualiza nombre y logo. El logo también puede venir de Supabase Storage.</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Actualiza nombre y logo.</p>
+            </div>
+            <div className="flex items-center gap-2">
+                           {/* Dropdown de opciones */}
+             <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon" disabled={loading || isFinished}>
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <MoreVertical className="size-4" />}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem
+            disabled={!isActive}
+            onSelect={() => setOpenDialog("archive")}
+          >
+            <Archive className="size-4" />
+            Archivar
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!isArchived}
+            onSelect={() => setOpenDialog("reactivate")}
+          >
+            <RefreshCw className="size-4" />
+            Reactivar
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={!isActive}
+            className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+            onSelect={() => setOpenDialog("finish")}
+          >
+            <Flag className="size-4" />
+            Finalizar
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+             </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -164,12 +208,12 @@ export function TournamentAdminClient(props: {
             }}
           />
           <Button type="button" variant="outline" disabled={savingDetails || uploadingLogo} onClick={() => fileInputRef.current?.click()}>
-            {uploadingLogo ? <Loader2 className="size-4 animate-spin" /> : <ImageIcon className="size-4" />}
-            Subir logo
+            {uploadingLogo ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+            Subir
           </Button>
-          <Button type="button" disabled={savingDetails || uploadingLogo || !name.trim()} onClick={() => void saveDetails()}>
+          <Button type="button" variant="outline" disabled={savingDetails || uploadingLogo || !name.trim()} onClick={() => void saveDetails()}>
             {savingDetails ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            Guardar cambios
+            Guardar
           </Button>
           <Button
             type="button"
@@ -180,120 +224,107 @@ export function TournamentAdminClient(props: {
               void saveDetails(null);
             }}
           >
-            <X className="size-4" />
-            Quitar logo
+            <Trash className="size-4" />
+            Borrar
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" disabled={loading || !isActive}>
-              <Archive className="size-4" />
-              Archivar
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Archivar torneo</AlertDialogTitle>
-              <AlertDialogDescription>Esto archivará el torneo. Podrás reactivarlo después (solo si no está finalizado).</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={async () => {
-                  setError(null);
-                  setLoading(true);
-                  const res = await fetch(`/api/tournaments/${props.tournamentId}`, {
-                    method: "PATCH",
-                    headers: { "content-type": "application/json" },
-                    body: JSON.stringify({ status: "ARCHIVED" }),
-                  });
-                  const data = (await res.json().catch(() => ({}))) as { error?: string };
-                  setLoading(false);
-                  if (!res.ok) return setError(data.error ?? "No se pudo archivar el torneo");
-                  window.location.reload();
-                }}
-              >
-                Confirmar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      {/* Diálogo: Archivar */}
+      <AlertDialog open={openDialog === "archive"} onOpenChange={(o) => !o && setOpenDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archivar torneo</AlertDialogTitle>
+            <AlertDialogDescription>Esto archivará el torneo. Podrás reactivarlo después (solo si no está finalizado).</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setOpenDialog(null);
+                setError(null);
+                setLoading(true);
+                const res = await fetch(`/api/tournaments/${props.tournamentId}`, {
+                  method: "PATCH",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({ status: "ARCHIVED" }),
+                });
+                const data = (await res.json().catch(() => ({}))) as { error?: string };
+                setLoading(false);
+                if (!res.ok) return setError(data.error ?? "No se pudo archivar el torneo");
+                window.location.reload();
+              }}
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" disabled={loading || props.status !== "ARCHIVED"}>
-              Reactivar
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Reactivar torneo</AlertDialogTitle>
-              <AlertDialogDescription>Esto reactivará el torneo. Solo es posible si no está finalizado.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={async () => {
-                  setError(null);
-                  setLoading(true);
-                  const res = await fetch(`/api/tournaments/${props.tournamentId}`, {
-                    method: "PATCH",
-                    headers: { "content-type": "application/json" },
-                    body: JSON.stringify({ status: "ACTIVE" }),
-                  });
-                  const data = (await res.json().catch(() => ({}))) as { error?: string };
-                  setLoading(false);
-                  if (!res.ok) return setError(data.error ?? "No se pudo reactivar el torneo");
-                  window.location.reload();
-                }}
-              >
-                Confirmar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      {/* Diálogo: Reactivar */}
+      <AlertDialog open={openDialog === "reactivate"} onOpenChange={(o) => !o && setOpenDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reactivar torneo</AlertDialogTitle>
+            <AlertDialogDescription>Esto reactivará el torneo y lo pondrá de nuevo como activo.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setOpenDialog(null);
+                setError(null);
+                setLoading(true);
+                const res = await fetch(`/api/tournaments/${props.tournamentId}`, {
+                  method: "PATCH",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({ status: "ACTIVE" }),
+                });
+                const data = (await res.json().catch(() => ({}))) as { error?: string };
+                setLoading(false);
+                if (!res.ok) return setError(data.error ?? "No se pudo reactivar el torneo");
+                window.location.reload();
+              }}
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" disabled={loading || !isActive}>
-              <Flag className="size-4" />
+      {/* Diálogo: Finalizar */}
+      <AlertDialog open={openDialog === "finish"} onOpenChange={(o) => !o && setOpenDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar torneo</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esto marcará el torneo como terminado y bloqueará cambios de estado. No podrás volver a activarlo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                setOpenDialog(null);
+                setError(null);
+                setLoading(true);
+                const res = await fetch(`/api/tournaments/${props.tournamentId}`, {
+                  method: "PATCH",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({ status: "FINISHED" }),
+                });
+                const data = (await res.json().catch(() => ({}))) as { error?: string };
+                setLoading(false);
+                if (!res.ok) return setError(data.error ?? "No se pudo finalizar el torneo");
+                window.location.reload();
+              }}
+            >
               Finalizar
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Finalizar torneo</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esto marcará el torneo como terminado y bloqueará cambios de estado. No podrás volver a activarlo.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                onClick={async () => {
-                  setError(null);
-                  setLoading(true);
-                  const res = await fetch(`/api/tournaments/${props.tournamentId}`, {
-                    method: "PATCH",
-                    headers: { "content-type": "application/json" },
-                    body: JSON.stringify({ status: "FINISHED" }),
-                  });
-                  const data = (await res.json().catch(() => ({}))) as { error?: string };
-                  setLoading(false);
-                  if (!res.ok) return setError(data.error ?? "No se pudo finalizar el torneo");
-                  window.location.reload();
-                }}
-              >
-                Finalizar torneo
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {isFinished ? <InlineAlert variant="info" message="El torneo está finalizado. El estado ya no se puede cambiar." /> : null}
       {isArchived ? <InlineAlert variant="info" message="El torneo está archivado. Puedes reactivarlo." /> : null}

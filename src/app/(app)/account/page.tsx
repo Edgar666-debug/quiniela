@@ -5,12 +5,12 @@ import { Shield } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/lib/auth";
-import { passkeyDateFormatter } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActiveSessionsClient, type SessionItem } from "./ActiveSessionsClient";
 import { CredentialsClient } from "./CredentialsClient";
+import { PasskeysListClient } from "./PasskeysListClient";
 import { ProfileClient } from "./ProfileClient";
 
 export const metadata: Metadata = {
@@ -91,21 +91,7 @@ export default async function AccountPage() {
 
             <div className="space-y-2">
               <p className="text-sm font-medium">Passkeys registradas</p>
-              {passkeys.length === 0 ? (
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">No hay passkeys registradas</p>
-              ) : (
-                <ul className="flex flex-col gap-2">
-                  {passkeys.slice(0, 5).map((p) => (
-                    <li key={p.id} className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-                      <p className="text-sm font-medium">{p.name ?? "Passkey"}</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Creado:{" "}
-                        {passkeyDateFormatter.format(p.createdAt)}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <PasskeysListClient passkeys={passkeys} />
             </div>
           </CardContent>
         </Card>

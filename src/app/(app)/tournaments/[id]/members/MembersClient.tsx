@@ -49,7 +49,6 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
             }}
           >
             {loadingUserId === props.myUserId ? <Loader2 className="size-4 animate-spin" /> : <LogOut className="size-4" />}
-            Salir del torneo
           </Button>
         ) : null}
       </div>
@@ -81,7 +80,6 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
                 }}
               >
                 {loadingUserId === m.user.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-                Expulsar
               </Button>
             ) : null}
           </div>

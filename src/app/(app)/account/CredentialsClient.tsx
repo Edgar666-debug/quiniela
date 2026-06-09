@@ -1,7 +1,7 @@
 "use client";
 
 import { useReducer } from "react";
-import { KeyRound, Loader2, Mail } from "lucide-react";
+import { KeyRound, Loader2, MailCheck } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -108,8 +108,7 @@ export function CredentialsClient(props: { currentEmail: string }) {
             dispatch({ type: "EMAIL_CHANGE_OK", source: props.currentEmail, value: state.newEmail.trim() });
           }}
         >
-          {state.loading ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
-          Cambiar email
+          {state.loading ? <Loader2 className="size-4 animate-spin" /> : <MailCheck className="size-4" />}
         </Button>
       </div>
 
@@ -165,7 +164,6 @@ export function CredentialsClient(props: { currentEmail: string }) {
           }}
         >
           {state.loading ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
-          Cambiar contraseña
         </Button>
         <p className="text-xs text-zinc-500">Mínimo 8 caracteres (ajustable en config de Better Auth).</p>
       </div>

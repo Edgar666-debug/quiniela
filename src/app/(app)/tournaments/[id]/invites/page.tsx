@@ -3,8 +3,6 @@ import { headers } from "next/headers";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Ticket, Trophy } from "lucide-react";
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { InvitesClient } from "./invites-client";
@@ -62,16 +60,6 @@ export default async function TournamentInvitesPage(props: { params: Promise<{ i
       </div>
 
       <InvitesClient tournamentId={tournamentId} tournamentStatus={tournament.status} initialInvites={invites.map(serializeInvite)} />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Notas</CardTitle>
-          <CardDescription>Buenas prácticas para compartir tokens.</CardDescription>
-        </CardHeader>
-        <CardContent className="text-sm text-zinc-600 dark:text-zinc-400">
-          Comparte el token por un canal privado. Si sospechas que se filtró, genera uno nuevo y deja de compartir el anterior.
-        </CardContent>
-      </Card>
     </main>
   );
 }

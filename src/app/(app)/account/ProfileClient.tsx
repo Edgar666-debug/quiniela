@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { Image as ImageIcon, Loader2, Save, User as UserIcon, X } from "lucide-react";
+import { Image as ImageIcon, Loader2, User as UserIcon, Upload, Trash, SaveIcon } from "lucide-react";
 
 import { supabase } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -188,11 +188,11 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
           disabled={loading || uploadingAvatar}
           onClick={() => fileInputRef.current?.click()}
         >
-          {uploadingAvatar ? <Loader2 className="size-4 animate-spin" /> : <ImageIcon className="size-4" />}
-          Subir avatar
+          {uploadingAvatar ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+          Subir
         </Button>
-        <Button type="button" onClick={save} disabled={loading || uploadingAvatar}>
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+        <Button type="button" variant="outline" onClick={save} disabled={loading || uploadingAvatar}>
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
           Guardar
         </Button>
         <Button
@@ -208,8 +208,7 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
             })
           }
         >
-          <X className="size-4" />
-          Quitar avatar
+          <Trash className="size-4" /> Quitar
         </Button>
         <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">
           <ImageIcon className="size-4" />

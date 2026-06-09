@@ -11,6 +11,8 @@ import {
   Trophy,
   Users,
   Zap,
+  LogIn,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/app/theme-toggle";
@@ -84,22 +86,21 @@ export default async function Home() {
                 <span className="hidden text-sm text-zinc-600 dark:text-zinc-400 sm:inline">
                   Hola, {displayName}
                 </span>
-                <Button asChild size="sm">
+                <Button asChild size="sm" variant="outline">
                   <Link href="/dashboard">
                     <LayoutDashboard className="size-4" />
-                    Dashboard
                   </Link>
                 </Button>
               </>
             ) : (
               <>
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/sign-in">Iniciar sesión</Link>
-                </Button>
-                <Button asChild size="sm">
+                <Button asChild size="sm" variant="outline">
                   <Link href="/sign-up">
-                    Crear cuenta <ArrowRight className="size-4" />
+                    <UserPlus className="size-4" />
                   </Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/sign-in"><LogIn className="size-4" /></Link>
                 </Button>
               </>
             )}

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Image as ImageIcon, Loader2, PlusCircle, Trophy, X } from "lucide-react";
+import { Loader2, PlusCircle, Trash, Trophy, Upload} from "lucide-react";
 
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
@@ -208,8 +208,8 @@ export function NewTournamentClient() {
           />
 
           <Button type="button" variant="outline" disabled={loading} onClick={() => fileInputRef.current?.click()}>
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <ImageIcon className="size-4" />}
-            Subir logo
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+            Subir
           </Button>
 
           <Button
@@ -228,13 +228,13 @@ export function NewTournamentClient() {
               setError(null);
             }}
           >
-            <X className="size-4" />
-            Quitar logo
+            <Trash className="size-4" />
+            Borrar
           </Button>
 
           <Button disabled={loading || !name.trim()} type="button" onClick={() => void createTournament()}>
             {loading ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}
-            Crear torneo
+            Crear
           </Button>
         </div>
       </CardContent>

@@ -2,50 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, KeyRound, LayoutDashboard, PlusCircle, Ticket, Trophy, Users } from "lucide-react";
+import { CalendarDays, KeyRound, PlusCircle, Ticket, Trophy, Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { canEditTournament, canManageTournament } from "@/lib/permissions";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type MyTournament = {
   tournamentId: string;
   name: string;
   logoUrl?: string | null;
-  role: "OWNER" | "ORGANIZER" | "PLAYER";
 };
 
 export function DashboardClient(props: { initialTournaments: MyTournament[] }) {
   const lastTournament = props.initialTournaments[0] ?? null;
-  const managedTournaments = props.initialTournaments.filter((t) => canManageTournament(t.role));
 
   return (
     <div className="flex flex-col gap-8">
-      {managedTournaments.length > 0 ? (
-        <section className="flex flex-col gap-3">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold">Gestión</h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Torneos donde puedes administrar jornadas y participantes.</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {managedTournaments.slice(0, 4).map((t) => (
-              <FeatureCard
-                key={t.tournamentId}
-                href={`/tournaments/${t.tournamentId}/manage`}
-                icon={<LayoutDashboard className="size-6 text-emerald-600" />}
-                title={`Gestionar “${t.name}”`}
-                description={
-                  canEditTournament(t.role)
-                    ? "Jornadas, invitaciones, participantes y enlace a editar torneo."
-                    : "Jornadas, invitaciones y participantes."
-                }
-                badge={<TournamentBadge name={t.name} logoUrl={t.logoUrl} />}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
       <section className="flex flex-col gap-3">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold">Accesos rápidos</h2>
