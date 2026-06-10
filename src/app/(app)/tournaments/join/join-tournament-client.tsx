@@ -99,12 +99,15 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
     revalidateOnFocus: false,
   });
 
-  const preview = previewData?.invite ?? null;
-  const previewError = trimmedToken ? previewRequestError?.message ?? null : null;
+  const previewSettled = debouncedToken === trimmedToken;
+  const showPreviewLoading = Boolean(trimmedToken) && (!previewSettled || previewLoading);
+  const preview = previewSettled ? previewData?.invite ?? null : null;
+  const previewError = previewSettled && trimmedToken ? previewRequestError?.message ?? null : null;
 
   const canJoin = Boolean(
     trimmedToken &&
       preview &&
+      !showPreviewLoading &&
       preview.tournament.status === "ACTIVE" &&
       !preview.isExpired &&
       preview.uses < preview.maxUses,
@@ -134,7 +137,7 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
           />
         </div>
 
-        {previewLoading ? <InlineAlert variant="info" message="Validando invitación..." /> : null}
+        {showPreviewLoading ? <InlineAlert variant="info" message="Validando invitación..." /> : null}
 
         {preview ? (
           <div className="border-subtle-ui rounded-xl border p-4">
@@ -187,3 +190,4 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
     </Card>
   );
 }
+
