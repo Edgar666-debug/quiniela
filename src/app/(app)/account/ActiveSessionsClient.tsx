@@ -6,6 +6,7 @@ import { Laptop, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { formatUtcDateTime } from "@/lib/date";
+import { readJsonResponse } from "@/lib/http";
 
 export type SessionItem = {
   id: string;
@@ -50,7 +51,7 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
     setError(null);
     setLoading(true);
     const res = await fetch("/api/me/sessions", { cache: "no-store" });
-    const data = (await res.json()) as { sessions?: SessionItem[]; error?: string };
+    const data = await readJsonResponse<{ sessions?: SessionItem[]; error?: string }>(res);
     setLoading(false);
     if (!res.ok) return setError(data.error ?? "No se pudieron cargar las sesiones.");
     setFetchedSessions({ source: props.initial, value: data.sessions ?? [] });
@@ -60,7 +61,7 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
     setError(null);
     setLoading(true);
     const res = await fetch(`/api/me/sessions/${encodeURIComponent(id)}`, { method: "DELETE" });
-    const data = (await res.json()) as { ok?: boolean; error?: string };
+    const data = await readJsonResponse<{ ok?: boolean; error?: string }>(res);
     setLoading(false);
     if (!res.ok) return setError(data.error ?? "No se pudo cerrar la sesión.");
     await refresh();

@@ -5,6 +5,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
+import { readJsonResponse } from "@/lib/http";
 
 type SyncLiveResponse = {
   checkedMatches?: number;
@@ -25,7 +26,7 @@ export function SyncLiveButton(props: { tournamentId: string }) {
     setError(null);
 
     const res = await fetch(`/api/tournaments/${props.tournamentId}/sync-live`, { method: "POST" });
-    const data = (await res.json().catch(() => ({}))) as SyncLiveResponse;
+    const data = await readJsonResponse<SyncLiveResponse>(res);
     setLoading(false);
 
     if (!res.ok) {

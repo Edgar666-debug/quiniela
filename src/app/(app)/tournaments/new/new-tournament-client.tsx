@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { sendJsonRequest } from "@/lib/http";
 import { pushAndRefresh } from "@/lib/navigation";
 import { requestSignedUploadUrl, uploadFileWithSignedUrl, validateImageFile } from "@/lib/storage-upload";
 
@@ -89,18 +90,16 @@ export function NewTournamentClient() {
   async function createTournament() {
     dispatch({ type: "submit_start" });
 
-    const res = await fetch("/api/tournaments", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        name: state.name.trim(),
-        logoUrl: state.logoFile ? null : (state.logoUrl.trim() || null),
-      }),
-    });
-    const data = (await res.json().catch(() => ({}))) as {
+    const { response: res, data } = await sendJsonRequest<{
       tournament?: { id: string; name: string; logoUrl: string | null };
       error?: string;
-    };
+    }>("/api/tournaments", {
+      method: "POST",
+      body: {
+        name: state.name.trim(),
+        logoUrl: state.logoFile ? null : (state.logoUrl.trim() || null),
+      },
+    });
 
     if (!res.ok || !data.tournament?.id) {
       return dispatch({ type: "submit_fail", error: data.error ?? "No se pudo crear el torneo." });
@@ -125,10 +124,9 @@ export function NewTournamentClient() {
       return;
     }
 
-    const patchRes = await fetch(`/api/tournaments/${data.tournament.id}`, {
+    const { response: patchRes } = await sendJsonRequest(`/api/tournaments/${data.tournament.id}`, {
       method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: state.name.trim(), logoUrl: upload.publicUrl }),
+      body: { name: state.name.trim(), logoUrl: upload.publicUrl },
     });
 
     if (!patchRes.ok) {

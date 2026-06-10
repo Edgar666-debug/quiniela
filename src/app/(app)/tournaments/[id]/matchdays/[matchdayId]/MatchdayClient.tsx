@@ -8,6 +8,7 @@ import { MatchdayClose } from "@/components/matchdays/matchday-close";
 import { MatchPickGroup, PickLegend, type PickValue } from "@/components/matches/pick-cards";
 import { groupMatchesByLocalKickoff } from "@/lib/format";
 import { FINISHED_STATUSES, outcomeFromScore, statusLabel, type Outcome } from "@/lib/football";
+import { readJsonResponse, sendJsonRequest } from "@/lib/http";
 
 type MatchRow = {
   id: string;
@@ -97,20 +98,18 @@ export function MatchdayClient(props: {
   async function refresh() {
     dispatch({ type: "refresh_start" });
     const res = await fetch(`/api/matchdays/${props.matchdayId}/detail`, { cache: "no-store" });
-    const data = (await res.json()) as { matches?: MatchRow[]; error?: string };
+    const data = await readJsonResponse<{ matches?: MatchRow[]; error?: string }>(res);
     if (!res.ok) return dispatch({ type: "refresh_fail", error: data.error ?? "No se pudo cargar partidos" });
     dispatch({ type: "refresh_ok", source: props.initial.matches, matches: data.matches ?? [] });
   }
 
   async function pick(matchId: string, outcome: Outcome) {
     dispatch({ type: "pick_start" });
-    const res = await fetch(`/api/matches/${matchId}/pick`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ outcome }),
-    });
-    const data = (await res.json()) as { error?: string };
-    if (!res.ok) return dispatch({ type: "pick_fail", error: data.error ?? "No se pudo guardar el pick" });
+    const { response, data } = await sendJsonRequest<{ error?: string }>(
+      `/api/matches/${matchId}/pick`,
+      { method: "POST", body: { outcome } },
+    );
+    if (!response.ok) return dispatch({ type: "pick_fail", error: data.error ?? "No se pudo guardar el pick" });
     dispatch({
       type: "pick_ok",
       source: props.initial.matches,

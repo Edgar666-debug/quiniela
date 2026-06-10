@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { sendJsonRequest } from "@/lib/http";
 
 type CredentialsState = {
   emailOverride: { source: string; value: string } | null;
@@ -147,17 +148,15 @@ export function CredentialsClient(props: { currentEmail: string }) {
           disabled={state.loading || !state.currentPassword || !state.newPassword || state.newPassword.length < 8}
           onClick={async () => {
             dispatch({ type: "SUBMIT_START" });
-            const res = await fetch("/api/auth/change-password", {
+            const { response, data } = await sendJsonRequest<{ error?: string }>("/api/auth/change-password", {
               method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({
+              body: {
                 currentPassword: state.currentPassword,
                 newPassword: state.newPassword,
                 revokeOtherSessions: true,
-              }),
+              },
             });
-            if (!res.ok) {
-              const data = (await res.json().catch(() => ({}))) as { error?: string };
+            if (!response.ok) {
               return dispatch({ type: "SUBMIT_ERROR", error: data.error ?? "No se pudo cambiar la contraseña." });
             }
             dispatch({ type: "PASSWORD_CHANGE_OK" });

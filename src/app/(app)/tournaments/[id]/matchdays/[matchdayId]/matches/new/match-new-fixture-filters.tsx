@@ -8,8 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-
-type SearchMode = "date" | "range";
+import type { SearchMode } from "./match-new-types";
 
 export function MatchNewFixtureFilters(props: {
   hasSelectedEntity: boolean;

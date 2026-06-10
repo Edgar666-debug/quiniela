@@ -6,6 +6,7 @@ import { Loader2, LogOut, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Badge } from "@/components/ui/badge";
+import { readJsonResponse } from "@/lib/http";
 
 type MemberRow = {
   role: "OWNER" | "ORGANIZER" | "PLAYER";
@@ -42,7 +43,7 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
               setError(null);
               setLoadingUserId(props.myUserId);
               const res = await fetch(`/api/tournaments/${props.tournamentId}/leave`, { method: "POST" });
-              const data = (await res.json().catch(() => ({}))) as { error?: string };
+              const data = await readJsonResponse<{ error?: string }>(res);
               setLoadingUserId(null);
               if (!res.ok) return setError(data.error ?? "No se pudo salir del torneo");
               window.location.href = "/tournaments";
@@ -70,7 +71,7 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
                   setError(null);
                   setLoadingUserId(m.user.id);
                   const res = await fetch(`/api/tournaments/${props.tournamentId}/members/${m.user.id}`, { method: "DELETE" });
-                  const data = (await res.json().catch(() => ({}))) as { error?: string };
+                  const data = await readJsonResponse<{ error?: string }>(res);
                   setLoadingUserId(null);
                   if (!res.ok) return setError(data.error ?? "No se pudo expulsar");
                   setLocalRows({

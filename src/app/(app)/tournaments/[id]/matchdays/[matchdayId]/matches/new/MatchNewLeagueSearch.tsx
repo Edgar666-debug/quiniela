@@ -8,31 +8,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { readJsonResponse } from "@/lib/http";
 import {
   createDefaultSearchDates,
   createSeasonOptions,
   type FixtureRow,
   type FixtureSelection,
-  type LeagueRow,
-  type PlayerRow,
-  type TeamRow,
+  type SearchMode,
+  type SearchTab,
 } from "./match-new-types";
 import { MatchNewEntityResults } from "./match-new-entity-results";
 import { MatchNewFixtureFilters } from "./match-new-fixture-filters";
 import { MatchNewFixtureResults } from "./match-new-fixture-results";
 import { MatchNewSelectedEntity } from "./match-new-selected-entity";
-
-type SearchTab = "league" | "team" | "player";
-type SearchMode = "date" | "range";
+import { useEntitySearch } from "./use-entity-search";
 
 type SearchState = {
   tab: SearchTab;
   query: string;
-  entityLoading: boolean;
-  entityError: string | null;
-  leagueResults: LeagueRow[];
-  teamResults: TeamRow[];
-  playerResults: PlayerRow[];
   selectedId: string;
   selectedLabel: string | null;
   searchSeason: string;
@@ -49,11 +42,6 @@ type SearchState = {
 type SearchAction =
   | { type: "set_tab"; tab: SearchTab }
   | { type: "set_query"; value: string }
-  | { type: "entity_start" }
-  | { type: "league_ok"; leagues: LeagueRow[] }
-  | { type: "team_ok"; teams: TeamRow[] }
-  | { type: "player_ok"; players: PlayerRow[] }
-  | { type: "entity_fail"; error: string }
   | { type: "select_entity"; id: string; label: string; season?: string }
   | { type: "clear_entity" }
   | { type: "set_season"; value: string }
@@ -84,39 +72,15 @@ function resetFixtures(state: SearchState) {
 function reducer(state: SearchState, action: SearchAction): SearchState {
   switch (action.type) {
     case "set_tab":
-      return resetFixtures({
-        ...state,
-        tab: action.tab,
-        query: "",
-        entityLoading: false,
-        entityError: null,
-        leagueResults: [],
-        teamResults: [],
-        playerResults: [],
-        selectedId: "",
-        selectedLabel: null,
-      });
+      return resetFixtures({ ...state, tab: action.tab, query: "", selectedId: "", selectedLabel: null });
     case "set_query":
       return { ...state, query: action.value };
-    case "entity_start":
-      return { ...state, entityLoading: true, entityError: null, leagueResults: [], teamResults: [], playerResults: [] };
-    case "league_ok":
-      return { ...state, entityLoading: false, leagueResults: action.leagues };
-    case "team_ok":
-      return { ...state, entityLoading: false, teamResults: action.teams };
-    case "player_ok":
-      return { ...state, entityLoading: false, playerResults: action.players };
-    case "entity_fail":
-      return { ...state, entityLoading: false, entityError: action.error };
     case "select_entity":
       return resetFixtures({
         ...state,
         selectedId: action.id,
         selectedLabel: action.label,
         searchSeason: action.season ?? state.searchSeason,
-        leagueResults: [],
-        teamResults: [],
-        playerResults: [],
       });
     case "clear_entity":
       return resetFixtures({ ...state, selectedId: "", selectedLabel: null });
@@ -146,11 +110,6 @@ function createInitialState(): SearchState {
   return {
     tab: "league",
     query: "",
-    entityLoading: false,
-    entityError: null,
-    leagueResults: [],
-    teamResults: [],
-    playerResults: [],
     selectedId: "",
     selectedLabel: null,
     searchSeason: defaults.seasonYear,
@@ -171,52 +130,18 @@ export function MatchNewLeagueSearch(props: {
   onToggleFixture: (fixture: FixtureSelection) => void;
 }) {
   const [state, dispatch] = useReducer(reducer, undefined, createInitialState);
+  const entitySearch = useEntitySearch();
 
   const tab = TABS.find((item) => item.id === state.tab)!;
   const seasonOptions = createSeasonOptions();
   const hasSelectedEntity = Boolean(state.selectedId);
   const hasDateFilter = state.searchMode === "date" ? Boolean(state.searchDate.trim()) : Boolean(state.searchFrom.trim() && state.searchTo.trim());
   const fixturesSearchDisabled = props.isClosed || !hasDateFilter || (hasSelectedEntity && !state.searchSeason.trim());
-  const hasEntityResults = state.leagueResults.length > 0 || state.teamResults.length > 0 || state.playerResults.length > 0;
+  const hasEntityResults = entitySearch.leagueResults.length > 0 || entitySearch.teamResults.length > 0 || entitySearch.playerResults.length > 0;
 
-  async function runEntitySearch() {
-    const query = state.query.trim();
-    if (query.length < 3) {
-      dispatch({ type: "entity_fail", error: "Escribe al menos 3 caracteres para buscar." });
-      return;
-    }
-
-    dispatch({ type: "entity_start" });
-
-    if (state.tab === "league") {
-      const res = await fetch(`/api/api-football/leagues/search?q=${encodeURIComponent(query)}`, { cache: "no-store" });
-      const data = (await res.json().catch(() => ({}))) as { leagues?: LeagueRow[]; error?: string };
-      if (!res.ok) {
-        dispatch({ type: "entity_fail", error: data.error ?? "No se pudo buscar ligas." });
-        return;
-      }
-      dispatch({ type: "league_ok", leagues: data.leagues ?? [] });
-      return;
-    }
-
-    if (state.tab === "team") {
-      const res = await fetch(`/api/api-football/teams/search?q=${encodeURIComponent(query)}`, { cache: "no-store" });
-      const data = (await res.json().catch(() => ({}))) as { teams?: TeamRow[]; error?: string };
-      if (!res.ok) {
-        dispatch({ type: "entity_fail", error: data.error ?? "No se pudo buscar equipos." });
-        return;
-      }
-      dispatch({ type: "team_ok", teams: data.teams ?? [] });
-      return;
-    }
-
-    const res = await fetch(`/api/api-football/players/search?q=${encodeURIComponent(query)}`, { cache: "no-store" });
-    const data = (await res.json().catch(() => ({}))) as { players?: PlayerRow[]; error?: string };
-    if (!res.ok) {
-      dispatch({ type: "entity_fail", error: data.error ?? "No se pudo buscar jugadores." });
-      return;
-    }
-    dispatch({ type: "player_ok", players: data.players ?? [] });
+  function handleTabChange(tab: SearchTab) {
+    dispatch({ type: "set_tab", tab });
+    entitySearch.reset();
   }
 
   async function runFixturesSearch() {
@@ -238,7 +163,7 @@ export function MatchNewLeagueSearch(props: {
     params.set("limit", "30");
 
     const res = await fetch(`/api/api-football/fixtures/search?${params.toString()}`, { cache: "no-store" });
-    const data = (await res.json().catch(() => ({}))) as { fixtures?: FixtureRow[]; error?: string };
+    const data = await readJsonResponse<{ fixtures?: FixtureRow[]; error?: string }>(res);
     if (!res.ok) {
       dispatch({ type: "fixtures_fail", error: data.error ?? "No se pudo buscar fixtures." });
       return;
@@ -256,7 +181,7 @@ export function MatchNewLeagueSearch(props: {
       <CardContent className="flex flex-col gap-4">
         {props.isClosed ? <InlineAlert variant="error" message="La jornada está cerrada. Ya no puedes agregar partidos." /> : null}
 
-        <Tabs value={state.tab} onValueChange={(value) => dispatch({ type: "set_tab", tab: value as SearchTab })}>
+        <Tabs value={state.tab} onValueChange={(value) => handleTabChange(value as SearchTab)}>
           <TabsList>
             {TABS.map((item) => (
               <TabsTrigger key={item.id} value={item.id}>
@@ -275,38 +200,56 @@ export function MatchNewLeagueSearch(props: {
               value={state.query}
               onChange={(event) => dispatch({ type: "set_query", value: event.target.value })}
               onKeyDown={(event) => {
-                if (event.key === "Enter") void runEntitySearch();
+                if (event.key === "Enter") void entitySearch.search(state.tab, state.query);
               }}
-              disabled={state.entityLoading}
+              disabled={entitySearch.loading}
             />
-            <Button type="button" variant="outline" onClick={() => void runEntitySearch()} disabled={state.entityLoading || state.query.trim().length < 3}>
-              {state.entityLoading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void entitySearch.search(state.tab, state.query)}
+              disabled={entitySearch.loading || state.query.trim().length < 3}
+            >
+              {entitySearch.loading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
               Buscar
             </Button>
           </div>
-          {state.entityError ? <InlineAlert variant="error" message={state.entityError} /> : null}
+          {entitySearch.error ? <InlineAlert variant="error" message={entitySearch.error} /> : null}
         </div>
 
         {hasEntityResults ? (
           <MatchNewEntityResults
             tab={state.tab}
-            leagueResults={state.leagueResults}
-            teamResults={state.teamResults}
-            playerResults={state.playerResults}
-            onSelectLeague={(league, season) =>
+            leagueResults={entitySearch.leagueResults}
+            teamResults={entitySearch.teamResults}
+            playerResults={entitySearch.playerResults}
+            onSelectLeague={(league, season) => {
               dispatch({
                 type: "select_entity",
                 id: String(league.id),
                 label: `${league.name} (${league.countryName})`,
                 season: season ? String(season) : undefined,
-              })
-            }
-            onSelectTeam={(team) => dispatch({ type: "select_entity", id: String(team.id), label: team.name })}
-            onSelectPlayer={(player) => dispatch({ type: "select_entity", id: String(player.id), label: player.name })}
+              });
+              entitySearch.reset();
+            }}
+            onSelectTeam={(team) => {
+              dispatch({ type: "select_entity", id: String(team.id), label: team.name });
+              entitySearch.reset();
+            }}
+            onSelectPlayer={(player) => {
+              dispatch({ type: "select_entity", id: String(player.id), label: player.name });
+              entitySearch.reset();
+            }}
           />
         ) : null}
 
-        <MatchNewSelectedEntity selectedLabel={state.selectedLabel} onClear={() => dispatch({ type: "clear_entity" })} />
+        <MatchNewSelectedEntity
+          selectedLabel={state.selectedLabel}
+          onClear={() => {
+            dispatch({ type: "clear_entity" });
+            entitySearch.reset();
+          }}
+        />
 
         <MatchNewFixtureFilters
           hasSelectedEntity={hasSelectedEntity}

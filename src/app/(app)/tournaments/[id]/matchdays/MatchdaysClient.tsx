@@ -7,6 +7,7 @@ import { CalendarDays, Loader2, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
+import { readJsonResponse } from "@/lib/http";
 
 type MatchdayRow = {
   id: string;
@@ -34,7 +35,7 @@ export function MatchdaysClient(props: {
     setLoading(true);
     setError(null);
     const res = await fetch(`/api/tournaments/${props.tournamentId}/matchdays/list`, { cache: "no-store" });
-    const data = (await res.json()) as { matchdays?: MatchdayRow[]; error?: string };
+    const data = await readJsonResponse<{ matchdays?: MatchdayRow[]; error?: string }>(res);
     setLoading(false);
     if (!res.ok) return setError(data.error ?? "No se pudo cargar jornadas");
     setLocalRows({ source: props.initial, value: data.matchdays ?? [] });

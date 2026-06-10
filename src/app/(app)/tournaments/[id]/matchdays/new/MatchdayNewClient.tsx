@@ -8,6 +8,7 @@ import { InlineAlert } from "@/components/app/inline-alert";
 import { MatchdayFormFields } from "@/components/matchdays/matchday-form-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { sendJsonRequest } from "@/lib/http";
 import { datetimeLocalToIso } from "@/lib/matchday-form";
 import { pushAndRefresh } from "@/lib/navigation";
 
@@ -50,14 +51,12 @@ export function MatchdayNewClient(props: { tournamentId: string }) {
                 setError(null);
                 setLoading(true);
                 const closesAtUtc = datetimeLocalToIso(closesAtLocal);
-                const res = await fetch(`/api/tournaments/${props.tournamentId}/matchdays`, {
-                  method: "POST",
-                  headers: { "content-type": "application/json" },
-                  body: JSON.stringify({ number: Number(number), closesAtUtc }),
-                });
-                const data = (await res.json().catch(() => ({}))) as { error?: string };
+                const { response, data } = await sendJsonRequest<{ error?: string }>(
+                  `/api/tournaments/${props.tournamentId}/matchdays`,
+                  { method: "POST", body: { number: Number(number), closesAtUtc } },
+                );
                 setLoading(false);
-                if (!res.ok) return setError(data.error ?? "No se pudo crear la jornada");
+                if (!response.ok) return setError(data.error ?? "No se pudo crear la jornada");
                 pushAndRefresh(router, `/tournaments/${props.tournamentId}/matchdays`);
               }}
             >

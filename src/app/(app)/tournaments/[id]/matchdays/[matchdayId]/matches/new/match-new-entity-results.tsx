@@ -3,9 +3,7 @@
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
-import type { LeagueRow, PlayerRow, TeamRow } from "./match-new-types";
-
-type SearchTab = "league" | "team" | "player";
+import type { LeagueRow, PlayerRow, SearchTab, TeamRow } from "./match-new-types";
 
 export function MatchNewEntityResults(props: {
   tab: SearchTab;
