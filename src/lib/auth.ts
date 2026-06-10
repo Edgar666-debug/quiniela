@@ -11,8 +11,10 @@ import { prisma } from "@/lib/prisma";
 function getTrustedOrigins() {
   const extras = (env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")
     .split(/[,\n]/)
-    .map((value: string) => value.trim())
-    .filter(Boolean);
+    .flatMap((value: string) => {
+      const trimmedValue = value.trim();
+      return trimmedValue ? [trimmedValue] : [];
+    });
 
   return Array.from(new Set([env.BETTER_AUTH_URL, ...extras]));
 }

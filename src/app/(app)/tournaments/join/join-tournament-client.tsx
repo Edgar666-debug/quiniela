@@ -1,15 +1,30 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Ticket, Trophy, Users } from "lucide-react";
+import useSWR from "swr";
 
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+type JoinState = {
+  token: string;
+  loading: boolean;
+  message: string | null;
+  error: string | null;
+};
+
+type JoinAction =
+  | { type: "set_token"; value: string }
+  | { type: "clear_feedback" }
+  | { type: "join_start" }
+  | { type: "join_fail"; error: string }
+  | { type: "join_success"; message: string };
 
 type InvitePreview = {
   maxUses: number;
@@ -24,46 +39,75 @@ type InvitePreview = {
   };
 };
 
-export function JoinTournamentClient(props: { initialToken?: string }) {
-  const router = useRouter();
-  const [token, setToken] = useState(props.initialToken ?? "");
-  const [loading, setLoading] = useState(false);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<InvitePreview | null>(null);
+type InvitePreviewResponse = {
+  invite?: InvitePreview | null;
+};
+
+function joinTournamentReducer(state: JoinState, action: JoinAction): JoinState {
+  switch (action.type) {
+    case "set_token":
+      return { ...state, token: action.value };
+    case "clear_feedback":
+      return { ...state, message: null, error: null };
+    case "join_start":
+      return { ...state, loading: true, message: null, error: null };
+    case "join_fail":
+      return { ...state, loading: false, error: action.error };
+    case "join_success":
+      return { ...state, loading: false, token: "", error: null, message: action.message };
+    default:
+      return state;
+  }
+}
+
+function useDebouncedValue<T>(value: T, delayMs: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
-    const nextToken = token.trim();
+    const timeoutId = window.setTimeout(() => setDebouncedValue(value), delayMs);
+    return () => window.clearTimeout(timeoutId);
+  }, [delayMs, value]);
 
-    if (!nextToken) return;
+  return debouncedValue;
+}
 
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(async () => {
-      setPreviewLoading(true);
-      const res = await fetch(`/api/invites/${encodeURIComponent(nextToken)}`, { signal: controller.signal });
-      const data = (await res.json().catch(() => ({}))) as { invite?: InvitePreview; error?: string };
-      setPreviewLoading(false);
+async function invitePreviewFetcher(url: string): Promise<InvitePreviewResponse> {
+  const res = await fetch(url);
+  const data = (await res.json().catch(() => ({}))) as InvitePreviewResponse & { error?: string };
 
-      if (!res.ok) {
-        setPreview(null);
-        setError(data.error ?? "No se pudo validar la invitación.");
-        return;
-      }
+  if (!res.ok) {
+    throw new Error(data.error ?? "No se pudo validar la invitación.");
+  }
 
-      setError(null);
-      setPreview(data.invite ?? null);
-    }, 300);
+  return data;
+}
 
-    return () => {
-      controller.abort();
-      window.clearTimeout(timeoutId);
-    };
-  }, [token]);
+export function JoinTournamentClient(props: { initialToken?: string }) {
+  const router = useRouter();
+  const [state, dispatch] = useReducer(joinTournamentReducer, {
+    token: props.initialToken ?? "",
+    loading: false,
+    message: null,
+    error: null,
+  });
+
+  const trimmedToken = state.token.trim();
+  const debouncedToken = useDebouncedValue(trimmedToken, 300);
+  const previewKey = debouncedToken ? `/api/invites/${encodeURIComponent(debouncedToken)}` : null;
+
+  const { data: previewData, error: previewRequestError, isLoading: previewLoading } = useSWR(previewKey, invitePreviewFetcher, {
+    revalidateOnFocus: false,
+  });
+
+  const previewSettled = debouncedToken === trimmedToken;
+  const showPreviewLoading = Boolean(trimmedToken) && (!previewSettled || previewLoading);
+  const preview = previewSettled ? previewData?.invite ?? null : null;
+  const previewError = previewSettled && trimmedToken ? previewRequestError?.message ?? null : null;
 
   const canJoin = Boolean(
-    token.trim() &&
+    trimmedToken &&
       preview &&
+      !showPreviewLoading &&
       preview.tournament.status === "ACTIVE" &&
       !preview.isExpired &&
       preview.uses < preview.maxUses,
@@ -84,34 +128,31 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
           <Input
             id="inviteToken"
             placeholder="pega-el-token..."
-            value={token}
-            onChange={(e) => {
-              const nextValue = e.target.value;
-              setMessage(null);
-              setError(null);
-              if (!nextValue.trim()) setPreview(null);
-              setToken(nextValue);
+            value={state.token}
+            onChange={(event) => {
+              dispatch({ type: "clear_feedback" });
+              dispatch({ type: "set_token", value: event.target.value });
             }}
             spellCheck={false}
           />
         </div>
 
-        {previewLoading ? <InlineAlert variant="info" message="Validando invitación..." /> : null}
+        {showPreviewLoading ? <InlineAlert variant="info" message="Validando invitación..." /> : null}
 
         {preview ? (
-          <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="border-subtle-ui rounded-xl border p-4">
             <div className="flex items-start gap-3">
-              <div className="flex size-14 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+              <div className="tournament-logo-frame size-14">
                 {preview.tournament.logoUrl ? (
                   <Image src={preview.tournament.logoUrl} alt="" width={56} height={56} className="h-full w-full object-cover" unoptimized />
                 ) : (
-                  <Trophy className="size-6 text-zinc-500" />
+                  <Trophy className="icon-muted-ui size-6" />
                 )}
               </div>
               <div className="min-w-0 space-y-1">
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Vista previa del torneo</p>
+                <p className="text-muted-ui text-sm">Vista previa del torneo</p>
                 <p className="truncate text-lg font-semibold">{preview.tournament.name}</p>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                <p className="text-muted-ui text-sm">
                   Estado: {preview.tournament.status} · Usos: {preview.uses}/{preview.maxUses}
                   {preview.expiresAtUtc ? ` · Expira: ${preview.expiresAtUtc}` : ""}
                 </p>
@@ -122,31 +163,31 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
 
         <div className="flex flex-wrap gap-2">
           <Button
-            disabled={loading || !canJoin}
+            disabled={state.loading || !canJoin}
             type="button"
             onClick={async () => {
-              setMessage(null);
-              setError(null);
-              setLoading(true);
-              const res = await fetch(`/api/invites/${encodeURIComponent(token.trim())}/join`, { method: "POST" });
+              dispatch({ type: "join_start" });
+              const res = await fetch(`/api/invites/${encodeURIComponent(trimmedToken)}/join`, { method: "POST" });
               const data = (await res.json()) as { ok?: boolean; error?: string };
-              setLoading(false);
-              if (!res.ok) return setError(data.error ?? "No se pudo unir al torneo");
-              setToken("");
-              setPreview(null);
-              setMessage("Te uniste al torneo.");
+              if (!res.ok) {
+                dispatch({ type: "join_fail", error: data.error ?? "No se pudo unir al torneo" });
+                return;
+              }
+              dispatch({ type: "join_success", message: "Te uniste al torneo." });
               router.push("/tournaments");
               router.refresh();
             }}
           >
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <Ticket className="size-4" />}
+            {state.loading ? <Loader2 className="size-4 animate-spin" /> : <Ticket className="size-4" />}
             Unirme
           </Button>
         </div>
 
-        {message ? <InlineAlert variant="success" message={message} /> : null}
-        {error ? <InlineAlert variant="error" message={error} /> : null}
+        {state.message ? <InlineAlert variant="success" message={state.message} /> : null}
+        {state.error ? <InlineAlert variant="error" message={state.error} /> : null}
+        {previewError ? <InlineAlert variant="error" message={previewError} /> : null}
       </CardContent>
     </Card>
   );
 }
+

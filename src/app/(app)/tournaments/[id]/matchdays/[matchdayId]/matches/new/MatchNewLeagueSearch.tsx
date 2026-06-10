@@ -1,20 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import { useReducer } from "react";
-import { Loader2, RefreshCw, Search, Trophy, User, Users, X } from "lucide-react";
+import { Loader2, Search, Trophy, User, Users } from "lucide-react";
 
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { formatUtcToLocal } from "@/lib/format";
-import { statusLabel } from "@/lib/football";
-import { cn } from "@/lib/utils";
 import {
   createDefaultSearchDates,
   createSeasonOptions,
@@ -24,6 +17,10 @@ import {
   type PlayerRow,
   type TeamRow,
 } from "./match-new-types";
+import { MatchNewEntityResults } from "./match-new-entity-results";
+import { MatchNewFixtureFilters } from "./match-new-fixture-filters";
+import { MatchNewFixtureResults } from "./match-new-fixture-results";
+import { MatchNewSelectedEntity } from "./match-new-selected-entity";
 
 type SearchTab = "league" | "team" | "player";
 type SearchMode = "date" | "range";
@@ -67,6 +64,12 @@ type SearchAction =
   | { type: "fixtures_start" }
   | { type: "fixtures_ok"; fixtures: FixtureRow[] }
   | { type: "fixtures_fail"; error: string };
+
+const TABS: { id: SearchTab; label: string; icon: typeof Trophy; placeholder: string; hint: string }[] = [
+  { id: "league", label: "Liga", icon: Trophy, placeholder: "Liga MX, Premier League, Champions...", hint: "Busca por nombre de liga o país." },
+  { id: "team", label: "Equipo", icon: Users, placeholder: "Real Madrid, América, Bayern...", hint: "Busca por nombre de equipo." },
+  { id: "player", label: "Jugador", icon: User, placeholder: "Messi, Ronaldo, Haaland...", hint: "Busca al jugador y luego filtra fixtures por temporada." },
+];
 
 function resetFixtures(state: SearchState) {
   return {
@@ -116,11 +119,7 @@ function reducer(state: SearchState, action: SearchAction): SearchState {
         playerResults: [],
       });
     case "clear_entity":
-      return resetFixtures({
-        ...state,
-        selectedId: "",
-        selectedLabel: null,
-      });
+      return resetFixtures({ ...state, selectedId: "", selectedLabel: null });
     case "set_season":
       return resetFixtures({ ...state, searchSeason: action.value });
     case "set_mode":
@@ -166,12 +165,6 @@ function createInitialState(): SearchState {
   };
 }
 
-const TABS: { id: SearchTab; label: string; icon: typeof Trophy; placeholder: string; hint: string }[] = [
-  { id: "league", label: "Liga", icon: Trophy, placeholder: "Liga MX, Premier League, Champions...", hint: "Busca por nombre de liga o país." },
-  { id: "team", label: "Equipo", icon: Users, placeholder: "Real Madrid, América, Bayern...", hint: "Busca por nombre de equipo." },
-  { id: "player", label: "Jugador", icon: User, placeholder: "Messi, Ronaldo, Haaland...", hint: "Busca al jugador y luego filtra fixtures por temporada." },
-];
-
 export function MatchNewLeagueSearch(props: {
   isClosed: boolean;
   selectedFixtureIds: number[];
@@ -183,8 +176,7 @@ export function MatchNewLeagueSearch(props: {
   const seasonOptions = createSeasonOptions();
   const hasSelectedEntity = Boolean(state.selectedId);
   const hasDateFilter = state.searchMode === "date" ? Boolean(state.searchDate.trim()) : Boolean(state.searchFrom.trim() && state.searchTo.trim());
-  const needsSeason = hasSelectedEntity;
-  const fixturesSearchDisabled = props.isClosed || !hasDateFilter || (needsSeason && !state.searchSeason.trim());
+  const fixturesSearchDisabled = props.isClosed || !hasDateFilter || (hasSelectedEntity && !state.searchSeason.trim());
   const hasEntityResults = state.leagueResults.length > 0 || state.teamResults.length > 0 || state.playerResults.length > 0;
 
   async function runEntitySearch() {
@@ -199,7 +191,10 @@ export function MatchNewLeagueSearch(props: {
     if (state.tab === "league") {
       const res = await fetch(`/api/api-football/leagues/search?q=${encodeURIComponent(query)}`, { cache: "no-store" });
       const data = (await res.json().catch(() => ({}))) as { leagues?: LeagueRow[]; error?: string };
-      if (!res.ok) return dispatch({ type: "entity_fail", error: data.error ?? "No se pudo buscar ligas." });
+      if (!res.ok) {
+        dispatch({ type: "entity_fail", error: data.error ?? "No se pudo buscar ligas." });
+        return;
+      }
       dispatch({ type: "league_ok", leagues: data.leagues ?? [] });
       return;
     }
@@ -207,14 +202,20 @@ export function MatchNewLeagueSearch(props: {
     if (state.tab === "team") {
       const res = await fetch(`/api/api-football/teams/search?q=${encodeURIComponent(query)}`, { cache: "no-store" });
       const data = (await res.json().catch(() => ({}))) as { teams?: TeamRow[]; error?: string };
-      if (!res.ok) return dispatch({ type: "entity_fail", error: data.error ?? "No se pudo buscar equipos." });
+      if (!res.ok) {
+        dispatch({ type: "entity_fail", error: data.error ?? "No se pudo buscar equipos." });
+        return;
+      }
       dispatch({ type: "team_ok", teams: data.teams ?? [] });
       return;
     }
 
     const res = await fetch(`/api/api-football/players/search?q=${encodeURIComponent(query)}`, { cache: "no-store" });
     const data = (await res.json().catch(() => ({}))) as { players?: PlayerRow[]; error?: string };
-    if (!res.ok) return dispatch({ type: "entity_fail", error: data.error ?? "No se pudo buscar jugadores." });
+    if (!res.ok) {
+      dispatch({ type: "entity_fail", error: data.error ?? "No se pudo buscar jugadores." });
+      return;
+    }
     dispatch({ type: "player_ok", players: data.players ?? [] });
   }
 
@@ -238,7 +239,11 @@ export function MatchNewLeagueSearch(props: {
 
     const res = await fetch(`/api/api-football/fixtures/search?${params.toString()}`, { cache: "no-store" });
     const data = (await res.json().catch(() => ({}))) as { fixtures?: FixtureRow[]; error?: string };
-    if (!res.ok) return dispatch({ type: "fixtures_fail", error: data.error ?? "No se pudo buscar fixtures." });
+    if (!res.ok) {
+      dispatch({ type: "fixtures_fail", error: data.error ?? "No se pudo buscar fixtures." });
+      return;
+    }
+
     dispatch({ type: "fixtures_ok", fixtures: data.fixtures ?? [] });
   }
 
@@ -283,230 +288,53 @@ export function MatchNewLeagueSearch(props: {
         </div>
 
         {hasEntityResults ? (
-          <div className="max-h-56 overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
-              {state.tab === "league" &&
-                state.leagueResults.map((league) => {
-                  const season = league.currentSeasons[0] ?? league.seasonYears[0];
-                  return (
-                    <li key={league.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {league.name} <span className="text-zinc-500">({league.countryName})</span>
-                        </p>
-                        <p className="text-xs text-zinc-500">{league.type}{season ? ` · Temporada ${season}` : ""}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        type="button"
-                        onClick={() =>
-                          dispatch({
-                            type: "select_entity",
-                            id: String(league.id),
-                            label: `${league.name} (${league.countryName})`,
-                            season: season ? String(season) : undefined,
-                          })
-                        }
-                      >
-                        Seleccionar
-                      </Button>
-                    </li>
-                  );
-                })}
-
-              {state.tab === "team" &&
-                state.teamResults.map((team) => (
-                  <li key={team.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                    <div className="flex min-w-0 items-center gap-2">
-                      {team.logoUrl ? (
-                        <Image src={team.logoUrl} alt={team.name} width={24} height={24} className="size-6 object-contain" unoptimized />
-                      ) : (
-                        <div className="size-6 rounded-full bg-zinc-100 dark:bg-zinc-800" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{team.name}</p>
-                        {team.city || team.country ? <p className="text-xs text-zinc-500">{[team.city, team.country].filter(Boolean).join(", ")}</p> : null}
-                      </div>
-                    </div>
-                    <Button size="sm" variant="outline" type="button" onClick={() => dispatch({ type: "select_entity", id: String(team.id), label: team.name })}>
-                      Seleccionar
-                    </Button>
-                  </li>
-                ))}
-
-              {state.tab === "player" &&
-                state.playerResults.map((player) => (
-                  <li key={player.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                    <div className="flex min-w-0 items-center gap-2">
-                      {player.photoUrl ? (
-                        <Image src={player.photoUrl} alt={player.name} width={24} height={24} className="size-6 rounded-full object-cover" unoptimized />
-                      ) : (
-                        <div className="size-6 rounded-full bg-zinc-100 dark:bg-zinc-800" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{player.name}</p>
-                        {player.teamName ? <p className="text-xs text-zinc-500">{player.teamName}</p> : null}
-                      </div>
-                    </div>
-                    <Button size="sm" variant="outline" type="button" onClick={() => dispatch({ type: "select_entity", id: String(player.id), label: player.name })}>
-                      Seleccionar
-                    </Button>
-                  </li>
-                ))}
-            </ul>
-          </div>
+          <MatchNewEntityResults
+            tab={state.tab}
+            leagueResults={state.leagueResults}
+            teamResults={state.teamResults}
+            playerResults={state.playerResults}
+            onSelectLeague={(league, season) =>
+              dispatch({
+                type: "select_entity",
+                id: String(league.id),
+                label: `${league.name} (${league.countryName})`,
+                season: season ? String(season) : undefined,
+              })
+            }
+            onSelectTeam={(team) => dispatch({ type: "select_entity", id: String(team.id), label: team.name })}
+            onSelectPlayer={(player) => dispatch({ type: "select_entity", id: String(player.id), label: player.name })}
+          />
         ) : null}
 
-        {state.selectedLabel ? (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-            <div className="min-w-0">
-              <span className="font-medium">Seleccionado:</span> <span className="truncate">{state.selectedLabel}</span>
-              <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">La búsqueda de fixtures usará este ID y exigirá temporada.</p>
-            </div>
-            <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0 text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100" onClick={() => dispatch({ type: "clear_entity" })}>
-              <X className="size-4" />
-              <span className="sr-only">Quitar selección</span>
-            </Button>
-          </div>
-        ) : (
-          <InlineAlert variant="info" message="También puedes buscar fixtures solo por fecha o rango, sin seleccionar entidad." />
-        )}
+        <MatchNewSelectedEntity selectedLabel={state.selectedLabel} onClear={() => dispatch({ type: "clear_entity" })} />
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="grid gap-2">
-            <Label htmlFor="search-season">Temporada {hasSelectedEntity ? "*" : "(opcional)"}</Label>
-            <Select value={state.searchSeason} onValueChange={(value) => dispatch({ type: "set_season", value })}>
-              <SelectTrigger id="search-season">
-                <SelectValue placeholder="Selecciona temporada" />
-              </SelectTrigger>
-              <SelectContent>
-                {seasonOptions.map((season) => (
-                  <SelectItem key={season} value={season}>
-                    {season}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              {hasSelectedEntity ? "Obligatoria cuando eliges liga, equipo o jugador." : "Si no seleccionas entidad, no se enviará al backend."}
-            </p>
-          </div>
+        <MatchNewFixtureFilters
+          hasSelectedEntity={hasSelectedEntity}
+          searchSeason={state.searchSeason}
+          seasonOptions={seasonOptions}
+          searchMode={state.searchMode}
+          searchDate={state.searchDate}
+          searchFrom={state.searchFrom}
+          searchTo={state.searchTo}
+          fixturesLoading={state.fixturesLoading}
+          fixturesSearchDisabled={fixturesSearchDisabled}
+          hasDateFilter={hasDateFilter}
+          fixturesError={state.fixturesError}
+          onSeasonChange={(value) => dispatch({ type: "set_season", value })}
+          onModeChange={(value) => dispatch({ type: "set_mode", mode: value })}
+          onDateChange={(value) => dispatch({ type: "set_date", value })}
+          onFromChange={(value) => dispatch({ type: "set_from", value })}
+          onToChange={(value) => dispatch({ type: "set_to", value })}
+          onSearch={() => void runFixturesSearch()}
+        />
 
-          <div className="grid gap-2">
-            <Label>Modo de fecha</Label>
-            <ToggleGroup
-              type="single"
-              value={state.searchMode}
-              onValueChange={(value) => {
-                if (value) dispatch({ type: "set_mode", mode: value as SearchMode });
-              }}
-            >
-              <ToggleGroupItem value="date">Fecha exacta</ToggleGroupItem>
-              <ToggleGroupItem value="range">Rango</ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-        </div>
-
-        {state.searchMode === "date" ? (
-          <div className="grid gap-2">
-            <Label htmlFor="search-date">Fecha *</Label>
-            <Input id="search-date" type="date" value={state.searchDate} onChange={(event) => dispatch({ type: "set_date", value: event.target.value })} />
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="search-from">Desde *</Label>
-              <Input id="search-from" type="date" value={state.searchFrom} onChange={(event) => dispatch({ type: "set_from", value: event.target.value })} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="search-to">Hasta *</Label>
-              <Input id="search-to" type="date" value={state.searchTo} onChange={(event) => dispatch({ type: "set_to", value: event.target.value })} />
-            </div>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <Button type="button" onClick={() => void runFixturesSearch()} disabled={state.fixturesLoading || fixturesSearchDisabled}>
-              {state.fixturesLoading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-              Buscar fixtures
-            </Button>
-          </div>
-          {!hasDateFilter ? <InlineAlert variant="info" message="Debes capturar una fecha exacta o un rango antes de buscar fixtures." /> : null}
-          {hasSelectedEntity && !state.searchSeason.trim() ? <InlineAlert variant="info" message="La temporada es obligatoria cuando buscas por liga, equipo o jugador." /> : null}
-          {state.fixturesError ? <InlineAlert variant="error" message={state.fixturesError} /> : null}
-        </div>
-
-        <div className="max-h-[50vh] overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-          {!state.fixturesSearched ? (
-            <p className="p-4 text-center text-sm text-zinc-400 dark:text-zinc-500">
-              {hasSelectedEntity
-                ? "Completa temporada y fecha/rango, luego presiona “Buscar fixtures”."
-                : "Captura una fecha o rango y presiona “Buscar fixtures”."}
-            </p>
-          ) : state.fixtures.length === 0 ? (
-            <p className="p-4 text-center text-sm text-zinc-500">Sin resultados para los filtros aplicados.</p>
-          ) : (
-            <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
-              {state.fixtures.map((fixture) => {
-                const isSelected = props.selectedFixtureIds.includes(fixture.id);
-                const localDate = formatUtcToLocal(fixture.dateUtc, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-
-                return (
-                  <li
-                    key={fixture.id}
-                    className={cn(
-                      "flex items-center justify-between gap-3 px-3 py-2.5 transition-colors",
-                      isSelected ? "bg-emerald-50 dark:bg-emerald-950/30" : "hover:bg-zinc-50 dark:hover:bg-zinc-900/50",
-                    )}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        {fixture.homeLogoUrl ? (
-                          <Image src={fixture.homeLogoUrl} alt={fixture.homeTeam} width={18} height={18} className="size-[18px] object-contain" unoptimized />
-                        ) : null}
-                        <span className="text-sm font-medium">{fixture.homeTeam}</span>
-                        <span className="text-xs text-zinc-400">vs</span>
-                        {fixture.awayLogoUrl ? (
-                          <Image src={fixture.awayLogoUrl} alt={fixture.awayTeam} width={18} height={18} className="size-[18px] object-contain" unoptimized />
-                        ) : null}
-                        <span className="text-sm font-medium">{fixture.awayTeam}</span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-zinc-500">
-                        {localDate}
-                        {fixture.leagueName ? ` · ${fixture.leagueName}` : ""}
-                        {fixture.round ? ` · ${fixture.round}` : ""}
-                        {" · "}
-                        {statusLabel(fixture.statusShort)}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={isSelected ? "default" : "outline"}
-                      type="button"
-                      onClick={() => {
-                        props.onToggleFixture({
-                          id: fixture.id,
-                          dateUtc: fixture.dateUtc,
-                          homeTeam: fixture.homeTeam,
-                          awayTeam: fixture.awayTeam,
-                        });
-                      }}
-                    >
-                      {isSelected ? "✓ Seleccionado" : "Seleccionar"}
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+        <MatchNewFixtureResults
+          fixturesSearched={state.fixturesSearched}
+          fixtures={state.fixtures}
+          hasSelectedEntity={hasSelectedEntity}
+          selectedFixtureIds={props.selectedFixtureIds}
+          onToggleFixture={props.onToggleFixture}
+        />
       </CardContent>
     </Card>
   );

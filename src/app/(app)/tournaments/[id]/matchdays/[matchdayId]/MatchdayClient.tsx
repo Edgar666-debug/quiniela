@@ -123,7 +123,7 @@ export function MatchdayClient(props: {
       <MatchdayClose closesAtUtc={props.initial.matchday.closesAtUtc} />
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{rows.length} partido(s)</p>
+        <p className="text-muted-ui text-sm">{rows.length} partido(s)</p>
         <Button variant="outline" size="sm" type="button" onClick={refresh} disabled={state.loading}>
           {state.loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           Refrescar
@@ -138,14 +138,14 @@ export function MatchdayClient(props: {
             <p className="text-center text-sm font-semibold text-zinc-700 dark:text-zinc-200">{g.label}</p>
             <div className="grid gap-4">
               {g.matches.map((m) => (
-                <div key={m.id} className="grid gap-3 rounded-2xl bg-zinc-50/70 p-4 dark:bg-zinc-950/30">
+                <div key={m.id} className="match-card-ui grid gap-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                    <p className="text-muted-ui text-xs">
                       Estado: {statusLabel(m.statusShort)}
                       {m.scoreHome != null && m.scoreAway != null ? ` • ${m.scoreHome}-${m.scoreAway}` : ""}
                       {m.externalFixtureId ? ` • Fixture ${m.externalFixtureId}` : ""}
                     </p>
-                    {m.myPick ? <p className="text-xs text-zinc-600 dark:text-zinc-400">Tu pick: {m.myPick}</p> : null}
+                    {m.myPick ? <p className="text-muted-ui text-xs">Tu pick: {m.myPick}</p> : null}
                   </div>
 
                   <MatchPickGroup
@@ -169,7 +169,7 @@ export function MatchdayClient(props: {
         ))}
       </div>
 
-      {isClosed ? <p className="text-sm text-zinc-600 dark:text-zinc-400">La jornada está cerrada.</p> : null}
+      {isClosed ? <p className="text-muted-ui text-sm">La jornada está cerrada.</p> : null}
       {state.message ? <p className="text-sm text-emerald-600">{state.message}</p> : null}
       {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
     </div>

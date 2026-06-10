@@ -1,4 +1,4 @@
-import { formatUtcToLocal } from "@/lib/format";
+import { formatUtcToLocalDateTime } from "@/lib/format";
 
 export function formatUtcDateTime(iso: string) {
   const d = new Date(iso);
@@ -12,13 +12,6 @@ export function formatUtcDateTime(iso: string) {
 
 /** Same instant as `iso`, shown in the user's local timezone. */
 export function formatLocalDateTime(iso: string) {
-  return formatUtcToLocal(iso, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  return formatUtcToLocalDateTime(iso);
 }
 

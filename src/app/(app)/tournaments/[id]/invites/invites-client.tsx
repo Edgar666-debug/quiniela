@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import { Clipboard, Loader2, Mail, Plus, Ticket } from "lucide-react";
+import { EmptyState } from "@/components/app/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,25 +17,75 @@ type InviteItem = {
   createdAtUtc: string;
 };
 
+type InviteState = {
+  loading: boolean;
+  emailLoading: boolean;
+  recipientEmail: string;
+  message: string | null;
+  error: string | null;
+};
+
+type InviteAction =
+  | { type: "set_recipient_email"; value: string }
+  | { type: "reset_feedback" }
+  | { type: "create_start"; mode: "token" | "email" }
+  | { type: "create_fail"; mode: "token" | "email"; error: string }
+  | { type: "create_success"; mode: "token" | "email"; message: string };
+
+function invitesReducer(state: InviteState, action: InviteAction): InviteState {
+  switch (action.type) {
+    case "set_recipient_email":
+      return { ...state, recipientEmail: action.value };
+    case "reset_feedback":
+      return { ...state, message: null, error: null };
+    case "create_start":
+      return {
+        ...state,
+        loading: action.mode === "token",
+        emailLoading: action.mode === "email",
+        message: null,
+        error: null,
+      };
+    case "create_fail":
+      return {
+        ...state,
+        loading: false,
+        emailLoading: false,
+        error: action.error,
+      };
+    case "create_success":
+      return {
+        ...state,
+        loading: false,
+        emailLoading: false,
+        recipientEmail: action.mode === "email" ? "" : state.recipientEmail,
+        message: action.message,
+        error: null,
+      };
+    default:
+      return state;
+  }
+}
+
 export function InvitesClient(props: { tournamentId: string; tournamentStatus: "ACTIVE" | "FINISHED" | "ARCHIVED"; initialInvites: InviteItem[] }) {
   const [localInvites, setLocalInvites] = useState<{ source: InviteItem[]; value: InviteItem[] } | null>(null);
   const invites = localInvites?.source === props.initialInvites ? localInvites.value : props.initialInvites;
-  const [loading, setLoading] = useState(false);
-  const [emailLoading, setEmailLoading] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(invitesReducer, {
+    loading: false,
+    emailLoading: false,
+    recipientEmail: "",
+    message: null,
+    error: null,
+  });
 
   const hasAvailable = invites.some((i) => i.uses < i.maxUses);
   const canGenerate = props.tournamentStatus === "ACTIVE";
 
   async function createInvite(email?: string) {
-    setMessage(null);
-    setError(null);
-    if (!canGenerate) return setError("El torneo no está activo. No se pueden generar invitaciones.");
+    dispatch({ type: "reset_feedback" });
+    if (!canGenerate) return dispatch({ type: "create_fail", mode: email ? "email" : "token", error: "El torneo no está activo. No se pueden generar invitaciones." });
 
-    if (email) setEmailLoading(true);
-    else setLoading(true);
+    dispatch({ type: "create_start", mode: email ? "email" : "token" });
 
     const res = await fetch(`/api/tournaments/${props.tournamentId}/invites`, {
       method: "POST",
@@ -42,12 +93,8 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
       body: JSON.stringify({ maxUses: 1, ...(email ? { email } : {}) }),
     });
     const data = (await res.json()) as { invite?: { token: string; maxUses: number; uses: number; expiresAt: string | null }; error?: string };
-
-    if (email) setEmailLoading(false);
-    else setLoading(false);
-
-    if (!res.ok) return setError(data.error ?? "No se pudo crear la invitación");
-    if (!data.invite?.token) return setError("Respuesta inválida del servidor");
+    if (!res.ok) return dispatch({ type: "create_fail", mode: email ? "email" : "token", error: data.error ?? "No se pudo crear la invitación" });
+    if (!data.invite?.token) return dispatch({ type: "create_fail", mode: email ? "email" : "token", error: "Respuesta inválida del servidor" });
 
     const item: InviteItem = {
       token: data.invite.token,
@@ -59,11 +106,10 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
     setLocalInvites({ source: props.initialInvites, value: [item, ...invites].slice(0, 20) });
 
     if (email) {
-      setRecipientEmail("");
-      setMessage(`Invitación enviada a ${email}`);
+      dispatch({ type: "create_success", mode: "email", message: `Invitación enviada a ${email}` });
     } else {
       await navigator.clipboard.writeText(item.token).catch(() => {});
-      setMessage(`Token copiado: ${item.token}`);
+      dispatch({ type: "create_success", mode: "token", message: `Token copiado: ${item.token}` });
     }
   }
 
@@ -79,12 +125,12 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">
-            <Button className="w-fit" disabled={loading || emailLoading || !canGenerate} type="button" onClick={() => createInvite()}>
-              {loading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+            <Button className="w-fit" disabled={state.loading || state.emailLoading || !canGenerate} type="button" onClick={() => createInvite()}>
+              {state.loading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
               Generar token
             </Button>
             {hasAvailable ? (
-              <p className="text-xs text-zinc-500">Tip: si ya tienes tokens sin usar, también puedes reutilizarlos.</p>
+              <p className="text-subtle-ui text-xs">Tip: si ya tienes tokens sin usar, también puedes reutilizarlos.</p>
             ) : null}
           </div>
 
@@ -98,26 +144,26 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
                   id="recipientEmail"
                   type="email"
                   placeholder="invitado@ejemplo.com"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                  disabled={emailLoading || !canGenerate}
+                  value={state.recipientEmail}
+                  onChange={(e) => dispatch({ type: "set_recipient_email", value: e.target.value })}
+                  disabled={state.emailLoading || !canGenerate}
                   className="max-w-72"
                 />
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={emailLoading || loading || !canGenerate || !recipientEmail.trim()}
-                  onClick={() => createInvite(recipientEmail.trim())}
+                  disabled={state.emailLoading || state.loading || !canGenerate || !state.recipientEmail.trim()}
+                  onClick={() => createInvite(state.recipientEmail.trim())}
                 >
-                  {emailLoading ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
+                  {state.emailLoading ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
                   Enviar
                 </Button>
               </div>
             </div>
           </div>
 
-          {message ? <p className="text-sm text-green-700">{message}</p> : null}
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {state.message ? <p className="text-sm text-green-700">{state.message}</p> : null}
+          {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
         </CardContent>
       </Card>
 
@@ -128,15 +174,15 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {invites.length === 0 ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Aún no hay invitaciones.</p>
+            <EmptyState compact description="Aún no hay invitaciones." />
           ) : (
             <ul className="flex flex-col gap-3">
               {invites.map((i) => (
-                <li key={i.token} className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <li key={i.token} className="list-row-ui">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-mono text-sm">{i.token}</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="text-muted-ui text-xs">
                         Usos: {i.uses}/{i.maxUses}
                         {i.expiresAtUtc ? ` • Expira: ${i.expiresAtUtc}` : ""}
                       </p>
@@ -147,7 +193,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
                       type="button"
                       onClick={async () => {
                         await navigator.clipboard.writeText(i.token).catch(() => {});
-                        setMessage(`Token copiado: ${i.token}`);
+                        dispatch({ type: "create_success", mode: "token", message: `Token copiado: ${i.token}` });
                       }}
                     >
                       <Clipboard className="size-4" />
@@ -155,7 +201,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
                     </Button>
                   </div>
                   <Separator className="my-2" />
-                  <p className="text-xs text-zinc-500">Creado (UTC): {i.createdAtUtc}</p>
+                  <p className="text-subtle-ui text-xs">Creado (UTC): {i.createdAtUtc}</p>
                 </li>
               ))}
             </ul>

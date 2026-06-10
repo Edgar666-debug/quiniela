@@ -24,7 +24,7 @@ export function CardTitle({ className, children, ...props }: React.HTMLAttribute
 }
 
 export function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("text-sm text-zinc-600 dark:text-zinc-400", className)} {...props} />;
+  return <p className={cn("text-muted-ui text-sm", className)} {...props} />;
 }
 
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -34,4 +34,3 @@ export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDi
 export function CardFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("flex items-center p-6 pt-0", className)} {...props} />;
 }
-

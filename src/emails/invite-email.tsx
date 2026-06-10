@@ -24,7 +24,7 @@ export function InviteEmail(props: InviteEmailProps) {
   return (
     <Html lang="es">
       <Head />
-      <Preview>{inviter} te invitó a la quiniela &quot;{props.tournamentName}&quot; — únete ahora</Preview>
+      <Preview>{inviter} te invitó a la quiniela &quot;{props.tournamentName}&quot; - únete ahora</Preview>
       <Body style={body}>
         <Container style={container}>
           {/* Hero card */}
@@ -268,3 +268,4 @@ const outerFooter = {
   textAlign: "center" as const,
   textTransform: "uppercase" as const,
 };
+

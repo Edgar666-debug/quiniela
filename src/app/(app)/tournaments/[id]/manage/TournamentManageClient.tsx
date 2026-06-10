@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { EmptyState } from "@/components/app/empty-state";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -110,7 +111,7 @@ export function TournamentManageClient(props: {
         </CardHeader>
         <CardContent>
           {props.matchdays.length === 0 ? (
-            <p className="text-sm text-zinc-500">Aún no hay jornadas. Crea la primera para empezar.</p>
+            <EmptyState compact description="Aún no hay jornadas. Crea la primera para empezar." />
           ) : (
             <Table>
               <TableHeader>

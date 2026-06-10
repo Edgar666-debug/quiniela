@@ -38,7 +38,7 @@ export function DialogContent({ className, children, ref, ...props }: DialogCont
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-200 bg-white p-4 shadow-lg outline-none dark:border-zinc-800 dark:bg-black",
+          "surface-panel-ui fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 p-4 shadow-lg outline-none",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-200",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           className,
@@ -72,7 +72,7 @@ export function DialogDescription({ className, ref, ...props }: DialogDescriptio
   return (
     <DialogPrimitive.Description
       ref={ref}
-      className={cn("text-sm text-zinc-600 dark:text-zinc-400", className)}
+      className={cn("text-muted-ui text-sm", className)}
       {...props}
     />
   );

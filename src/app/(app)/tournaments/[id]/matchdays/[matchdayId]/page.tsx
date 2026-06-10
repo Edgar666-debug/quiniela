@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Image from "next/image";
+import { Trophy } from "lucide-react";
 import { auth } from "@/lib/auth";
-import { TournamentPageHeader } from "@/components/app/tournament-page-header";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MatchdayClient } from "./MatchdayClient";
@@ -74,16 +75,27 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
-      <TournamentPageHeader
-        name={tournament.name}
-        logoUrl={tournament.logoUrl}
-        eyebrow={`Jornada ${matchday.number}`}
-        meta={
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
-          </p>
-        }
-        actions={
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="tournament-logo-frame size-14">
+            {tournament.logoUrl ? (
+              <Image src={tournament.logoUrl} alt="" width={56} height={56} className="h-full w-full object-cover" unoptimized />
+            ) : (
+              <Trophy className="size-6 text-zinc-500" />
+            )}
+          </div>
+          <div className="space-y-1">
+            <div className="text-muted-ui flex items-center gap-2">
+              <Trophy className="size-4" />
+              <span className="text-sm">{`Jornada ${matchday.number}`}</span>
+            </div>
+            <h1 className="text-2xl font-semibold">{tournament.name}</h1>
+            <p className="text-muted-ui text-sm">
+              Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
           <MatchdayPageActions
             tournamentId={tournamentId}
             matchdayId={matchdayId}
@@ -91,8 +103,8 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
             tournamentStatus={tournament.status}
             closesAtUtc={matchday.closesAtUtc.toISOString()}
           />
-        }
-      />
+        </div>
+      </div>
 
       <Card>
         <CardHeader>

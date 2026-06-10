@@ -55,7 +55,7 @@ function TableHead({ className, ref, ...props }: TableHeadProps) {
   return (
     <th
       ref={ref}
-      className={cn("h-10 px-3 text-left align-middle text-xs font-medium text-zinc-600 dark:text-zinc-400 [&:has([role=checkbox])]:pr-0", className)}
+      className={cn("text-muted-ui h-10 px-3 text-left align-middle text-xs font-medium [&:has([role=checkbox])]:pr-0", className)}
       {...props}
     />
   );
@@ -68,7 +68,7 @@ function TableCell({ className, ref, ...props }: TableCellProps) {
 TableCell.displayName = "TableCell";
 
 function TableCaption({ className, ref, ...props }: TableCaptionProps) {
-  return <caption ref={ref} className={cn("mt-4 text-sm text-zinc-600 dark:text-zinc-400", className)} {...props} />;
+  return <caption ref={ref} className={cn("text-muted-ui mt-4 text-sm", className)} {...props} />;
 }
 TableCaption.displayName = "TableCaption";
 

@@ -45,7 +45,7 @@ export function DropdownMenuSubContent({ className, ref, ...props }: DropdownMen
     <DropdownMenuPrimitive.SubContent
       ref={ref}
       className={cn(
-        "z-50 min-w-[10rem] overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 text-zinc-950 shadow-lg dark:border-zinc-800 dark:bg-black dark:text-zinc-50",
+        "surface-panel-ui z-50 min-w-[10rem] overflow-hidden p-1 text-zinc-950 shadow-lg dark:text-zinc-50",
         className,
       )}
       {...props}
@@ -61,7 +61,7 @@ export function DropdownMenuContent({ className, sideOffset = 8, ref, ...props }
         ref={ref}
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-[12rem] overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 text-zinc-950 shadow-lg dark:border-zinc-800 dark:bg-black dark:text-zinc-50",
+          "surface-panel-ui z-50 min-w-[12rem] overflow-hidden p-1 text-zinc-950 shadow-lg dark:text-zinc-50",
           className,
         )}
         {...props}
@@ -131,11 +131,11 @@ DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;
 
 export function DropdownMenuLabel({ className, inset, ref, ...props }: DropdownMenuLabelProps) {
   return (
-    <DropdownMenuPrimitive.Label
-      ref={ref}
-      className={cn("px-2 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400", inset ? "pl-8" : "", className)}
-      {...props}
-    />
+      <DropdownMenuPrimitive.Label
+        ref={ref}
+        className={cn("text-subtle-ui px-2 py-1.5 text-xs font-medium", inset ? "pl-8" : "", className)}
+        {...props}
+      />
   );
 }
 DropdownMenuLabel.displayName = DropdownMenuPrimitive.Label.displayName;
@@ -146,5 +146,5 @@ export function DropdownMenuSeparator({ className, ref, ...props }: DropdownMenu
 DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName;
 
 export function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"span">) {
-  return <span className={cn("ml-auto text-xs tracking-widest text-zinc-500 dark:text-zinc-400", className)} {...props} />;
+  return <span className={cn("text-subtle-ui ml-auto text-xs tracking-widest", className)} {...props} />;
 }

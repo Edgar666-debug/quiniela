@@ -76,20 +76,20 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
                   </TableCell>
                   <TableCell className="py-2">
                     <p className="font-medium">{m.name ?? m.email}</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">{m.email}</p>
+                    <p className="text-muted-ui text-xs">{m.email}</p>
                   </TableCell>
                   <TableCell className="hidden py-2 sm:table-cell">
-                    <span className="text-xs text-zinc-600 dark:text-zinc-400">{m.role}</span>
+                    <span className="text-muted-ui text-xs">{m.role}</span>
                   </TableCell>
                   <TableCell className="py-2 text-right">
-                    <span className="text-xs text-zinc-600 dark:text-zinc-400">{props.matchdays.length}</span>
+                    <span className="text-muted-ui text-xs">{props.matchdays.length}</span>
                   </TableCell>
                 </TableRow>
 
                 {isOpen ? (
                   <TableRow key={`${m.id}-expanded`} className="hover:bg-transparent">
                     <TableCell colSpan={4} className="pt-0">
-                      <div className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
+                      <div className="surface-panel-ui rounded-xl p-3">
                         <div className="grid gap-2 md:grid-cols-2">
                           {matchdaysClosedFirst.map((md) => {
                             const href = `/tournaments/${props.tournamentId}/picks/${m.id}/${md.id}`;
@@ -106,7 +106,7 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
                               >
                                 <div className="min-w-0">
                                   <p className="truncate text-sm font-medium">Jornada {md.number}</p>
-                                  <p className="text-xs text-zinc-600 dark:text-zinc-400">Cierre (UTC): {md.closesAtLabel}</p>
+                                  <p className="text-muted-ui text-xs">Cierre (UTC): {md.closesAtLabel}</p>
                                 </div>
                                 {disabled ? (
                                   <div className="flex items-center gap-2 text-xs">
@@ -133,7 +133,7 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
       </Table>
 
       {filteredMembers.length === 0 ? (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin participantes para esa búsqueda.</p>
+        <p className="text-muted-ui text-sm">Sin participantes para esa búsqueda.</p>
       ) : null}
     </div>
   );

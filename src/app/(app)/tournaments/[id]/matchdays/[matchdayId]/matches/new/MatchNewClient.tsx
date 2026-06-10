@@ -56,12 +56,12 @@ export function MatchNewClient(props: {
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
+          <div className="text-muted-ui flex items-center gap-2">
             <CalendarDays className="size-4" />
             <span className="text-sm">Jornada {props.matchdayNumber}</span>
           </div>
           <h1 className="text-2xl font-semibold">Agregar partido</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Busca fixtures y guarda el partido en la jornada.</p>
+          <p className="text-muted-ui text-sm">Busca fixtures y guarda el partido en la jornada.</p>
         </div>
       </div>
 

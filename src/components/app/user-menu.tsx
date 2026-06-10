@@ -43,16 +43,16 @@ export function UserMenu(props: { user: { email: string; name: string | null }; 
           )}
           aria-label="Menú de usuario"
         >
-          <div className="flex size-8 items-center justify-center rounded-full border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+          <div className="avatar-frame-ui size-8 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
             {(props.user.name ?? props.user.email).slice(0, 1).toUpperCase()}
           </div>
           {props.collapsed ? null : (
             <>
               <div className="min-w-0 flex-1 text-left">
                 <p className="truncate text-sm font-medium">{displayName}</p>
-                <p className="truncate text-xs text-zinc-600 dark:text-zinc-400">{props.user.email}</p>
+                <p className="text-muted-ui truncate text-xs">{props.user.email}</p>
               </div>
-              <ChevronUp className="size-4 text-zinc-500 dark:text-zinc-400" />
+              <ChevronUp className="icon-muted-ui size-4" />
             </>
           )}
         </Button>
@@ -62,7 +62,7 @@ export function UserMenu(props: { user: { email: string; name: string | null }; 
         <DropdownMenuLabel>
           <div className="space-y-0.5">
             <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">{displayName}</p>
-            <p className="truncate text-xs text-zinc-600 dark:text-zinc-400">{props.user.email}</p>
+            <p className="text-muted-ui truncate text-xs">{props.user.email}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

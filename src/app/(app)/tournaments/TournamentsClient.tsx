@@ -19,6 +19,7 @@ import { canEditTournament, canManageTournament } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/app/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +72,7 @@ export function TournamentsClient(props: { tournaments: TournamentRow[] }) {
       return t.name.toLowerCase().includes(q);
     });
 
-    rows = [...rows].sort((a, b) => {
+    rows = rows.toSorted((a, b) => {
       const cmp = a.name.localeCompare(b.name, "es");
       return sortMode === "name-asc" ? cmp : -cmp;
     });
@@ -130,7 +131,7 @@ export function TournamentsClient(props: { tournaments: TournamentRow[] }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-full border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-800 dark:bg-zinc-900/80">
+          <div className="border-subtle-ui flex items-center rounded-full border bg-zinc-100 p-1 dark:bg-zinc-900/80">
             <Button
               type="button"
               size="icon"
@@ -176,18 +177,17 @@ export function TournamentsClient(props: { tournaments: TournamentRow[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-6 py-16 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
-          <Trophy className="mx-auto size-10 text-zinc-400 dark:text-zinc-600" />
-          <p className="mt-4 text-lg font-medium">
-            {props.tournaments.length === 0 ? "Aún no tienes torneos" : "Sin resultados"}
-          </p>
-          <p className="mt-1 text-sm text-zinc-500">
-            {props.tournaments.length === 0
+        <EmptyState
+          title={props.tournaments.length === 0 ? "Aún no tienes torneos" : "Sin resultados"}
+          description={
+            props.tournaments.length === 0
               ? "Crea uno nuevo o únete con una invitación."
-              : "Prueba otro filtro o término de búsqueda."}
-          </p>
-          {props.tournaments.length === 0 ? (
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              : "Prueba otro filtro o término de búsqueda."
+          }
+          icon={<Trophy className="mx-auto size-10 text-zinc-400 dark:text-zinc-600" />}
+          actions={
+            props.tournaments.length === 0 ? (
+              <>
               <Button asChild className="rounded-full bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-700 dark:hover:bg-emerald-600">
                 <Link href="/tournaments/new">
                   <Plus className="size-4" />
@@ -197,9 +197,10 @@ export function TournamentsClient(props: { tournaments: TournamentRow[] }) {
               <Button asChild variant="outline" className="rounded-full">
                 <Link href="/tournaments/join">Unirme por invitación</Link>
               </Button>
-            </div>
-          ) : null}
-        </div>
+              </>
+            ) : null
+          }
+        />
       ) : viewMode === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((t) => (
@@ -268,7 +269,7 @@ function TournamentCard(props: { tournament: TournamentRow }) {
   const t = props.tournament;
 
   return (
-    <div className="group relative flex min-h-[140px] flex-col rounded-xl border border-zinc-200 bg-white p-5 transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/60 dark:hover:border-zinc-700 dark:hover:bg-zinc-900">
+    <div className="surface-panel-ui surface-panel-hover-ui group relative flex min-h-[140px] flex-col rounded-xl p-5">
       <div className="absolute right-3 top-3 z-10" onClick={(e) => e.stopPropagation()}>
         <TournamentCardMenu tournament={t} />
       </div>
@@ -276,7 +277,7 @@ function TournamentCard(props: { tournament: TournamentRow }) {
       <Link href={`/tournaments/${t.tournamentId}`} className="flex min-h-[108px] flex-1 flex-col pr-8">
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-semibold text-zinc-900 group-hover:text-black dark:text-zinc-50 dark:group-hover:text-white">{t.name}</p>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="text-muted-ui mt-1 text-sm">
             {roleLabel(t.role)} · {t.matchdaysCount} jornada{t.matchdaysCount === 1 ? "" : "s"} · {t.membersCount} miembro
             {t.membersCount === 1 ? "" : "s"}
           </p>
@@ -287,7 +288,7 @@ function TournamentCard(props: { tournament: TournamentRow }) {
             {statusLabel(t.status)}
           </Badge>
           {t.logoUrl ? (
-            <div className="flex size-8 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="border-subtle-ui flex size-8 items-center justify-center overflow-hidden rounded-lg border bg-zinc-100 dark:bg-zinc-950">
               <Image src={t.logoUrl} alt="" width={32} height={32} className="size-full object-cover" unoptimized />
             </div>
           ) : null}
@@ -301,9 +302,9 @@ function TournamentListRow(props: { tournament: TournamentRow }) {
   const t = props.tournament;
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/60 dark:hover:border-zinc-700 dark:hover:bg-zinc-900">
+    <div className="surface-panel-ui surface-panel-hover-ui flex items-center gap-4 rounded-xl px-4 py-3">
       <Link href={`/tournaments/${t.tournamentId}`} className="flex min-w-0 flex-1 items-center gap-4">
-        <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="border-subtle-ui flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-zinc-100 dark:bg-zinc-950">
           {t.logoUrl ? (
             <Image src={t.logoUrl} alt="" width={40} height={40} className="size-full object-cover" unoptimized />
           ) : (
@@ -312,7 +313,7 @@ function TournamentListRow(props: { tournament: TournamentRow }) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-zinc-900 dark:text-zinc-50">{t.name}</p>
-          <p className="text-sm text-zinc-500">
+          <p className="text-muted-ui text-sm">
             {roleLabel(t.role)} · {t.matchdaysCount} jornadas · {t.membersCount} miembros
           </p>
         </div>

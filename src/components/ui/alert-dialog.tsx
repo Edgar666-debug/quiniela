@@ -36,7 +36,7 @@ export function AlertDialogContent({ className, ref, ...props }: AlertDialogCont
       <AlertDialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-xl border border-zinc-200 bg-white p-6 shadow-lg outline-none dark:border-zinc-800 dark:bg-black",
+          "surface-panel-ui fixed left-[50%] top-[50%] z-50 w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] p-6 shadow-lg outline-none",
           className,
         )}
         {...props}
@@ -60,7 +60,7 @@ export function AlertDialogTitle({ className, ref, ...props }: AlertDialogTitleP
 AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName;
 
 export function AlertDialogDescription({ className, ref, ...props }: AlertDialogDescriptionProps) {
-  return <AlertDialogPrimitive.Description ref={ref} className={cn("text-sm text-zinc-600 dark:text-zinc-400", className)} {...props} />;
+  return <AlertDialogPrimitive.Description ref={ref} className={cn("text-muted-ui text-sm", className)} {...props} />;
 }
 AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName;
 

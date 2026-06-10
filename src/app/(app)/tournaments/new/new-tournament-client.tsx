@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, PlusCircle, Trash, Trophy, Upload} from "lucide-react";
+import { Loader2, SaveIcon, Trash, Trophy, Upload } from "lucide-react";
 
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
@@ -12,40 +12,84 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase/client";
 
+type TournamentState = {
+  name: string;
+  logoUrl: string;
+  logoFile: File | null;
+  loading: boolean;
+  error: string | null;
+  message: string | null;
+  uploadedPreviewUrl: string | null;
+};
+
+type TournamentAction =
+  | { type: "set_name"; value: string }
+  | { type: "set_logo_url"; value: string }
+  | { type: "set_logo_file"; file: File | null; previewUrl: string | null; message: string | null }
+  | { type: "clear_logo" }
+  | { type: "submit_start" }
+  | { type: "submit_fail"; error: string };
+
+function newTournamentReducer(state: TournamentState, action: TournamentAction): TournamentState {
+  switch (action.type) {
+    case "set_name":
+      return { ...state, name: action.value };
+    case "set_logo_url":
+      return { ...state, logoUrl: action.value, logoFile: null, uploadedPreviewUrl: null };
+    case "set_logo_file":
+      return {
+        ...state,
+        error: null,
+        logoUrl: "",
+        logoFile: action.file,
+        uploadedPreviewUrl: action.previewUrl,
+        message: action.message,
+      };
+    case "clear_logo":
+      return { ...state, logoUrl: "", logoFile: null, uploadedPreviewUrl: null, message: null, error: null };
+    case "submit_start":
+      return { ...state, loading: true, error: null, message: null };
+    case "submit_fail":
+      return { ...state, loading: false, error: action.error };
+    default:
+      return state;
+  }
+}
+
 export function NewTournamentClient() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uploadedPreviewUrlRef = useRef<string | null>(null);
-
-  const [name, setName] = useState("");
-  const [logoUrl, setLogoUrl] = useState("");
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [uploadedPreviewUrl, setUploadedPreviewUrl] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(newTournamentReducer, {
+    name: "",
+    logoUrl: "",
+    logoFile: null,
+    loading: false,
+    error: null,
+    message: null,
+    uploadedPreviewUrl: null,
+  });
 
   useEffect(() => {
+    const previewUrl = uploadedPreviewUrlRef.current;
     return () => {
-      if (uploadedPreviewUrlRef.current) {
-        URL.revokeObjectURL(uploadedPreviewUrlRef.current);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
       }
     };
   }, []);
 
-  const previewLogoUrl = uploadedPreviewUrl ?? (logoUrl.trim() || null);
+  const previewLogoUrl = state.uploadedPreviewUrl ?? (state.logoUrl.trim() || null);
 
   async function createTournament() {
-    setError(null);
-    setMessage(null);
-    setLoading(true);
+    dispatch({ type: "submit_start" });
 
     const res = await fetch("/api/tournaments", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        name: name.trim(),
-        logoUrl: logoFile ? null : (logoUrl.trim() || null),
+        name: state.name.trim(),
+        logoUrl: state.logoFile ? null : (state.logoUrl.trim() || null),
       }),
     });
     const data = (await res.json().catch(() => ({}))) as {
@@ -54,13 +98,10 @@ export function NewTournamentClient() {
     };
 
     if (!res.ok || !data.tournament?.id) {
-      setLoading(false);
-      setError(data.error ?? "No se pudo crear el torneo.");
-      return;
+      return dispatch({ type: "submit_fail", error: data.error ?? "No se pudo crear el torneo." });
     }
 
-    if (!logoFile) {
-      setLoading(false);
+    if (!state.logoFile) {
       router.push(`/tournaments/${data.tournament.id}`);
       router.refresh();
       return;
@@ -69,7 +110,7 @@ export function NewTournamentClient() {
     const signedRes = await fetch(`/api/tournaments/${data.tournament.id}/logo/upload-url`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ contentType: logoFile.type, fileSize: logoFile.size }),
+      body: JSON.stringify({ contentType: state.logoFile.type, fileSize: state.logoFile.size }),
     });
     const signedData = (await signedRes.json().catch(() => ({}))) as {
       path?: string;
@@ -79,17 +120,15 @@ export function NewTournamentClient() {
     };
 
     if (!signedRes.ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
-      setLoading(false);
-      setError("El torneo se creó, pero no se pudo preparar la carga del logo. Puedes intentarlo otra vez desde administración.");
+      dispatch({ type: "submit_fail", error: "El torneo se creó, pero no se pudo preparar la carga del logo. Puedes intentarlo otra vez desde administración." });
       router.push(`/tournaments/${data.tournament.id}`);
       router.refresh();
       return;
     }
 
-    const upload = await supabase.storage.from("tournament-assets").uploadToSignedUrl(signedData.path, signedData.token, logoFile);
+    const upload = await supabase.storage.from("tournament-assets").uploadToSignedUrl(signedData.path, signedData.token, state.logoFile);
     if (upload.error) {
-      setLoading(false);
-      setError("El torneo se creó, pero no se pudo subir el logo. Puedes intentarlo otra vez desde administración.");
+      dispatch({ type: "submit_fail", error: "El torneo se creó, pero no se pudo subir el logo. Puedes intentarlo otra vez desde administración." });
       router.push(`/tournaments/${data.tournament.id}`);
       router.refresh();
       return;
@@ -99,18 +138,16 @@ export function NewTournamentClient() {
     const patchRes = await fetch(`/api/tournaments/${data.tournament.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), logoUrl: publicUrl }),
+      body: JSON.stringify({ name: state.name.trim(), logoUrl: publicUrl }),
     });
 
     if (!patchRes.ok) {
-      setLoading(false);
-      setError("El torneo se creó, pero no se pudo guardar el logo. Puedes intentarlo otra vez desde administración.");
+      dispatch({ type: "submit_fail", error: "El torneo se creó, pero no se pudo guardar el logo. Puedes intentarlo otra vez desde administración." });
       router.push(`/tournaments/${data.tournament.id}`);
       router.refresh();
       return;
     }
 
-    setLoading(false);
     router.push(`/tournaments/${data.tournament.id}`);
     router.refresh();
   }
@@ -125,11 +162,11 @@ export function NewTournamentClient() {
         <CardDescription>El nombre y el logo los puedes cambiar después si hace falta.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {message ? <InlineAlert variant="success" message={message} /> : null}
-        {error ? <InlineAlert variant="error" message={error} /> : null}
+        {state.message ? <InlineAlert variant="success" message={state.message} /> : null}
+        {state.error ? <InlineAlert variant="error" message={state.error} /> : null}
 
         <div className="flex items-center gap-3">
-          <div className="flex size-14 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
+          <div className="tournament-logo-frame size-14">
             {previewLogoUrl ? (
               <Image src={previewLogoUrl} alt="" width={56} height={56} className="h-full w-full object-cover" unoptimized />
             ) : (
@@ -138,7 +175,7 @@ export function NewTournamentClient() {
           </div>
           <div>
             <p className="text-sm font-medium">Identidad inicial</p>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Puedes pegar una URL o subir un JPG, PNG o WebP de hasta 5 MB.</p>
+            <p className="text-muted-ui text-xs">Puedes pegar una URL o subir un JPG, PNG o WebP de hasta 5 MB.</p>
           </div>
         </div>
 
@@ -148,8 +185,8 @@ export function NewTournamentClient() {
             <Input
               id="tournamentName"
               placeholder="Liga MX • Clausura • Jornada 1"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={state.name}
+              onChange={(event) => dispatch({ type: "set_name", value: event.target.value })}
               maxLength={80}
             />
           </div>
@@ -159,15 +196,13 @@ export function NewTournamentClient() {
             <Input
               id="tournamentLogo"
               placeholder="https://..."
-              value={logoUrl}
-              onChange={(e) => {
+              value={state.logoUrl}
+              onChange={(event) => {
                 if (uploadedPreviewUrlRef.current) {
                   URL.revokeObjectURL(uploadedPreviewUrlRef.current);
                   uploadedPreviewUrlRef.current = null;
                 }
-                setLogoUrl(e.target.value);
-                if (logoFile) setLogoFile(null);
-                setUploadedPreviewUrl(null);
+                dispatch({ type: "set_logo_url", value: event.target.value });
               }}
             />
           </div>
@@ -177,6 +212,7 @@ export function NewTournamentClient() {
           <input
             ref={fileInputRef}
             type="file"
+            aria-label="Seleccionar logo del torneo"
             accept="image/jpeg,image/png,image/webp"
             className="hidden"
             onChange={(event) => {
@@ -185,11 +221,11 @@ export function NewTournamentClient() {
 
               if (!file) return;
               if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-                setError("Formato no soportado. Usa JPG, PNG o WebP.");
+                dispatch({ type: "submit_fail", error: "Formato no soportado. Usa JPG, PNG o WebP." });
                 return;
               }
               if (file.size > 5 * 1024 * 1024) {
-                setError("El logo no debe exceder 5 MB.");
+                dispatch({ type: "submit_fail", error: "El logo no debe exceder 5 MB." });
                 return;
               }
 
@@ -199,42 +235,34 @@ export function NewTournamentClient() {
 
               const nextPreviewUrl = URL.createObjectURL(file);
               uploadedPreviewUrlRef.current = nextPreviewUrl;
-              setError(null);
-              setLogoUrl("");
-              setLogoFile(file);
-              setUploadedPreviewUrl(nextPreviewUrl);
-              setMessage(`Logo listo: ${file.name}`);
+              dispatch({ type: "set_logo_file", file, previewUrl: nextPreviewUrl, message: `Logo listo: ${file.name}` });
             }}
           />
 
-          <Button type="button" variant="outline" disabled={loading} onClick={() => fileInputRef.current?.click()}>
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+          <Button type="button" variant="outline" disabled={state.loading} onClick={() => fileInputRef.current?.click()}>
+            {state.loading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
             Subir
+          </Button>
+
+          <Button type="button" variant="outline" disabled={state.loading || !state.name.trim()} onClick={() => void createTournament()}>
+            {state.loading ? <Loader2 className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
+            Guardar
           </Button>
 
           <Button
             type="button"
             variant="outline"
-            disabled={loading || (!logoFile && !logoUrl.trim())}
+            disabled={state.loading || (!state.logoFile && !state.logoUrl.trim())}
             onClick={() => {
               if (uploadedPreviewUrlRef.current) {
                 URL.revokeObjectURL(uploadedPreviewUrlRef.current);
                 uploadedPreviewUrlRef.current = null;
               }
-              setLogoFile(null);
-              setUploadedPreviewUrl(null);
-              setLogoUrl("");
-              setMessage(null);
-              setError(null);
+              dispatch({ type: "clear_logo" });
             }}
           >
             <Trash className="size-4" />
             Borrar
-          </Button>
-
-          <Button disabled={loading || !name.trim()} type="button" onClick={() => void createTournament()}>
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}
-            Crear
           </Button>
         </div>
       </CardContent>
