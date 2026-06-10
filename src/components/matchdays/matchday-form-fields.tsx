@@ -2,7 +2,6 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { previewUtcFromDatetimeLocal } from "@/lib/matchday-form";
 
 export function MatchdayFormFields(props: {
   number: string;
@@ -12,7 +11,6 @@ export function MatchdayFormFields(props: {
   numberId?: string;
   closesAtId?: string;
 }) {
-  const closesAtUtcPreview = previewUtcFromDatetimeLocal(props.closesAtLocal);
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -34,9 +32,6 @@ export function MatchdayFormFields(props: {
           value={props.closesAtLocal}
           onChange={(e) => props.onClosesAtChange(e.target.value)}
         />
-        {closesAtUtcPreview ? (
-          <p className="text-muted-ui text-xs">Se guardará como UTC: {closesAtUtcPreview}</p>
-        ) : null}
       </div>
     </div>
   );

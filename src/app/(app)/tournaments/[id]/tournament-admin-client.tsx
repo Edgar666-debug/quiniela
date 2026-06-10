@@ -2,13 +2,16 @@
 
 import { useReducer, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Loader2, Save, Trash, Trophy, Upload } from "lucide-react";
 
-import { supabase } from "@/lib/supabase/client";
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { sendJsonRequest } from "@/lib/http";
+import { requestSignedUploadUrl, uploadFileWithSignedUrl, validateImageFile } from "@/lib/storage-upload";
 import { TournamentAdminStatusDialog, type TournamentStatusDialogKind } from "./tournament-admin-status-dialog";
 import { TournamentAdminStatusMenu } from "./tournament-admin-status-menu";
 
@@ -91,6 +94,7 @@ export function TournamentAdminClient(props: {
   currentName: string;
   currentLogoUrl: string | null;
 }) {
+  const router = useRouter();
   const [state, dispatch] = useReducer(tournamentAdminReducer, props, createInitialState);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -103,21 +107,18 @@ export function TournamentAdminClient(props: {
   async function saveDetails(nextLogoUrl?: string | null) {
     dispatch({ type: "save_start" });
 
-    const res = await fetch(`/api/tournaments/${props.tournamentId}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        name: state.draftName.trim(),
-        logoUrl: nextLogoUrl !== undefined ? nextLogoUrl : state.draftLogoUrl.trim() || null,
-      }),
-    });
-
-    const data = (await res.json().catch(() => ({}))) as {
+    const { response, data } = await sendJsonRequest<{
       tournament?: { name: string; logoUrl: string | null };
       error?: string;
-    };
+    }>(`/api/tournaments/${props.tournamentId}`, {
+      method: "PATCH",
+      body: {
+        name: state.draftName.trim(),
+        logoUrl: nextLogoUrl !== undefined ? nextLogoUrl : state.draftLogoUrl.trim() || null,
+      },
+    });
 
-    if (!res.ok) {
+    if (!response.ok) {
       dispatch({ type: "save_error", error: data.error ?? "No se pudo actualizar el torneo." });
       return;
     }
@@ -131,58 +132,41 @@ export function TournamentAdminClient(props: {
   }
 
   async function uploadLogo(file: File) {
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      dispatch({ type: "upload_error", error: "Formato no soportado. Usa JPG, PNG o WebP." });
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      dispatch({ type: "upload_error", error: "El logo no debe exceder 5 MB." });
+    const fileError = validateImageFile(file, "logo");
+    if (fileError) {
+      dispatch({ type: "upload_error", error: fileError });
       return;
     }
 
     dispatch({ type: "upload_start" });
 
-    const signedRes = await fetch(`/api/tournaments/${props.tournamentId}/logo/upload-url`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ contentType: file.type, fileSize: file.size }),
-    });
-    const signedData = (await signedRes.json().catch(() => ({}))) as {
-      path?: string;
-      token?: string;
-      publicUrl?: string;
-      error?: string;
-    };
+    const { ok, data: signedData } = await requestSignedUploadUrl(`/api/tournaments/${props.tournamentId}/logo/upload-url`, file);
 
-    if (!signedRes.ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
+    if (!ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
       dispatch({ type: "upload_error", error: signedData.error ?? "No se pudo preparar la carga del logo." });
       return;
     }
 
-    const upload = await supabase.storage.from("tournament-assets").uploadToSignedUrl(signedData.path, signedData.token, file);
-    if (upload.error) {
-      dispatch({ type: "upload_error", error: upload.error.message ?? "No se pudo subir el logo." });
+    const upload = await uploadFileWithSignedUrl("tournament-assets", file, signedData.path, signedData.token, signedData.publicUrl);
+    if (!upload.ok) {
+      dispatch({ type: "upload_error", error: upload.error ?? "No se pudo subir el logo." });
       return;
     }
 
-    const publicUrl = `${signedData.publicUrl}?v=${Date.now()}`;
-    const res = await fetch(`/api/tournaments/${props.tournamentId}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: state.draftName.trim(), logoUrl: publicUrl }),
-    });
-    const data = (await res.json().catch(() => ({}))) as {
+    const { response, data } = await sendJsonRequest<{
       tournament?: { name: string; logoUrl: string | null };
       error?: string;
-    };
+    }>(`/api/tournaments/${props.tournamentId}`, {
+      method: "PATCH",
+      body: { name: state.draftName.trim(), logoUrl: upload.publicUrl },
+    });
 
-    if (!res.ok) {
+    if (!response.ok) {
       dispatch({ type: "upload_error", error: data.error ?? "No se pudo guardar el logo." });
       return;
     }
 
-    dispatch({ type: "upload_success", logoUrl: data.tournament?.logoUrl ?? publicUrl, message: "Logo actualizado." });
+    dispatch({ type: "upload_success", logoUrl: data.tournament?.logoUrl ?? upload.publicUrl, message: "Logo actualizado." });
   }
 
   async function updateStatus(nextStatus: "ACTIVE" | "ARCHIVED" | "FINISHED", fallbackError: string) {
@@ -190,28 +174,25 @@ export function TournamentAdminClient(props: {
     dispatch({ type: "clear_feedback" });
     dispatch({ type: "set_loading", value: true });
 
-    const res = await fetch(`/api/tournaments/${props.tournamentId}`, {
+    const { response, data } = await sendJsonRequest<{ error?: string }>(`/api/tournaments/${props.tournamentId}`, {
       method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ status: nextStatus }),
+      body: { status: nextStatus },
     });
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
 
     dispatch({ type: "set_loading", value: false });
 
-    if (!res.ok) {
+    if (!response.ok) {
       dispatch({ type: "save_error", error: data.error ?? fallbackError });
       return;
     }
 
-    window.location.reload();
+    router.refresh();
   }
 
   return (
     <div className="flex flex-col gap-4">
       {!isActive ? <InlineAlert variant="info" message={`Estado actual: ${props.status}`} /> : null}
-      {state.message ? <InlineAlert variant="success" message={state.message} /> : null}
-      {state.error ? <InlineAlert variant="error" message={state.error} /> : null}
+      <FeedbackAlerts message={state.message} error={state.error} />
 
       <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-4 flex items-center gap-3">

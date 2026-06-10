@@ -5,12 +5,13 @@ import { useEffect, useReducer, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, SaveIcon, Trash, Trophy, Upload } from "lucide-react";
 
-import { InlineAlert } from "@/components/app/inline-alert";
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase/client";
+import { pushAndRefresh } from "@/lib/navigation";
+import { requestSignedUploadUrl, uploadFileWithSignedUrl, validateImageFile } from "@/lib/storage-upload";
 
 type TournamentState = {
   name: string;
@@ -81,6 +82,10 @@ export function NewTournamentClient() {
 
   const previewLogoUrl = state.uploadedPreviewUrl ?? (state.logoUrl.trim() || null);
 
+  function goToTournament(tournamentId: string) {
+    pushAndRefresh(router, `/tournaments/${tournamentId}`);
+  }
+
   async function createTournament() {
     dispatch({ type: "submit_start" });
 
@@ -102,54 +107,37 @@ export function NewTournamentClient() {
     }
 
     if (!state.logoFile) {
-      router.push(`/tournaments/${data.tournament.id}`);
-      router.refresh();
+      goToTournament(data.tournament.id);
       return;
     }
 
-    const signedRes = await fetch(`/api/tournaments/${data.tournament.id}/logo/upload-url`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ contentType: state.logoFile.type, fileSize: state.logoFile.size }),
-    });
-    const signedData = (await signedRes.json().catch(() => ({}))) as {
-      path?: string;
-      token?: string;
-      publicUrl?: string;
-      error?: string;
-    };
-
-    if (!signedRes.ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
+    const { ok, data: signedData } = await requestSignedUploadUrl(`/api/tournaments/${data.tournament.id}/logo/upload-url`, state.logoFile);
+    if (!ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
       dispatch({ type: "submit_fail", error: "El torneo se creó, pero no se pudo preparar la carga del logo. Puedes intentarlo otra vez desde administración." });
-      router.push(`/tournaments/${data.tournament.id}`);
-      router.refresh();
+      goToTournament(data.tournament.id);
       return;
     }
 
-    const upload = await supabase.storage.from("tournament-assets").uploadToSignedUrl(signedData.path, signedData.token, state.logoFile);
-    if (upload.error) {
+    const upload = await uploadFileWithSignedUrl("tournament-assets", state.logoFile, signedData.path, signedData.token, signedData.publicUrl);
+    if (!upload.ok) {
       dispatch({ type: "submit_fail", error: "El torneo se creó, pero no se pudo subir el logo. Puedes intentarlo otra vez desde administración." });
-      router.push(`/tournaments/${data.tournament.id}`);
-      router.refresh();
+      goToTournament(data.tournament.id);
       return;
     }
 
-    const publicUrl = `${signedData.publicUrl}?v=${Date.now()}`;
     const patchRes = await fetch(`/api/tournaments/${data.tournament.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: state.name.trim(), logoUrl: publicUrl }),
+      body: JSON.stringify({ name: state.name.trim(), logoUrl: upload.publicUrl }),
     });
 
     if (!patchRes.ok) {
       dispatch({ type: "submit_fail", error: "El torneo se creó, pero no se pudo guardar el logo. Puedes intentarlo otra vez desde administración." });
-      router.push(`/tournaments/${data.tournament.id}`);
-      router.refresh();
+      goToTournament(data.tournament.id);
       return;
     }
 
-    router.push(`/tournaments/${data.tournament.id}`);
-    router.refresh();
+    goToTournament(data.tournament.id);
   }
 
   return (
@@ -162,8 +150,7 @@ export function NewTournamentClient() {
         <CardDescription>El nombre y el logo los puedes cambiar después si hace falta.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {state.message ? <InlineAlert variant="success" message={state.message} /> : null}
-        {state.error ? <InlineAlert variant="error" message={state.error} /> : null}
+        <FeedbackAlerts message={state.message} error={state.error} />
 
         <div className="flex items-center gap-3">
           <div className="tournament-logo-frame size-14">
@@ -220,12 +207,10 @@ export function NewTournamentClient() {
               event.currentTarget.value = "";
 
               if (!file) return;
-              if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-                dispatch({ type: "submit_fail", error: "Formato no soportado. Usa JPG, PNG o WebP." });
-                return;
-              }
-              if (file.size > 5 * 1024 * 1024) {
-                dispatch({ type: "submit_fail", error: "El logo no debe exceder 5 MB." });
+
+              const fileError = validateImageFile(file, "logo");
+              if (fileError) {
+                dispatch({ type: "submit_fail", error: fileError });
                 return;
               }
 

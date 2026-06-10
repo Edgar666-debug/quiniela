@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronUp, LogOut, Mail, Settings } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { pushAndRefresh } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,8 +27,7 @@ export function UserMenu(props: { user: { email: string; name: string | null }; 
     setLoading(true);
     await authClient.signOut();
     setLoading(false);
-    router.push("/");
-    router.refresh();
+    pushAndRefresh(router, "/");
   }
 
   return (

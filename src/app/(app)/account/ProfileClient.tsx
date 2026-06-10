@@ -4,7 +4,8 @@ import { useReducer, useRef } from "react";
 import Image from "next/image";
 import { Image as ImageIcon, Loader2, SaveIcon, Trash, Upload, User as UserIcon } from "lucide-react";
 
-import { supabase } from "@/lib/supabase/client";
+import { requestSignedUploadUrl, uploadFileWithSignedUrl, validateImageFile } from "@/lib/storage-upload";
+import { sendJsonRequest } from "@/lib/http";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -125,16 +126,16 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
 
   async function save() {
     dispatch({ type: "save_start" });
-    const res = await fetch("/api/me/profile", {
+    const { response, data } = await sendJsonRequest<{ user?: { name: string | null; image: string | null }; error?: string }>(
+      "/api/me/profile",
+      {
       method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
+      body: {
         name: name.trim() ? name.trim() : undefined,
         image: image.trim() ? image.trim() : null,
-      }),
+      },
     });
-    const data = (await res.json().catch(() => ({}))) as { user?: { name: string | null; image: string | null }; error?: string };
-    if (!res.ok) return dispatch({ type: "save_fail", error: data.error ?? "No se pudo guardar el perfil." });
+    if (!response.ok) return dispatch({ type: "save_fail", error: data.error ?? "No se pudo guardar el perfil." });
 
     dispatch({
       type: "save_success",
@@ -147,45 +148,31 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
   }
 
   async function uploadAvatar(file: File) {
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      return dispatch({ type: "upload_fail", error: "Formato no soportado. Usa JPG, PNG o WebP." });
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      return dispatch({ type: "upload_fail", error: "El avatar no debe exceder 5 MB." });
-    }
+    const fileError = validateImageFile(file, "avatar");
+    if (fileError) return dispatch({ type: "upload_fail", error: fileError });
 
     dispatch({ type: "upload_start" });
 
-    const signedRes = await fetch("/api/me/avatar/upload-url", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ contentType: file.type, fileSize: file.size }),
-    });
-    const signedData = (await signedRes.json().catch(() => ({}))) as {
-      path?: string;
-      token?: string;
-      publicUrl?: string;
-      error?: string;
-    };
+    const { ok, data: signedData } = await requestSignedUploadUrl("/api/me/avatar/upload-url", file);
 
-    if (!signedRes.ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
+    if (!ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
       return dispatch({ type: "upload_fail", error: signedData.error ?? "No se pudo preparar la carga del avatar." });
     }
 
-    const upload = await supabase.storage.from("avatars").uploadToSignedUrl(signedData.path, signedData.token, file);
-    if (upload.error) {
-      return dispatch({ type: "upload_fail", error: upload.error.message ?? "No se pudo subir el avatar." });
+    const upload = await uploadFileWithSignedUrl("avatars", file, signedData.path, signedData.token, signedData.publicUrl);
+    if (!upload.ok) {
+      return dispatch({ type: "upload_fail", error: upload.error ?? "No se pudo subir el avatar." });
     }
 
-    const imageUrlWithVersion = `${signedData.publicUrl}?v=${Date.now()}`;
-    const res = await fetch("/api/me/profile", {
+    const imageUrlWithVersion = upload.publicUrl;
+    const { response, data } = await sendJsonRequest<{ user?: { name: string | null; image: string | null }; error?: string }>(
+      "/api/me/profile",
+      {
       method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ image: imageUrlWithVersion }),
+      body: { image: imageUrlWithVersion },
     });
-    const data = (await res.json().catch(() => ({}))) as { user?: { name: string | null; image: string | null }; error?: string };
 
-    if (!res.ok) {
+    if (!response.ok) {
       return dispatch({ type: "upload_fail", error: data.error ?? "No se pudo guardar el avatar." });
     }
 

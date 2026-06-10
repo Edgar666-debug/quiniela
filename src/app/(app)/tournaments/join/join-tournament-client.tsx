@@ -6,11 +6,14 @@ import { useRouter } from "next/navigation";
 import { Loader2, Ticket, Trophy, Users } from "lucide-react";
 import useSWR from "swr";
 
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { readJsonResponse, sendJsonRequest } from "@/lib/http";
+import { pushAndRefresh } from "@/lib/navigation";
 
 type JoinState = {
   token: string;
@@ -73,7 +76,7 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 
 async function invitePreviewFetcher(url: string): Promise<InvitePreviewResponse> {
   const res = await fetch(url);
-  const data = (await res.json().catch(() => ({}))) as InvitePreviewResponse & { error?: string };
+  const data = await readJsonResponse<InvitePreviewResponse & { error?: string }>(res);
 
   if (!res.ok) {
     throw new Error(data.error ?? "No se pudo validar la invitación.");
@@ -167,15 +170,16 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
             type="button"
             onClick={async () => {
               dispatch({ type: "join_start" });
-              const res = await fetch(`/api/invites/${encodeURIComponent(trimmedToken)}/join`, { method: "POST" });
-              const data = (await res.json()) as { ok?: boolean; error?: string };
-              if (!res.ok) {
+              const { response, data } = await sendJsonRequest<{ ok?: boolean; error?: string }>(
+                `/api/invites/${encodeURIComponent(trimmedToken)}/join`,
+                { method: "POST" },
+              );
+              if (!response.ok) {
                 dispatch({ type: "join_fail", error: data.error ?? "No se pudo unir al torneo" });
                 return;
               }
               dispatch({ type: "join_success", message: "Te uniste al torneo." });
-              router.push("/tournaments");
-              router.refresh();
+              pushAndRefresh(router, "/tournaments");
             }}
           >
             {state.loading ? <Loader2 className="size-4 animate-spin" /> : <Ticket className="size-4" />}
@@ -183,8 +187,7 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
           </Button>
         </div>
 
-        {state.message ? <InlineAlert variant="success" message={state.message} /> : null}
-        {state.error ? <InlineAlert variant="error" message={state.error} /> : null}
+        <FeedbackAlerts message={state.message} error={state.error} />
         {previewError ? <InlineAlert variant="error" message={previewError} /> : null}
       </CardContent>
     </Card>

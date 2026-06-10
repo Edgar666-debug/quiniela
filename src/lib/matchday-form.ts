@@ -8,10 +8,3 @@ export function isoToDatetimeLocalValue(iso: string) {
 export function datetimeLocalToIso(local: string) {
   return new Date(local).toISOString();
 }
-
-export function previewUtcFromDatetimeLocal(local: string) {
-  if (!local) return null;
-  const d = new Date(local);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString().replace("T", " ").slice(0, 16);
-}

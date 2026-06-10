@@ -4,6 +4,7 @@ import { useReducer } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { formatUtcToLocalShort } from "@/lib/format";
+import { readJsonResponse, sendJsonRequest } from "@/lib/http";
+import { pushAndRefresh } from "@/lib/navigation";
 import { toLocalDateTimeInputValue, type FixtureSelection } from "./match-new-types";
 
 type FormState = {
@@ -106,10 +109,10 @@ export function MatchNewConfirmForm(props: {
 
     dispatch({ type: "load_fixture_start" });
     const res = await fetch(`/api/api-football/fixtures/${encodeURIComponent(id)}`, { cache: "no-store" });
-    const data = (await res.json().catch(() => ({}))) as {
+    const data = await readJsonResponse<{
       fixture?: { dateUtc: string; homeTeam: string; awayTeam: string; statusShort: string };
       error?: string;
-    };
+    }>(res);
     if (!res.ok) return dispatch({ type: "load_fixture_fail", error: data.error ?? "No se pudo consultar el fixture" });
     if (!data.fixture) return dispatch({ type: "load_fixture_fail", error: "Fixture no encontrado" });
 
@@ -125,27 +128,24 @@ export function MatchNewConfirmForm(props: {
 
   async function submitSelectedMatches() {
     dispatch({ type: "submit_start" });
-    const res = await fetch(`/api/matchdays/${props.matchdayId}/matches`, {
+    const { response, data } = await sendJsonRequest<{ error?: string; count?: number }>(`/api/matchdays/${props.matchdayId}/matches`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
+      body: {
         matches: props.selectedFixtures.map((fixture) => ({
           externalFixtureId: fixture.id,
           startsAtUtc: fixture.dateUtc,
           homeTeam: fixture.homeTeam,
           awayTeam: fixture.awayTeam,
         })),
-      }),
+      },
     });
-    const data = (await res.json().catch(() => ({}))) as { error?: string; count?: number };
-    if (!res.ok) return dispatch({ type: "submit_fail", error: data.error ?? "No se pudieron crear los partidos" });
+    if (!response.ok) return dispatch({ type: "submit_fail", error: data.error ?? "No se pudieron crear los partidos" });
 
     dispatch({
       type: "submit_success",
       message: `${data.count ?? props.selectedFixtures.length} partidos agregados correctamente.`,
     });
-    router.push(`/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}`);
-    router.refresh();
+    pushAndRefresh(router, `/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}`);
   }
 
   async function submitSingleMatch() {
@@ -159,22 +159,19 @@ export function MatchNewConfirmForm(props: {
     dispatch({ type: "submit_start" });
     const startsAtUtc = new Date(state.startsAtLocal).toISOString();
     const externalFixtureId = state.fixtureId.trim() ? Number(state.fixtureId) : undefined;
-    const res = await fetch(`/api/matchdays/${props.matchdayId}/matches`, {
+    const { response, data } = await sendJsonRequest<{ error?: string }>(`/api/matchdays/${props.matchdayId}/matches`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
+      body: {
         startsAtUtc,
         homeTeam: state.homeTeam,
         awayTeam: state.awayTeam,
         externalFixtureId,
-      }),
+      },
     });
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    if (!res.ok) return dispatch({ type: "submit_fail", error: data.error ?? "No se pudo crear el partido" });
+    if (!response.ok) return dispatch({ type: "submit_fail", error: data.error ?? "No se pudo crear el partido" });
 
     dispatch({ type: "submit_success", message: "Partido agregado correctamente." });
-    router.push(`/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}`);
-    router.refresh();
+    pushAndRefresh(router, `/tournaments/${props.tournamentId}/matchdays/${props.matchdayId}`);
   }
 
   return (
@@ -287,8 +284,7 @@ export function MatchNewConfirmForm(props: {
 
         <Separator />
 
-        {state.message ? <InlineAlert variant="success" message={state.message} /> : null}
-        {state.error ? <InlineAlert variant="error" message={state.error} /> : null}
+        <FeedbackAlerts message={state.message} error={state.error} />
 
         <div className="flex flex-wrap gap-2">
           <Button

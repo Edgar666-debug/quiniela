@@ -29,9 +29,6 @@ export const kickoffUtcFormatter = new Intl.DateTimeFormat("es-MX", {
   minute: "2-digit",
 });
 
-/** @deprecated Use `kickoffUtcFormatter` or `kickoffLocalFormatter`. */
-export const kickoffDateFormatter = kickoffUtcFormatter;
-
 /** Kickoff labels in the user's local timezone (browser / device). */
 export const kickoffLocalFormatter = new Intl.DateTimeFormat("es-MX", {
   weekday: "long",

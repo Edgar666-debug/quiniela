@@ -9,6 +9,7 @@ import { MatchdayFormFields } from "@/components/matchdays/matchday-form-fields"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { datetimeLocalToIso } from "@/lib/matchday-form";
+import { pushAndRefresh } from "@/lib/navigation";
 
 export function MatchdayNewClient(props: { tournamentId: string }) {
   const router = useRouter();
@@ -57,8 +58,7 @@ export function MatchdayNewClient(props: { tournamentId: string }) {
                 const data = (await res.json().catch(() => ({}))) as { error?: string };
                 setLoading(false);
                 if (!res.ok) return setError(data.error ?? "No se pudo crear la jornada");
-                router.push(`/tournaments/${props.tournamentId}/matchdays`);
-                router.refresh();
+                pushAndRefresh(router, `/tournaments/${props.tournamentId}/matchdays`);
               }}
             >
               {loading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}

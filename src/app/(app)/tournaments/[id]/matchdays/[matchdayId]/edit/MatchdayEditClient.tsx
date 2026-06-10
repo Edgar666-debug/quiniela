@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 
-import { InlineAlert } from "@/components/app/inline-alert";
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { MatchdayFormFields } from "@/components/matchdays/matchday-form-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { sendJsonRequest } from "@/lib/http";
 import { datetimeLocalToIso, isoToDatetimeLocalValue } from "@/lib/matchday-form";
 
 type EditState = {
@@ -84,8 +85,7 @@ export function MatchdayEditClient(props: {
           closesAtId="edit-closesAt"
         />
 
-        {state.message ? <InlineAlert variant="success" message={state.message} /> : null}
-        {state.error ? <InlineAlert variant="error" message={state.error} /> : null}
+        <FeedbackAlerts message={state.message} error={state.error} />
 
         <div className="flex flex-wrap gap-2">
           <Button
@@ -93,16 +93,14 @@ export function MatchdayEditClient(props: {
             type="button"
             onClick={async () => {
               dispatch({ type: "save_start" });
-              const res = await fetch(`/api/matchdays/${props.matchdayId}`, {
+              const { response, data } = await sendJsonRequest<{ error?: string }>(`/api/matchdays/${props.matchdayId}`, {
                 method: "PATCH",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({
+                body: {
                   number: Number(state.number),
                   closesAtUtc: datetimeLocalToIso(state.closesAtLocal),
-                }),
+                },
               });
-              const data = (await res.json().catch(() => ({}))) as { error?: string };
-              if (!res.ok) return dispatch({ type: "save_fail", error: data.error ?? "No se pudo actualizar la jornada" });
+              if (!response.ok) return dispatch({ type: "save_fail", error: data.error ?? "No se pudo actualizar la jornada" });
               dispatch({ type: "save_success", message: "Jornada actualizada." });
               router.refresh();
             }}
