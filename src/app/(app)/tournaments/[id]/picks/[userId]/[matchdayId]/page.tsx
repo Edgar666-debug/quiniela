@@ -7,6 +7,7 @@ import Link from "next/link";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { UserAvatar } from "@/components/app/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ParticipantMatchdayPicksClient } from "./ParticipantMatchdayPicksClient";
@@ -29,7 +30,7 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
 
   const participant = await prisma.tournamentMember.findUnique({
     where: { tournamentId_userId: { tournamentId, userId } },
-    select: { user: { select: { name: true, email: true } }, tournament: { select: { name: true, logoUrl: true } } },
+    select: { user: { select: { name: true, email: true, image: true } }, tournament: { select: { name: true, logoUrl: true } } },
   });
   if (!participant) redirect(`/tournaments/${tournamentId}/picks`);
 
@@ -60,6 +61,7 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
   const initial = {
     matchday: { number: matchday.number, closesAtUtc: matchday.closesAtUtc.toISOString() },
     participantLabel: participant.user.name ?? participant.user.email,
+    participantImage: participant.user.image ?? null,
     matches: matches.map((m) => ({
       id: m.id,
       externalFixtureId: m.externalFixtureId,
@@ -92,7 +94,14 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
               <span className="text-sm">{`Jornada ${matchday.number}`}</span>
             </div>
             <h1 className="text-2xl font-semibold">{participant.tournament.name}</h1>
-            <p className="text-muted-ui text-sm">{`Picks de ${participant.user.name ?? participant.user.email}`}</p>
+            <div className="flex items-center gap-2">
+              <UserAvatar
+                name={participant.user.name}
+                email={participant.user.email}
+                image={participant.user.image}
+              />
+              <p className="text-muted-ui text-sm">{`Picks de ${participant.user.name ?? participant.user.email}`}</p>
+            </div>
             <p className="text-muted-ui text-sm">
               Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
             </p>

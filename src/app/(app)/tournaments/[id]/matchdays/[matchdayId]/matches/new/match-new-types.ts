@@ -1,3 +1,6 @@
+export type SearchTab = "league" | "team" | "player";
+export type SearchMode = "date" | "range";
+
 export type LeagueRow = {
   id: number;
   name: string;

@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 
-export type TournamentRow = {
+type TournamentRow = {
   tournamentId: string;
   name: string;
   logoUrl: string | null;

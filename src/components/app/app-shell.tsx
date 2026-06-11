@@ -30,7 +30,7 @@ import { UserMenu } from "@/components/app/user-menu";
 import { buildAppCrumbs } from "@/lib/app-nav";
 
 type TournamentLink = { id: string; name: string; logoUrl?: string | null; status: "ACTIVE" | "FINISHED" | "ARCHIVED"; role: "OWNER" | "ORGANIZER" | "PLAYER" };
-type AppUser = { email: string; name: string | null };
+type AppUser = { email: string; name: string | null; image: string | null };
 
 function SectionLabel(props: { children: React.ReactNode; collapsed: boolean }) {
   if (props.collapsed) return null;

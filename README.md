@@ -7,14 +7,15 @@ Torneos tipo quiniela por invitación, con jornadas cerradas por horario, picks 
 ## Funcionalidades
 
 - **Torneos por invitación** — máx. 10 participantes; roles OWNER / ORGANIZER / PLAYER; token manual o envío por email.
-- **Jornadas** — un solo cierre (UTC); los picks se bloquean al llegar la hora.
-- **Quiniela 1X2** — HOME / DRAW / AWAY; 1 punto por acierto.
+- **Jornadas** — un solo cierre (UTC); los picks se bloquean al llegar la hora; barra de progreso de picks enviados.
+- **Quiniela 1X2** — HOME / DRAW / AWAY; 1 punto por acierto; resultados coloreados (verde / rojo / neutro) con leyenda.
 - **Ranking en vivo** — tabla `Standing` + Supabase Realtime.
-- **Partidos desde API-Football** — búsqueda por liga, equipo o jugador; fixtures por fecha o rango.
+- **Partidos desde API-Football** — búsqueda por liga, equipo o jugador; fixtures por fecha.
 - **Picks por participante** — ver picks de otros tras el cierre de la jornada.
 - **Auth** — email/contraseña (verificación obligatoria), OTP por email, passkeys (WebAuthn), recuperación de contraseña.
-- **Cuenta** — perfil, credenciales, sesiones activas, passkeys.
-- **Emails** — verificación, OTP, reset de contraseña e invitaciones (Resend).
+- **Cuenta** — perfil (con avatar), credenciales, sesiones activas, gestión de passkeys.
+- **Avatares** — se muestran en el menú lateral, participantes, ranking, picks y cualquier lista de usuarios.
+- **Emails** — verificación, OTP, reset de contraseña e invitaciones (Resend); en desarrollo se imprimen en consola.
 - **Cron** — sincronización de resultados vía API-Football (`vercel.json`)
 
 ## Requisitos
@@ -102,6 +103,7 @@ El flujo actual de perfil también sigue aceptando URL pública manual si no qui
 | `pnpm build` | `prisma generate` + build de producción |
 | `pnpm start` | Servidor de producción |
 | `pnpm lint` | ESLint |
+| `pnpm email` | Preview de plantillas React Email en `http://localhost:3001` |
 | `pnpm doctor` | React Doctor (calidad UI/React) |
 | `pnpm doctor:ci` | Igual que `doctor`, falla solo en errores |
 
@@ -161,7 +163,7 @@ pnpm rebuild
 En `vercel.json`:
 
 - **Ruta:** `/api/cron/sync-live`
-- **Programación:** `*/15 * * * *` (cada 15 minutos)
+- **Programación:** `*/15 * * * *` (cada 15 minutos) necesitas cuenta pro.
 
 Autenticación: `Authorization: Bearer $CRON_SECRET` o cabecera `x-cron-secret`.
 
@@ -213,14 +215,23 @@ src/
     (auth)/         # sign-in, sign-up, forgot/reset password
     api/            # Route handlers
     page.tsx        # Landing
-  components/       # UI (shadcn-style) y shell de la app
-  emails/           # Plantillas React Email
-  hooks/            # p. ej. useStandingsRealtime
-  lib/              # auth, prisma, api-football, env, email, etc.
+  components/
+    app/            # Shell, UserAvatar, UserMenu, InlineAlert, etc.
+    matches/        # PickCards (coloreado 1X2)
+    ui/             # Componentes shadcn-style
+  emails/           # Plantillas React Email (preview: pnpm email)
+  hooks/            # useStandingsRealtime, useEntitySearch, etc.
+  lib/              # auth, prisma, api-football, http, email, football, etc.
 prisma/             # schema y migraciones
 doctor.config.ts    # React Doctor
 pnpm-workspace.yaml # Políticas pnpm
 ```
+
+### Patrones de código relevantes
+
+- **`sendJsonRequest` / `readJsonResponse`** (`src/lib/http.ts`) — helpers para todas las llamadas `fetch` cliente → API; usados de forma consistente en todos los client components.
+- **`useEntitySearch`** (`matches/new/use-entity-search.ts`) — hook que encapsula la búsqueda de ligas, equipos y jugadores en la pantalla de agregar partido.
+- **`UserAvatar`** (`components/app/user-avatar.tsx`) — componente reutilizable con prop `size`; muestra la foto del usuario o su inicial como fallback.
 
 ## Desarrollo con túnel / previews (opcional)
 

@@ -39,7 +39,7 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
       orderBy: [{ joinedAt: "asc" }],
       select: {
         role: true,
-        user: { select: { id: true, name: true, email: true } },
+        user: { select: { id: true, name: true, email: true, image: true } },
       },
     }),
     prisma.matchday.findMany({
@@ -88,6 +88,7 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
               id: m.user.id,
               name: m.user.name,
               email: m.user.email,
+              image: m.user.image,
               role: m.role,
             }))}
             matchdays={matchdayRows}

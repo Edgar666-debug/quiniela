@@ -7,6 +7,7 @@ import { useStandingsRealtime } from "@/hooks/useStandingsRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { UserAvatar } from "@/components/app/user-avatar";
 
 type StandingRow = {
   points: number;
@@ -68,7 +69,8 @@ export function StandingsLive(props: { tournamentId: string; initial: StandingRo
                     <TableCell className="relative px-4 py-3">
                       <div className="absolute inset-y-0 left-0 -z-10 bg-zinc-50 dark:bg-zinc-900/30" style={{ width: `${width}%` }} />
                       <div className="flex items-center gap-2">
-                        <span className="w-6 text-center text-sm">{medal ?? i + 1}</span>
+                        <span className="w-6 shrink-0 text-center text-sm">{medal ?? i + 1}</span>
+                        <UserAvatar name={r.user.name} email={r.user.email} image={r.user.image} />
                         <span className="truncate font-medium">{r.user.name ?? r.user.email}</span>
                       </div>
                     </TableCell>
