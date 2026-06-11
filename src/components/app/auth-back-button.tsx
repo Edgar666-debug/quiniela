@@ -16,7 +16,7 @@ export function AuthBackButton(props: { className?: string }) {
     <Button asChild variant="ghost" size="sm" className={cn("gap-1.5", props.className)}>
       <Link href={back.href}>
         <ArrowLeft className="size-4" />
-        {back.label}
+        {/*{back.label}*/}
       </Link>
     </Button>
   );

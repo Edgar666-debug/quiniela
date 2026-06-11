@@ -2,12 +2,23 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarDays, Loader2, Plus, RefreshCw } from "lucide-react";
+import { CalendarDays, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
-import { readJsonResponse } from "@/lib/http";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { readJsonResponse, sendJsonRequest } from "@/lib/http";
 
 type MatchdayRow = {
   id: string;
@@ -27,10 +38,23 @@ export function MatchdaysClient(props: {
   const rows = localRows?.source === props.initial ? localRows.value : props.initial;
 
   const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const canManage = props.role === "OWNER" || props.role === "ORGANIZER";
   const canCreateMatchday = canManage && props.tournamentStatus === "ACTIVE";
+
+  async function deleteMatchday(matchdayId: string) {
+    setDeletingId(matchdayId);
+    setError(null);
+    const { response, data } = await sendJsonRequest<{ error?: string }>(
+      `/api/tournaments/${props.tournamentId}/matchdays/${matchdayId}`,
+      { method: "DELETE" },
+    );
+    setDeletingId(null);
+    if (!response.ok) return setError(data.error ?? "No se pudo borrar la jornada");
+    setLocalRows({ source: props.initial, value: rows.filter((r) => r.id !== matchdayId) });
+  }
 
   async function refresh() {
     setLoading(true);
@@ -104,6 +128,33 @@ export function MatchdaysClient(props: {
                       Abrir
                     </Link>
                   </Button>
+                  {canManage && m.matchesCount === 0 ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" disabled={deletingId === m.id}>
+                          {deletingId === m.id ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-4" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Borrar jornada {m.number}?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción no se puede deshacer. La jornada se eliminará permanentemente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteMatchday(m.id)}>
+                            Borrar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : null}
                 </div>
               </div>
             </div>

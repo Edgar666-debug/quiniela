@@ -33,6 +33,8 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
   });
   if (!tournament) redirect("/dashboard");
 
+  const nowMs = Date.now();
+
   const [members, matchdays] = await Promise.all([
     prisma.tournamentMember.findMany({
       where: { tournamentId },
@@ -45,12 +47,27 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
     prisma.matchday.findMany({
       where: { tournamentId },
       orderBy: [{ number: "desc" }],
-      select: { id: true, number: true, closesAtUtc: true },
+      select: { id: true, number: true, closesAtUtc: true, _count: { select: { matches: true } } },
     }),
   ]);
 
-  const nowIso = new Date().toISOString();
-  const nowMs = new Date(nowIso).getTime();
+  const openMatchdayIds = matchdays
+    .filter((m) => nowMs < m.closesAtUtc.getTime())
+    .map((m) => m.id);
+
+  // pick counts per open matchday per user: pickCounts[matchdayId][userId] = n
+  const pickCounts: Record<string, Record<string, number>> = {};
+  if (openMatchdayIds.length > 0) {
+    const picks = await prisma.pick.findMany({
+      where: { match: { matchdayId: { in: openMatchdayIds } } },
+      select: { userId: true, match: { select: { matchdayId: true } } },
+    });
+    for (const p of picks) {
+      const mid = p.match.matchdayId;
+      pickCounts[mid] ??= {};
+      pickCounts[mid][p.userId] = (pickCounts[mid][p.userId] ?? 0) + 1;
+    }
+  }
 
   const matchdayRows = matchdays.map((m) => {
     const closesIso = m.closesAtUtc.toISOString();
@@ -60,6 +77,7 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
       closesAtUtc: closesIso,
       closesAtLabel: formatUtcShort(closesIso),
       isClosed: nowMs >= m.closesAtUtc.getTime(),
+      matchesCount: m._count.matches,
     };
   });
 
@@ -92,6 +110,7 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
               role: m.role,
             }))}
             matchdays={matchdayRows}
+            pickCounts={pickCounts}
           />
         </CardContent>
       </Card>

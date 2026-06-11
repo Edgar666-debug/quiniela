@@ -11,17 +11,22 @@ import { UserAvatar } from "@/components/app/user-avatar";
 import { cn } from "@/lib/utils";
 
 type MemberRow = { id: string; name: string | null; email: string; image: string | null; role: "OWNER" | "ORGANIZER" | "PLAYER" };
-type MatchdayRow = { id: string; number: number; closesAtUtc: string; closesAtLabel: string; isClosed: boolean };
+type MatchdayRow = { id: string; number: number; closesAtUtc: string; closesAtLabel: string; isClosed: boolean; matchesCount: number };
 
-export function TournamentPicksIndexClient(props: { tournamentId: string; members: MemberRow[]; matchdays: MatchdayRow[] }) {
+export function TournamentPicksIndexClient(props: {
+  tournamentId: string;
+  members: MemberRow[];
+  matchdays: MatchdayRow[];
+  pickCounts: Record<string, Record<string, number>>;
+}) {
   const [openUserId, setOpenUserId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const closedOnly = true;
 
-  const matchdaysClosedFirst = (() => {
+  // show closed first, then open (open ones show progress bar)
+  const sortedMatchdays = (() => {
     const closed = props.matchdays.filter((m) => m.isClosed);
     const open = props.matchdays.filter((m) => !m.isClosed);
-    return closedOnly ? closed : [...closed, ...open];
+    return [...closed, ...open];
   })();
 
   const filteredMembers = (() => {
@@ -39,14 +44,6 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
           onChange={(e) => setQuery(e.target.value)}
           className="sm:max-w-sm"
         />
-        {/* <div className="flex items-center gap-2">
-          <Button type="button" size="sm" variant={closedOnly ? "default" : "outline"} onClick={() => setClosedOnly(true)}>
-            Solo cerradas
-          </Button>
-          <Button type="button" size="sm" variant={!closedOnly ? "default" : "outline"} onClick={() => setClosedOnly(false)}>
-            Todas
-          </Button>
-        </div> */}
       </div>
 
       <Table>
@@ -97,28 +94,39 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
                     <TableCell colSpan={4} className="pt-0">
                       <div className="surface-panel-ui rounded-xl p-3">
                         <div className="grid gap-2 md:grid-cols-2">
-                          {matchdaysClosedFirst.map((md) => {
+                          {sortedMatchdays.map((md) => {
                             const href = `/tournaments/${props.tournamentId}/picks/${m.id}/${md.id}`;
-                            const disabled = !md.isClosed;
+                            const pickedCount = props.pickCounts[md.id]?.[m.id] ?? 0;
+                            const pct = md.matchesCount > 0 ? Math.round((pickedCount / md.matchesCount) * 100) : 0;
                             return (
                               <div
                                 key={md.id}
                                 className={cn(
                                   "flex items-center justify-between gap-3 rounded-lg border px-3 py-2",
-                                  disabled
+                                  !md.isClosed
                                     ? "border-zinc-200 bg-zinc-50 text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/30 dark:text-zinc-400"
                                     : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950",
                                 )}
                               >
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1">
                                   <p className="truncate text-sm font-medium">Jornada {md.number}</p>
                                   <p className="text-muted-ui text-xs">Cierre (UTC): {md.closesAtLabel}</p>
+                                  {!md.isClosed && md.matchesCount > 0 ? (
+                                    <div className="mt-1.5 flex items-center gap-2">
+                                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+                                        <div
+                                          className="h-full rounded-full bg-emerald-500 transition-all"
+                                          style={{ width: `${pct}%` }}
+                                        />
+                                      </div>
+                                      <span className="shrink-0 text-xs tabular-nums">
+                                        {pickedCount}/{md.matchesCount}
+                                      </span>
+                                    </div>
+                                  ) : null}
                                 </div>
-                                {disabled ? (
-                                  <div className="flex items-center gap-2 text-xs">
-                                    <Lock className="size-4" />
-                                    <span>Aún abierta</span>
-                                  </div>
+                                {!md.isClosed ? (
+                                  <Lock className="size-4 shrink-0" />
                                 ) : (
                                   <Button asChild size="sm" variant="outline">
                                     <Link href={href}><Eye className="size-4" /></Link>
