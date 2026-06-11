@@ -32,7 +32,17 @@ export default async function TournamentMatchdaysPage(props: { params: Promise<{
   const matchdays = await prisma.matchday.findMany({
     where: { tournamentId },
     orderBy: [{ number: "desc" }],
-    select: { id: true, number: true, closesAtUtc: true, _count: { select: { matches: true } } },
+    select: {
+      id: true,
+      number: true,
+      closesAtUtc: true,
+      _count: { select: { matches: true } },
+      matches: {
+        select: {
+          _count: { select: { picks: { where: { userId: session.user.id } } } },
+        },
+      },
+    },
   });
 
   const initial = matchdays.map((m) => ({
@@ -40,6 +50,7 @@ export default async function TournamentMatchdaysPage(props: { params: Promise<{
     number: m.number,
     closesAtUtc: m.closesAtUtc.toISOString(),
     matchesCount: m._count.matches,
+    myPicksCount: m.matches.reduce((sum, match) => sum + (match._count.picks > 0 ? 1 : 0), 0),
   }));
 
   return (

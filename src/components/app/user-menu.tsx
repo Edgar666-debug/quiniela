@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronUp, LogOut, Mail, Settings } from "lucide-react";
+import { ChevronUp, LogOut, Mail, Settings} from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { pushAndRefresh } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function UserMenu(props: { user: { email: string; name: string | null }; collapsed: boolean; onNavigate?: () => void }) {
+export function UserMenu(props: { user: { email: string; name: string | null; image: string | null }; collapsed: boolean; onNavigate?: () => void }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -43,8 +44,10 @@ export function UserMenu(props: { user: { email: string; name: string | null }; 
           )}
           aria-label="Menú de usuario"
         >
-          <div className="avatar-frame-ui size-8 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
-            {(props.user.name ?? props.user.email).slice(0, 1).toUpperCase()}
+          <div className="avatar-frame-ui size-8 shrink-0 overflow-hidden text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+            {props.user.image ? (
+              <Image src={props.user.image} alt="" width={32} height={32} className="h-full w-full object-cover" unoptimized />
+            ) : (props.user.name ?? props.user.email).slice(0, 1).toUpperCase()}
           </div>
           {props.collapsed ? null : (
             <>

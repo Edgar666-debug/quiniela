@@ -2,6 +2,7 @@
 
 import { useReducer, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Image as ImageIcon, Loader2, SaveIcon, Trash, Upload, User as UserIcon } from "lucide-react";
 
 import { requestSignedUploadUrl, uploadFileWithSignedUrl, validateImageFile } from "@/lib/storage-upload";
@@ -109,6 +110,7 @@ function profileReducer(state: ProfileState, action: ProfileAction): ProfileStat
 }
 
 export function ProfileClient(props: { initial: { name: string | null; image: string | null; email: string } }) {
+  const router = useRouter();
   const [state, dispatch] = useReducer(profileReducer, {
     draft: null,
     loading: false,
@@ -145,6 +147,7 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
       image: data.user?.image ?? "",
       message: "Perfil actualizado.",
     });
+    router.refresh();
   }
 
   async function uploadAvatar(file: File) {
@@ -184,6 +187,7 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
       image: data.user?.image ?? imageUrlWithVersion,
       message: "Avatar actualizado.",
     });
+    router.refresh();
   }
 
   return (

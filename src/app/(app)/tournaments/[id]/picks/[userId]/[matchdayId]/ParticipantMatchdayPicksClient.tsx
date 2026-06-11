@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 
 import { InlineAlert } from "@/components/app/inline-alert";
+import { UserAvatar } from "@/components/app/user-avatar";
 import { Button } from "@/components/ui/button";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
 import { MatchPickGroup, PickLegend, type PickValue } from "@/components/matches/pick-cards";
@@ -28,7 +29,7 @@ export function ParticipantMatchdayPicksClient(props: {
   tournamentId: string;
   userId: string;
   matchdayId: string;
-  initial: { matchday: { number: number; closesAtUtc: string }; participantLabel: string; matches: MatchRow[] };
+  initial: { matchday: { number: number; closesAtUtc: string }; participantLabel: string; participantImage: string | null; matches: MatchRow[] };
 }) {
   const [localRows, setLocalRows] = useState<{ source: MatchRow[]; value: MatchRow[] } | null>(null);
   const rows = localRows?.source === props.initial.matches ? localRows.value : props.initial.matches;
@@ -68,9 +69,16 @@ export function ParticipantMatchdayPicksClient(props: {
       <MatchdayClose closesAtUtc={props.initial.matchday.closesAtUtc} />
 
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium">{props.initial.participantLabel}</p>
-          <p className="text-muted-ui text-xs">{rows.length} partido(s)</p>
+        <div className="flex items-center gap-2.5">
+          <UserAvatar
+            name={props.initial.participantLabel}
+            email={props.initial.participantLabel}
+            image={props.initial.participantImage}
+          />
+          <div>
+            <p className="text-sm font-medium">{props.initial.participantLabel}</p>
+            <p className="text-muted-ui text-xs">{rows.length} partido(s)</p>
+          </div>
         </div>
         <Button variant="outline" size="sm" type="button" onClick={refresh} disabled={loading}>
           {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}

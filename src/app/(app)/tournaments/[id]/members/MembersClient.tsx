@@ -6,11 +6,12 @@ import { Loader2, LogOut, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/app/user-avatar";
 import { readJsonResponse } from "@/lib/http";
 
 type MemberRow = {
   role: "OWNER" | "ORGANIZER" | "PLAYER";
-  user: { id: string; email: string; name: string | null };
+  user: { id: string; email: string; name: string | null; image: string | null };
 };
 
 export function MembersClient(props: { tournamentId: string; myUserId: string; myRole: "OWNER" | "ORGANIZER" | "PLAYER"; initial: MemberRow[] }) {
@@ -56,9 +57,12 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
 
       {rows.map((m) => (
         <div key={m.user.id} className="list-row-ui flex flex-wrap items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{m.user.name ?? m.user.email}</p>
-            <p className="text-muted-ui truncate text-xs">{m.user.email}</p>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <UserAvatar name={m.user.name} email={m.user.email} image={m.user.image} />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{m.user.name ?? m.user.email}</p>
+              <p className="text-muted-ui truncate text-xs">{m.user.email}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline">{m.role}</Badge>

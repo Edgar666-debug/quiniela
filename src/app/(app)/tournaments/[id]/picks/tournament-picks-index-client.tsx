@@ -7,9 +7,10 @@ import { ChevronDown, ChevronRight, Eye, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { UserAvatar } from "@/components/app/user-avatar";
 import { cn } from "@/lib/utils";
 
-type MemberRow = { id: string; name: string | null; email: string; role: "OWNER" | "ORGANIZER" | "PLAYER" };
+type MemberRow = { id: string; name: string | null; email: string; image: string | null; role: "OWNER" | "ORGANIZER" | "PLAYER" };
 type MatchdayRow = { id: string; number: number; closesAtUtc: string; closesAtLabel: string; isClosed: boolean };
 
 export function TournamentPicksIndexClient(props: { tournamentId: string; members: MemberRow[]; matchdays: MatchdayRow[] }) {
@@ -75,8 +76,13 @@ export function TournamentPicksIndexClient(props: { tournamentId: string; member
                     </Button>
                   </TableCell>
                   <TableCell className="py-2">
-                    <p className="font-medium">{m.name ?? m.email}</p>
-                    <p className="text-muted-ui text-xs">{m.email}</p>
+                    <div className="flex items-center gap-2.5">
+                      <UserAvatar name={m.name} email={m.email} image={m.image} />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{m.name ?? m.email}</p>
+                        <p className="text-muted-ui truncate text-xs">{m.email}</p>
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell className="hidden py-2 sm:table-cell">
                     <span className="text-muted-ui text-xs">{m.role}</span>

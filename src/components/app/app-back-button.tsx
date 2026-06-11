@@ -31,7 +31,7 @@ export function AppBackButton(props: AppBackButtonProps) {
     >
       <Link href={back.href} aria-label={props.compact ? `Volver a ${back.label}` : undefined}>
         <ArrowLeft className="size-4 shrink-0" />
-        {props.compact ? null : <span className="truncate">{back.label}</span>}
+        {/*{props.compact ? null : <span className="truncate">{back.label}</span>}*/}
       </Link>
     </Button>
   );

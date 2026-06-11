@@ -27,6 +27,11 @@ export async function GET(_: Request, ctx: { params: Promise<{ id: string }> }) 
       number: true,
       closesAtUtc: true,
       _count: { select: { matches: true } },
+      matches: {
+        select: {
+          _count: { select: { picks: { where: { userId: session.user.id } } } },
+        },
+      },
     },
   });
 
@@ -37,6 +42,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ id: string }> }) 
       number: m.number,
       closesAtUtc: m.closesAtUtc.toISOString(),
       matchesCount: m._count.matches,
+      myPicksCount: m.matches.reduce((sum, match) => sum + (match._count.picks > 0 ? 1 : 0), 0),
     })),
   });
 }

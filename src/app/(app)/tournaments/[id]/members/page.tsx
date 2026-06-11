@@ -35,7 +35,7 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
     select: {
       role: true,
       joinedAt: true,
-      user: { select: { id: true, email: true, name: true } },
+      user: { select: { id: true, email: true, name: true, image: true } },
     },
   });
 
