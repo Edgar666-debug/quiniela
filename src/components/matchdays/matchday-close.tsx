@@ -64,7 +64,6 @@ export function MatchdayClose(props: { closesAtUtc: string; compact?: boolean; c
       <p className="text-muted-ui text-xs">
         Cierre: {formatLocalDateTime(props.closesAtUtc)} ({getUserTimeZone()})
       </p>
-      <p className="text-subtle-ui text-xs">Referencia UTC: {formatUtcDateTime(props.closesAtUtc)}</p>
       {isClosed ? null : (
         <p className="text-muted-ui text-xs">Tiempo restante: {formatRemaining(remainingMs)}</p>
       )}

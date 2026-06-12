@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { formatLocalDateTime } from "@/lib/date";
 
 type InviteItem = {
   token: string;
@@ -184,7 +185,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
                       <p className="truncate font-mono text-sm">{i.token}</p>
                       <p className="text-muted-ui text-xs">
                         Usos: {i.uses}/{i.maxUses}
-                        {i.expiresAtUtc ? ` • Expira: ${i.expiresAtUtc}` : ""}
+                        {i.expiresAtUtc ? ` • Expira: ${formatLocalDateTime(i.expiresAtUtc)}` : ""}
                       </p>
                     </div>
                     <Button
@@ -201,7 +202,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
                     </Button>
                   </div>
                   <Separator className="my-2" />
-                  <p className="text-subtle-ui text-xs">Creado (UTC): {i.createdAtUtc}</p>
+                  <p className="text-subtle-ui text-xs">Creado: {formatLocalDateTime(i.createdAtUtc)}</p>
                 </li>
               ))}
             </ul>

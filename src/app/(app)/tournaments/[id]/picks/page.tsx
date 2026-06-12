@@ -5,7 +5,6 @@ import { Eye } from "lucide-react";
 
 import { auth } from "@/lib/auth";
 import { TournamentPageHeader } from "@/components/app/tournament-page-header";
-import { formatUtcShort } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SyncLiveButton } from "./sync-live-button";
@@ -69,17 +68,13 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
     }
   }
 
-  const matchdayRows = matchdays.map((m) => {
-    const closesIso = m.closesAtUtc.toISOString();
-    return {
-      id: m.id,
-      number: m.number,
-      closesAtUtc: closesIso,
-      closesAtLabel: formatUtcShort(closesIso),
-      isClosed: nowMs >= m.closesAtUtc.getTime(),
-      matchesCount: m._count.matches,
-    };
-  });
+  const matchdayRows = matchdays.map((m) => ({
+    id: m.id,
+    number: m.number,
+    closesAtUtc: m.closesAtUtc.toISOString(),
+    isClosed: nowMs >= m.closesAtUtc.getTime(),
+    matchesCount: m._count.matches,
+  }));
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
@@ -97,7 +92,7 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
             <Eye className="size-4" />
             Picks
           </CardTitle>
-          <CardDescription>Las jornadas se habilitan después del cierre (UTC).</CardDescription>
+          <CardDescription>Las jornadas se habilitan después del cierre.</CardDescription>
         </CardHeader>
         <CardContent>
           <TournamentPicksIndexClient

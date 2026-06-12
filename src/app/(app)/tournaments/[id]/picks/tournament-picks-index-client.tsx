@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { UserAvatar } from "@/components/app/user-avatar";
+import { formatLocalDateTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 type MemberRow = { id: string; name: string | null; email: string; image: string | null; role: "OWNER" | "ORGANIZER" | "PLAYER" };
-type MatchdayRow = { id: string; number: number; closesAtUtc: string; closesAtLabel: string; isClosed: boolean; matchesCount: number };
+type MatchdayRow = { id: string; number: number; closesAtUtc: string; isClosed: boolean; matchesCount: number };
 
 export function TournamentPicksIndexClient(props: {
   tournamentId: string;
@@ -110,7 +111,7 @@ export function TournamentPicksIndexClient(props: {
                               >
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate text-sm font-medium">Jornada {md.number}</p>
-                                  <p className="text-muted-ui text-xs">Cierre (UTC): {md.closesAtLabel}</p>
+                                  <p className="text-muted-ui text-xs">Cierre: {formatLocalDateTime(md.closesAtUtc)}</p>
                                   {!md.isClosed && md.matchesCount > 0 ? (
                                     <div className="mt-1.5 flex items-center gap-2">
                                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">

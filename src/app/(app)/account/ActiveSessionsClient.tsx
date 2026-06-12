@@ -5,7 +5,7 @@ import { Laptop, Loader2, RefreshCw, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { formatUtcDateTime } from "@/lib/date";
+import { formatLocalDateTime } from "@/lib/date";
 import { readJsonResponse } from "@/lib/http";
 
 export type SessionItem = {
@@ -103,7 +103,7 @@ export function ActiveSessionsClient(props: { initial: SessionItem[] }) {
                     <p className="text-muted-ui text-xs">{parseOS(s.userAgent)}</p>
                     <p className="text-muted-ui text-xs">IP: {s.ipAddress ?? "—"}</p>
                     <p className="text-muted-ui text-xs">
-                      Last active: {formatUtcDateTime(s.updatedAtUtc)} • Expires: {formatUtcDateTime(s.expiresAtUtc)}
+                      Last active: {formatLocalDateTime(s.updatedAtUtc)} • Expires: {formatLocalDateTime(s.expiresAtUtc)}
                     </p>
                   </div>
                 </div>

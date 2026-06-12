@@ -41,12 +41,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const closesAt = new Date(body.data.closesAtUtc);
   if (Number.isNaN(closesAt.getTime())) return NextResponse.json({ error: "Invalid closesAtUtc" }, { status: 400 });
   if (closesAt.getTime() <= Date.now()) {
-    return NextResponse.json({ error: "El cierre debe ser una fecha futura (UTC)." }, { status: 409 });
+    return NextResponse.json({ error: "El cierre debe ser una fecha futura." }, { status: 409 });
   }
   // Guardrail: evita cierres absurdamente lejanos por error de captura.
   const maxFutureMs = 180 * 24 * 60 * 60_000; // 180 días
   if (closesAt.getTime() - Date.now() > maxFutureMs) {
-    return NextResponse.json({ error: "El cierre está demasiado lejos. Revisa la fecha (UTC)." }, { status: 409 });
+    return NextResponse.json({ error: "El cierre está demasiado lejos. Revisa la fecha." }, { status: 409 });
   }
 
   const matchday = await prisma.matchday.create({

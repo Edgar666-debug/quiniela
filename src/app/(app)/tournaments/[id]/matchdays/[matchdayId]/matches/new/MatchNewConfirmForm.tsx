@@ -152,7 +152,7 @@ export function MatchNewConfirmForm(props: {
     if (manualViolatesCloseRule) {
       return dispatch({
         type: "submit_fail",
-        error: "El inicio del partido está antes del cierre (UTC). Ajusta el cierre de la jornada o elige otro fixture.",
+        error: "El inicio del partido está antes del cierre. Ajusta el cierre de la jornada o elige otro fixture.",
       });
     }
 
@@ -184,7 +184,7 @@ export function MatchNewConfirmForm(props: {
         {invalidSelectedFixtures.length > 0 ? (
           <InlineAlert
             variant="error"
-            message="Uno o más fixtures seleccionados inician antes del cierre de la jornada (UTC). Quítalos o ajusta el cierre."
+            message="Uno o más fixtures seleccionados inician antes del cierre de la jornada. Quítalos o ajusta el cierre."
           />
         ) : null}
 
@@ -237,7 +237,7 @@ export function MatchNewConfirmForm(props: {
         {manualViolatesCloseRule ? (
           <InlineAlert
             variant="error"
-            message="Este partido inicia antes del cierre de la jornada (UTC). Ajusta el cierre para que sea antes del primer partido o elige otro fixture."
+            message="Este partido inicia antes del cierre de la jornada. Ajusta el cierre para que sea antes del primer partido o elige otro fixture."
           />
         ) : null}
 

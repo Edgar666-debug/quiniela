@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatLocalDateTime } from "@/lib/date";
 import { readJsonResponse, sendJsonRequest } from "@/lib/http";
 import { pushAndRefresh } from "@/lib/navigation";
 
@@ -157,7 +158,7 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
                 <p className="truncate text-lg font-semibold">{preview.tournament.name}</p>
                 <p className="text-muted-ui text-sm">
                   Estado: {preview.tournament.status} · Usos: {preview.uses}/{preview.maxUses}
-                  {preview.expiresAtUtc ? ` · Expira: ${preview.expiresAtUtc}` : ""}
+                  {preview.expiresAtUtc ? ` · Expira: ${formatLocalDateTime(preview.expiresAtUtc)}` : ""}
                 </p>
               </div>
             </div>

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { LocalDateTimeText } from "@/components/app/local-date-time";
 import { TournamentPageHeader } from "@/components/app/tournament-page-header";
 import { createSupabaseRealtimeToken } from "@/lib/supabase/realtime-token";
 import { StandingsLive } from "./StandingsLive";
@@ -65,7 +66,7 @@ export default async function TournamentStandingsPage(props: { params: Promise<{
         <CardContent>
           {lastSync ? (
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Última sync (UTC): {lastSync.ranAtUtc.toISOString().replace("T", " ").slice(0, 16)} • Checked: {lastSync.checkedMatches} • Updated:{" "}
+              Última sync: <LocalDateTimeText iso={lastSync.ranAtUtc.toISOString()} /> • Checked: {lastSync.checkedMatches} • Updated:{" "}
               {lastSync.updatedMatches} • Standings: {lastSync.standingsRecalculated ? "recalculados" : "sin cambios"}
             </p>
           ) : (

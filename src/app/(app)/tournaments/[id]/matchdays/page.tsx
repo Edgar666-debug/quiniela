@@ -65,7 +65,7 @@ export default async function TournamentMatchdaysPage(props: { params: Promise<{
       <Card>
         <CardHeader>
           <CardTitle>Listado</CardTitle>
-          <CardDescription>Las jornadas se cierran por horario (UTC).</CardDescription>
+          <CardDescription>Las jornadas se cierran por horario local.</CardDescription>
         </CardHeader>
         <CardContent>
           <MatchdaysClient tournamentId={tournamentId} role={membership.role} tournamentStatus={tournament.status} initial={initial} />

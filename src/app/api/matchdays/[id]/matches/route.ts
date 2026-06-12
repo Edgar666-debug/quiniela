@@ -107,7 +107,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
       if (createData.startsAtUtc.getTime() < matchday.closesAtUtc.getTime()) {
         throw new Error(
-          `El fixture ${createData.externalFixtureId ?? `${createData.homeTeam} vs ${createData.awayTeam}`} inicia antes del cierre de la jornada (UTC).`,
+          `El fixture ${createData.externalFixtureId ?? `${createData.homeTeam} vs ${createData.awayTeam}`} inicia antes del cierre de la jornada.`,
         );
       }
 

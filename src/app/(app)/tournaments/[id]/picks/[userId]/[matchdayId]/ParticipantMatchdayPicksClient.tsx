@@ -64,7 +64,7 @@ export function ParticipantMatchdayPicksClient(props: {
   return (
     <div className="flex flex-col gap-4">
       {!isClosed ? (
-        <InlineAlert variant="info" message="Los picks se revelan solo después del cierre de la jornada (UTC)." />
+        <InlineAlert variant="info" message="Los picks se revelan solo después del cierre de la jornada." />
       ) : null}
       <MatchdayClose closesAtUtc={props.initial.matchday.closesAtUtc} />
 

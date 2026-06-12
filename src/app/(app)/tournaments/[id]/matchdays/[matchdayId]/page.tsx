@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Trophy } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { LocalDateTimeText } from "@/components/app/local-date-time";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MatchdayClient } from "./MatchdayClient";
 import { MatchdayPageActions } from "./MatchdayPageActions";
@@ -91,7 +92,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
             </div>
             <h1 className="text-2xl font-semibold">{tournament.name}</h1>
             <p className="text-muted-ui text-sm">
-              Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
+              <LocalDateTimeText iso={matchday.closesAtUtc.toISOString()} prefix="Cierre" />
             </p>
           </div>
         </div>

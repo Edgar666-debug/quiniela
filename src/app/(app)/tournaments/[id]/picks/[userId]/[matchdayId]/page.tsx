@@ -7,6 +7,7 @@ import Link from "next/link";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { LocalDateTimeText } from "@/components/app/local-date-time";
 import { UserAvatar } from "@/components/app/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,7 +104,7 @@ export default async function ParticipantMatchdayPicksPage(props: { params: Prom
               <p className="text-muted-ui text-sm">{`Picks de ${participant.user.name ?? participant.user.email}`}</p>
             </div>
             <p className="text-muted-ui text-sm">
-              Cierre (UTC): {matchday.closesAtUtc.toISOString().replace("T", " ").slice(0, 16)}
+              <LocalDateTimeText iso={matchday.closesAtUtc.toISOString()} prefix="Cierre" />
             </p>
           </div>
         </div>
