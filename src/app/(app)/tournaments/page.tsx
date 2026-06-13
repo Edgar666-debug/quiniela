@@ -24,6 +24,10 @@ export default async function TournamentsIndexPage() {
           name: true,
           status: true,
           logoUrl: true,
+          scope: true,
+          externalLeagueId: true,
+          leagueName: true,
+          leagueSeason: true,
           _count: { select: { members: true, matchdays: true } },
         },
       },
@@ -42,6 +46,10 @@ export default async function TournamentsIndexPage() {
           role: m.role,
           membersCount: m.tournament._count.members,
           matchdaysCount: m.tournament._count.matchdays,
+          scope: m.tournament.scope,
+          externalLeagueId: m.tournament.externalLeagueId,
+          leagueName: m.tournament.leagueName,
+          leagueSeason: m.tournament.leagueSeason,
         }))}
       />
     </main>

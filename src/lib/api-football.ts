@@ -281,6 +281,7 @@ export type LeagueSearchItem = {
   type: string;
   countryName: string;
   countryCode?: string | null;
+  logoUrl?: string | null;
   seasonYears: number[];
   currentSeasons: number[];
 };
@@ -314,6 +315,7 @@ export async function searchLeagues(params: { search: string; season?: number; c
         type: row.league.type,
         countryName: row.country.name,
         countryCode: row.country.code ?? null,
+        logoUrl: row.league.logo ?? null,
         seasonYears: Array.from(new Set(years)).sort((a, b) => b - a),
         currentSeasons: Array.from(new Set(currentYears)).sort((a, b) => b - a),
       });
@@ -323,6 +325,24 @@ export async function searchLeagues(params: { search: string; season?: number; c
 
   const limit = Math.min(Math.max(params.limit ?? 20, 1), 50);
   return out.slice(0, limit);
+}
+
+export async function fetchLeagueLogoUrl(leagueId: number, season?: number) {
+  const url = new URL("/leagues", env.API_FOOTBALL_BASE_URL);
+  url.searchParams.set("id", String(leagueId));
+  if (season) url.searchParams.set("season", String(season));
+
+  return requestJsonCached(url, await getPlanCacheTtl("league"), async () => {
+    const res = await apiFootballRequest(url);
+    if (res.status === 204) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`API-Football error ${res.status}: ${body}`);
+    }
+
+    const json = (await res.json()) as ApiFootballLeaguesResponse;
+    return json.response?.[0]?.league.logo ?? null;
+  });
 }
 
 export type TeamSearchItem = {

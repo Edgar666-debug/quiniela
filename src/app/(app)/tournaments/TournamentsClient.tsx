@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/app/empty-state";
+import { TournamentScopeBadge } from "@/components/tournaments/tournament-scope-badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +41,10 @@ type TournamentRow = {
   role: "OWNER" | "ORGANIZER" | "PLAYER";
   membersCount: number;
   matchdaysCount: number;
+  scope: "OPEN" | "SINGLE_LEAGUE";
+  externalLeagueId: number | null;
+  leagueName: string | null;
+  leagueSeason: number | null;
 };
 
 type StatusFilter = "ALL" | "ACTIVE" | "FINISHED" | "ARCHIVED";
@@ -281,6 +286,7 @@ function TournamentCard(props: { tournament: TournamentRow }) {
             {roleLabel(t.role)} · {t.matchdaysCount} jornada{t.matchdaysCount === 1 ? "" : "s"} · {t.membersCount} miembro
             {t.membersCount === 1 ? "" : "s"}
           </p>
+          <TournamentScopeBadge tournament={t} className="mt-2" />
         </div>
 
         <div className="mt-auto flex items-end justify-between gap-3 pt-6">
@@ -316,6 +322,7 @@ function TournamentListRow(props: { tournament: TournamentRow }) {
           <p className="text-muted-ui text-sm">
             {roleLabel(t.role)} · {t.matchdaysCount} jornadas · {t.membersCount} miembros
           </p>
+          <TournamentScopeBadge tournament={t} className="mt-1" />
         </div>
         <Badge variant="outline" className="hidden shrink-0 rounded-md text-[11px] uppercase sm:inline-flex">
           {statusLabel(t.status)}

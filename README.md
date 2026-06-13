@@ -7,6 +7,7 @@ Torneos tipo quiniela por invitación, con jornadas cerradas por horario, picks 
 ## Funcionalidades
 
 - **Torneos por invitación** — máx. 10 participantes; roles OWNER / ORGANIZER / PLAYER; token manual o envío por email.
+- **Modo torneo** — **abierto** (cualquier liga) o **liga única** (solo fixtures de una competición/temporada); el modo queda bloqueado tras el primer partido.
 - **Jornadas** — un solo cierre (UTC); los picks se bloquean al llegar la hora; barra de progreso de picks enviados.
 - **Quiniela 1X2** — HOME / DRAW / AWAY; 1 punto por acierto; resultados coloreados (verde / rojo / neutro) con leyenda.
 - **Ranking en vivo** — tabla `Standing` + Supabase Realtime.

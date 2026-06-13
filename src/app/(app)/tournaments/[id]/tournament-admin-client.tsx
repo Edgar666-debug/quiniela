@@ -7,6 +7,7 @@ import { Loader2, Save, Trash, Trophy, Upload } from "lucide-react";
 
 import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { InlineAlert } from "@/components/app/inline-alert";
+import { TournamentLeaguePicker, type TournamentLeagueSelection, type TournamentScopeMode } from "@/components/tournaments/tournament-league-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,8 @@ type AdminState = {
   uploadingLogo: boolean;
   draftName: string;
   draftLogoUrl: string;
+  draftScope: TournamentScopeMode;
+  draftLeagueSelection: TournamentLeagueSelection | null;
   message: string | null;
   error: string | null;
 };
@@ -37,6 +40,8 @@ type AdminAction =
   | { type: "upload_error"; error: string }
   | { type: "set_name"; value: string }
   | { type: "set_logo_url"; value: string }
+  | { type: "set_scope"; value: TournamentScopeMode }
+  | { type: "set_league_selection"; value: TournamentLeagueSelection | null }
   | { type: "clear_feedback" };
 
 function tournamentAdminReducer(state: AdminState, action: AdminAction): AdminState {
@@ -68,6 +73,19 @@ function tournamentAdminReducer(state: AdminState, action: AdminAction): AdminSt
       return { ...state, draftName: action.value };
     case "set_logo_url":
       return { ...state, draftLogoUrl: action.value };
+    case "set_scope":
+      return {
+        ...state,
+        draftScope: action.value,
+        draftLeagueSelection: action.value === "OPEN" ? null : state.draftLeagueSelection,
+      };
+    case "set_league_selection":
+      return {
+        ...state,
+        draftLeagueSelection: action.value,
+        draftLogoUrl: action.value?.logoUrl ?? state.draftLogoUrl,
+        message: action.value?.logoUrl ? "Logo de la liga aplicado." : state.message,
+      };
     case "clear_feedback":
       return { ...state, message: null, error: null };
     default:
@@ -75,7 +93,12 @@ function tournamentAdminReducer(state: AdminState, action: AdminAction): AdminSt
   }
 }
 
-function createInitialState(props: { currentName: string; currentLogoUrl: string | null }): AdminState {
+function createInitialState(props: {
+  currentName: string;
+  currentLogoUrl: string | null;
+  currentScope: TournamentScopeMode;
+  currentLeagueSelection: TournamentLeagueSelection | null;
+}): AdminState {
   return {
     loading: false,
     openDialog: null,
@@ -83,6 +106,8 @@ function createInitialState(props: { currentName: string; currentLogoUrl: string
     uploadingLogo: false,
     draftName: props.currentName,
     draftLogoUrl: props.currentLogoUrl ?? "",
+    draftScope: props.currentScope,
+    draftLeagueSelection: props.currentLeagueSelection,
     message: null,
     error: null,
   };
@@ -93,6 +118,9 @@ export function TournamentAdminClient(props: {
   status: string;
   currentName: string;
   currentLogoUrl: string | null;
+  currentScope: TournamentScopeMode;
+  currentLeagueSelection: TournamentLeagueSelection | null;
+  scopeLocked: boolean;
 }) {
   const router = useRouter();
   const [state, dispatch] = useReducer(tournamentAdminReducer, props, createInitialState);
@@ -105,6 +133,11 @@ export function TournamentAdminClient(props: {
   const actionsDisabled = state.savingDetails || state.uploadingLogo;
 
   async function saveDetails(nextLogoUrl?: string | null) {
+    if (state.draftScope === "SINGLE_LEAGUE" && !state.draftLeagueSelection) {
+      dispatch({ type: "save_error", error: "Selecciona una liga y temporada para el modo liga única." });
+      return;
+    }
+
     dispatch({ type: "save_start" });
 
     const { response, data } = await sendJsonRequest<{
@@ -114,7 +147,11 @@ export function TournamentAdminClient(props: {
       method: "PATCH",
       body: {
         name: state.draftName.trim(),
-        logoUrl: nextLogoUrl !== undefined ? nextLogoUrl : state.draftLogoUrl.trim() || null,
+        logoUrl: nextLogoUrl !== undefined ? nextLogoUrl : state.draftLogoUrl.trim() || state.draftLeagueSelection?.logoUrl || null,
+        scope: state.draftScope,
+        externalLeagueId: state.draftLeagueSelection?.externalLeagueId ?? null,
+        leagueName: state.draftLeagueSelection?.leagueName ?? null,
+        leagueSeason: state.draftLeagueSelection?.leagueSeason ?? null,
       },
     });
 
@@ -281,6 +318,15 @@ export function TournamentAdminClient(props: {
           </Button>
         </div>
       </div>
+
+      <TournamentLeaguePicker
+        scope={state.draftScope}
+        onScopeChange={(value) => dispatch({ type: "set_scope", value })}
+        selection={state.draftLeagueSelection}
+        onSelectionChange={(value) => dispatch({ type: "set_league_selection", value })}
+        disabled={actionsDisabled}
+        locked={props.scopeLocked}
+      />
 
       <TournamentAdminStatusDialog
         kind="archive"

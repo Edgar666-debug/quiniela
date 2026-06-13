@@ -5,6 +5,7 @@ import { z } from "zod";
 import { fetchFixtureById } from "@/lib/api-football";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { assertFixtureAllowedForTournament } from "@/lib/tournament-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,7 +38,19 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const matchday = await prisma.matchday.findUnique({
     where: { id: matchdayId },
-    select: { tournamentId: true, closesAtUtc: true, tournament: { select: { status: true } } },
+    select: {
+      tournamentId: true,
+      closesAtUtc: true,
+      tournament: {
+        select: {
+          status: true,
+          scope: true,
+          externalLeagueId: true,
+          leagueName: true,
+          leagueSeason: true,
+        },
+      },
+    },
   });
   if (!matchday) return NextResponse.json({ error: "Matchday not found" }, { status: 404 });
 
@@ -89,11 +102,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         awayTeam: input.awayTeam,
         homeLogoUrl: null as string | null,
         awayLogoUrl: null as string | null,
+        externalLeagueId: null as number | null,
+        leagueName: null as string | null,
+        leagueSeason: null as number | null,
       };
 
       if (input.externalFixtureId) {
         const fixture = await fetchFixtureById(input.externalFixtureId);
         if (fixture) {
+          assertFixtureAllowedForTournament(matchday.tournament, fixture);
           createData = {
             ...createData,
             startsAtUtc: fixture.dateUtc,
@@ -101,6 +118,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
             awayTeam: fixture.awayTeam,
             homeLogoUrl: fixture.homeLogoUrl ?? null,
             awayLogoUrl: fixture.awayLogoUrl ?? null,
+            externalLeagueId: fixture.leagueId ?? null,
+            leagueName: fixture.leagueName ?? null,
+            leagueSeason: fixture.season ?? null,
           };
         }
       }
@@ -131,6 +151,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           awayTeam: item.awayTeam,
           homeLogoUrl: item.homeLogoUrl,
           awayLogoUrl: item.awayLogoUrl,
+          externalLeagueId: item.externalLeagueId,
+          leagueName: item.leagueName,
+          leagueSeason: item.leagueSeason,
           createdByUserId: session.user.id,
         },
         select: { id: true },

@@ -19,6 +19,7 @@ type MatchRow = {
   homeLogoUrl?: string | null;
   awayTeam: string;
   awayLogoUrl?: string | null;
+  leagueName?: string | null;
   statusShort: string;
   scoreHome: number | null;
   scoreAway: number | null;
@@ -144,6 +145,7 @@ export function MatchdayClient(props: {
                     <p className="text-muted-ui text-xs">
                       Estado: {statusLabel(m.statusShort)}
                       {m.scoreHome != null && m.scoreAway != null ? ` • ${m.scoreHome}-${m.scoreAway}` : ""}
+                      {m.leagueName ? ` • ${m.leagueName}` : ""}
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       {m.myPick ? <p className="text-muted-ui text-xs">Tu pick: {m.myPick}</p> : null}

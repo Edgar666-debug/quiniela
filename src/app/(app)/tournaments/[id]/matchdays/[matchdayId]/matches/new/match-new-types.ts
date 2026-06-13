@@ -6,6 +6,7 @@ export type LeagueRow = {
   name: string;
   type: string;
   countryName: string;
+  logoUrl?: string | null;
   seasonYears: number[];
   currentSeasons: number[];
 };
