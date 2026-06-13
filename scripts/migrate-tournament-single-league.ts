@@ -120,29 +120,36 @@ async function main() {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      let updatedTournament = tournament;
-      if (tournamentNeedsUpdate || logoNeedsUpdate) {
-        updatedTournament = await tx.tournament.update({
-          where: { id: TOURNAMENT_ID },
-          data: {
-            scope: LEAGUE.scope,
-            externalLeagueId: LEAGUE.externalLeagueId,
-            leagueName: LEAGUE.leagueName,
-            leagueSeason: LEAGUE.leagueSeason,
-            ...(logoNeedsUpdate ? { logoUrl: LEAGUE.logoUrl } : {}),
-          },
-          select: {
-            id: true,
-            name: true,
-            scope: true,
-            externalLeagueId: true,
-            leagueName: true,
-            leagueSeason: true,
-            logoUrl: true,
-            matchdays: { select: { id: true } },
-          },
-        });
-      }
+      const updatedTournament =
+        tournamentNeedsUpdate || logoNeedsUpdate
+          ? await tx.tournament.update({
+              where: { id: TOURNAMENT_ID },
+              data: {
+                scope: LEAGUE.scope,
+                externalLeagueId: LEAGUE.externalLeagueId,
+                leagueName: LEAGUE.leagueName,
+                leagueSeason: LEAGUE.leagueSeason,
+                ...(logoNeedsUpdate ? { logoUrl: LEAGUE.logoUrl } : {}),
+              },
+              select: {
+                id: true,
+                name: true,
+                scope: true,
+                externalLeagueId: true,
+                leagueName: true,
+                leagueSeason: true,
+                logoUrl: true,
+              },
+            })
+          : {
+              id: tournament.id,
+              name: tournament.name,
+              scope: tournament.scope,
+              externalLeagueId: tournament.externalLeagueId,
+              leagueName: tournament.leagueName,
+              leagueSeason: tournament.leagueSeason,
+              logoUrl: tournament.logoUrl,
+            };
 
       const matchUpdate =
         matchesNeedingUpdate.length > 0

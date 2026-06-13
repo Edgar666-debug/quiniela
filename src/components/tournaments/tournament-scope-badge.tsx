@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { formatTournamentScopeLabel, type TournamentLeagueConfig } from "@/lib/tournament-scope";
+import { formatTournamentScopeLabel, type TournamentLeagueConfig } from "@/lib/tournament-scope-shared";
 
 export function TournamentScopeBadge(props: { tournament: TournamentLeagueConfig; className?: string }) {
   const label = formatTournamentScopeLabel(props.tournament);
