@@ -6,6 +6,7 @@ import { TournamentPageHeader } from "@/components/app/tournament-page-header";
 import { auth } from "@/lib/auth";
 import { canEditTournament } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { canEditTournamentScope } from "@/lib/tournament-scope";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TournamentAdminClient } from "../tournament-admin-client";
 
@@ -27,9 +28,27 @@ export default async function TournamentAdminPage(props: { params: Promise<{ id:
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { name: true, logoUrl: true, status: true },
+    select: {
+      name: true,
+      logoUrl: true,
+      status: true,
+      scope: true,
+      externalLeagueId: true,
+      leagueName: true,
+      leagueSeason: true,
+    },
   });
   if (!tournament) redirect("/dashboard");
+
+  const scopeLocked = !(await canEditTournamentScope(tournamentId));
+  const currentLeagueSelection =
+    tournament.scope === "SINGLE_LEAGUE" && tournament.externalLeagueId && tournament.leagueSeason
+      ? {
+          externalLeagueId: tournament.externalLeagueId,
+          leagueName: tournament.leagueName ?? `Liga ${tournament.externalLeagueId}`,
+          leagueSeason: tournament.leagueSeason,
+        }
+      : null;
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
@@ -51,6 +70,9 @@ export default async function TournamentAdminPage(props: { params: Promise<{ id:
             status={tournament.status}
             currentName={tournament.name}
             currentLogoUrl={tournament.logoUrl}
+            currentScope={tournament.scope}
+            currentLeagueSelection={currentLeagueSelection}
+            scopeLocked={scopeLocked}
           />
         </CardContent>
       </Card>

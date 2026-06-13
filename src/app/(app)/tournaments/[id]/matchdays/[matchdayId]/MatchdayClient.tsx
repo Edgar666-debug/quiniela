@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useReducer, useState } from "react"; 
 import { Loader2, RefreshCw } from "lucide-react";
 
+import { MatchGameLink } from "@/components/api-football/match-game-link";
 import { Button } from "@/components/ui/button";
 import { MatchdayClose } from "@/components/matchdays/matchday-close";
 import { MatchPickGroup, PickLegend, type PickValue } from "@/components/matches/pick-cards";
@@ -18,6 +19,7 @@ type MatchRow = {
   homeLogoUrl?: string | null;
   awayTeam: string;
   awayLogoUrl?: string | null;
+  leagueName?: string | null;
   statusShort: string;
   scoreHome: number | null;
   scoreAway: number | null;
@@ -64,6 +66,7 @@ function matchdayReducer(state: MatchdayState, action: MatchdayAction): Matchday
 }
 
 export function MatchdayClient(props: {
+  tournamentId: string;
   matchdayId: string;
   initial: {
     role: "OWNER" | "ORGANIZER" | "PLAYER";
@@ -142,9 +145,18 @@ export function MatchdayClient(props: {
                     <p className="text-muted-ui text-xs">
                       Estado: {statusLabel(m.statusShort)}
                       {m.scoreHome != null && m.scoreAway != null ? ` • ${m.scoreHome}-${m.scoreAway}` : ""}
-                      {m.externalFixtureId ? ` • Fixture ${m.externalFixtureId}` : ""}
+                      {m.leagueName ? ` • ${m.leagueName}` : ""}
                     </p>
-                    {m.myPick ? <p className="text-muted-ui text-xs">Tu pick: {m.myPick}</p> : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {m.myPick ? <p className="text-muted-ui text-xs">Tu pick: {m.myPick}</p> : null}
+                      {m.externalFixtureId ? (
+                        <MatchGameLink
+                          tournamentId={props.tournamentId}
+                          matchdayId={props.matchdayId}
+                          matchId={m.id}
+                        />
+                      ) : null}
+                    </div>
                   </div>
 
                   <MatchPickGroup

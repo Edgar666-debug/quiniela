@@ -1,7 +1,7 @@
 "use client";
 
 import { useReducer } from "react";
-import { Loader2, Search, Trophy, User, Users } from "lucide-react";
+import { Loader2, Search, Trophy, Users } from "lucide-react";
 
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,6 @@ type SearchAction =
 const TABS: { id: SearchTab; label: string; icon: typeof Trophy; placeholder: string; hint: string }[] = [
   { id: "league", label: "Liga", icon: Trophy, placeholder: "Liga MX, Premier League, Champions...", hint: "Busca por nombre de liga o país." },
   { id: "team", label: "Equipo", icon: Users, placeholder: "Real Madrid, América, Bayern...", hint: "Busca por nombre de equipo." },
-  { id: "player", label: "Jugador", icon: User, placeholder: "Messi, Ronaldo, Haaland...", hint: "Busca al jugador y luego filtra fixtures por temporada." },
 ];
 
 function resetFixtures(state: SearchState) {
@@ -105,8 +104,26 @@ function reducer(state: SearchState, action: SearchAction): SearchState {
   }
 }
 
-function createInitialState(): SearchState {
+function createInitialState(fixedLeague?: MatchNewLeagueSearchProps["fixedLeague"]): SearchState {
   const defaults = createDefaultSearchDates();
+  if (fixedLeague) {
+    return {
+      tab: "league",
+      query: "",
+      selectedId: String(fixedLeague.leagueId),
+      selectedLabel: `${fixedLeague.leagueName} · Temporada ${fixedLeague.leagueSeason}`,
+      searchSeason: String(fixedLeague.leagueSeason),
+      searchMode: "range",
+      searchDate: defaults.date,
+      searchFrom: defaults.from,
+      searchTo: defaults.to,
+      fixturesLoading: false,
+      fixturesError: null,
+      fixtures: [],
+      fixturesSearched: false,
+    };
+  }
+
   return {
     tab: "league",
     query: "",
@@ -124,12 +141,16 @@ function createInitialState(): SearchState {
   };
 }
 
-export function MatchNewLeagueSearch(props: {
+type MatchNewLeagueSearchProps = {
   isClosed: boolean;
   selectedFixtureIds: number[];
   onToggleFixture: (fixture: FixtureSelection) => void;
-}) {
-  const [state, dispatch] = useReducer(reducer, undefined, createInitialState);
+  fixedLeague?: { leagueId: number; leagueName: string; leagueSeason: number } | null;
+};
+
+export function MatchNewLeagueSearch(props: MatchNewLeagueSearchProps) {
+  const fixedLeague = props.fixedLeague ?? null;
+  const [state, dispatch] = useReducer(reducer, fixedLeague, createInitialState);
   const entitySearch = useEntitySearch();
 
   const tab = TABS.find((item) => item.id === state.tab)!;
@@ -137,7 +158,7 @@ export function MatchNewLeagueSearch(props: {
   const hasSelectedEntity = Boolean(state.selectedId);
   const hasDateFilter = state.searchMode === "date" ? Boolean(state.searchDate.trim()) : Boolean(state.searchFrom.trim() && state.searchTo.trim());
   const fixturesSearchDisabled = props.isClosed || !hasDateFilter || (hasSelectedEntity && !state.searchSeason.trim());
-  const hasEntityResults = entitySearch.leagueResults.length > 0 || entitySearch.teamResults.length > 0 || entitySearch.playerResults.length > 0;
+  const hasEntityResults = entitySearch.leagueResults.length > 0 || entitySearch.teamResults.length > 0;
 
   function handleTabChange(tab: SearchTab) {
     dispatch({ type: "set_tab", tab });
@@ -176,53 +197,62 @@ export function MatchNewLeagueSearch(props: {
     <Card>
       <CardHeader>
         <CardTitle>1) Buscar fixture</CardTitle>
-        <CardDescription>Busca por liga, equipo o jugador, o usa solo fecha/rango para encontrar el partido.</CardDescription>
+        <CardDescription>Busca por liga o equipo, o usa solo fecha/rango para encontrar el partido.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {props.isClosed ? <InlineAlert variant="error" message="La jornada está cerrada. Ya no puedes agregar partidos." /> : null}
+        {fixedLeague ? (
+          <InlineAlert
+            variant="info"
+            message={`Este torneo solo permite partidos de ${fixedLeague.leagueName} (${fixedLeague.leagueSeason}).`}
+          />
+        ) : null}
 
-        <Tabs value={state.tab} onValueChange={(value) => handleTabChange(value as SearchTab)}>
-          <TabsList>
-            {TABS.map((item) => (
-              <TabsTrigger key={item.id} value={item.id}>
-                <item.icon className="size-3.5" />
-                {item.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {!fixedLeague ? (
+          <Tabs value={state.tab} onValueChange={(value) => handleTabChange(value as SearchTab)}>
+            <TabsList>
+              {TABS.map((item) => (
+                <TabsTrigger key={item.id} value={item.id}>
+                  <item.icon className="size-3.5" />
+                  {item.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : null}
 
-        <div className="flex flex-col gap-2">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">{tab.hint}</p>
-          <div className="flex gap-2">
-            <Input
-              placeholder={tab.placeholder}
-              value={state.query}
-              onChange={(event) => dispatch({ type: "set_query", value: event.target.value })}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") void entitySearch.search(state.tab, state.query);
-              }}
-              disabled={entitySearch.loading}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void entitySearch.search(state.tab, state.query)}
-              disabled={entitySearch.loading || state.query.trim().length < 3}
-            >
-              {entitySearch.loading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
-              Buscar
-            </Button>
+        {!fixedLeague ? (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">{tab.hint}</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder={tab.placeholder}
+                value={state.query}
+                onChange={(event) => dispatch({ type: "set_query", value: event.target.value })}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void entitySearch.search(state.tab, state.query);
+                }}
+                disabled={entitySearch.loading}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void entitySearch.search(state.tab, state.query)}
+                disabled={entitySearch.loading || state.query.trim().length < 3}
+              >
+                {entitySearch.loading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
+                Buscar
+              </Button>
+            </div>
+            {entitySearch.error ? <InlineAlert variant="error" message={entitySearch.error} /> : null}
           </div>
-          {entitySearch.error ? <InlineAlert variant="error" message={entitySearch.error} /> : null}
-        </div>
+        ) : null}
 
-        {hasEntityResults ? (
+        {!fixedLeague && hasEntityResults ? (
           <MatchNewEntityResults
             tab={state.tab}
             leagueResults={entitySearch.leagueResults}
             teamResults={entitySearch.teamResults}
-            playerResults={entitySearch.playerResults}
             onSelectLeague={(league, season) => {
               dispatch({
                 type: "select_entity",
@@ -236,19 +266,19 @@ export function MatchNewLeagueSearch(props: {
               dispatch({ type: "select_entity", id: String(team.id), label: team.name });
               entitySearch.reset();
             }}
-            onSelectPlayer={(player) => {
-              dispatch({ type: "select_entity", id: String(player.id), label: player.name });
-              entitySearch.reset();
-            }}
           />
         ) : null}
 
         <MatchNewSelectedEntity
           selectedLabel={state.selectedLabel}
-          onClear={() => {
-            dispatch({ type: "clear_entity" });
-            entitySearch.reset();
-          }}
+          onClear={
+            fixedLeague
+              ? undefined
+              : () => {
+                  dispatch({ type: "clear_entity" });
+                  entitySearch.reset();
+                }
+          }
         />
 
         <MatchNewFixtureFilters

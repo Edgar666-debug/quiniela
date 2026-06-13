@@ -49,6 +49,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
       homeLogoUrl: true,
       awayTeam: true,
       awayLogoUrl: true,
+      leagueName: true,
       statusShort: true,
       scoreHome: true,
       scoreAway: true,
@@ -67,6 +68,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
       awayTeam: m.awayTeam,
       homeLogoUrl: m.homeLogoUrl,
       awayLogoUrl: m.awayLogoUrl,
+      leagueName: m.leagueName,
       statusShort: m.statusShort,
       scoreHome: m.scoreHome,
       scoreAway: m.scoreAway,
@@ -113,7 +115,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
           <CardDescription>Selecciona 1X2 antes del cierre. 1 punto por acierto.</CardDescription>
         </CardHeader>
         <CardContent>
-          <MatchdayClient matchdayId={matchdayId} initial={initial} />
+          <MatchdayClient tournamentId={tournamentId} matchdayId={matchdayId} initial={initial} />
         </CardContent>
       </Card>
     </main>

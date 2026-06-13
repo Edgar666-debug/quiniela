@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InlineAlert } from "@/components/app/inline-alert";
+import { TournamentScopeBadge } from "@/components/tournaments/tournament-scope-badge";
 
 export const metadata: Metadata = {
   title: "Resumen del torneo",
@@ -30,7 +31,15 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { name: true, status: true, logoUrl: true },
+    select: {
+      name: true,
+      status: true,
+      logoUrl: true,
+      scope: true,
+      externalLeagueId: true,
+      leagueName: true,
+      leagueSeason: true,
+    },
   });
   if (!tournament) redirect("/dashboard");
 
@@ -51,7 +60,10 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
               <span className="text-sm">Torneo</span>
             </div>
             <h1 className="text-2xl font-semibold">{tournament.name}</h1>
-            {tournament.status !== "ACTIVE" ? <InlineAlert variant="info" message={`Estado: ${tournament.status}`} className="mt-2" /> : null}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <TournamentScopeBadge tournament={tournament} />
+              {tournament.status !== "ACTIVE" ? <InlineAlert variant="info" message={`Estado: ${tournament.status}`} /> : null}
+            </div>
           </div>
         </div>
       </div>

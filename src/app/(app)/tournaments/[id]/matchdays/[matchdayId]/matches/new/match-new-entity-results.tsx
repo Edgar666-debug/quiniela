@@ -3,16 +3,14 @@
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
-import type { LeagueRow, PlayerRow, SearchTab, TeamRow } from "./match-new-types";
+import type { LeagueRow, SearchTab, TeamRow } from "./match-new-types";
 
 export function MatchNewEntityResults(props: {
   tab: SearchTab;
   leagueResults: LeagueRow[];
   teamResults: TeamRow[];
-  playerResults: PlayerRow[];
   onSelectLeague: (league: LeagueRow, season?: number) => void;
   onSelectTeam: (team: TeamRow) => void;
-  onSelectPlayer: (player: PlayerRow) => void;
 }) {
   return (
     <div className="max-h-56 overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
@@ -50,26 +48,6 @@ export function MatchNewEntityResults(props: {
                 </div>
               </div>
               <Button size="sm" variant="outline" type="button" onClick={() => props.onSelectTeam(team)}>
-                Seleccionar
-              </Button>
-            </li>
-          ))}
-
-        {props.tab === "player" &&
-          props.playerResults.map((player) => (
-            <li key={player.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-              <div className="flex min-w-0 items-center gap-2">
-                {player.photoUrl ? (
-                  <Image src={player.photoUrl} alt={player.name} width={24} height={24} className="size-6 rounded-full object-cover" unoptimized />
-                ) : (
-                  <div className="size-6 rounded-full bg-zinc-100 dark:bg-zinc-800" />
-                )}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{player.name}</p>
-                  {player.teamName ? <p className="text-xs text-zinc-500">{player.teamName}</p> : null}
-                </div>
-              </div>
-              <Button size="sm" variant="outline" type="button" onClick={() => props.onSelectPlayer(player)}>
                 Seleccionar
               </Button>
             </li>

@@ -16,6 +16,8 @@ export const env = createEnv({
     PASSKEY_RP_NAME: z.string().min(1).default("Quiniela"),
     API_FOOTBALL_KEY: z.string().min(1),
     API_FOOTBALL_BASE_URL: z.url().default("https://v3.football.api-sports.io"),
+    /** auto = detect from GET /status; free|pro = force tier limits (usage still read when possible) */
+    API_FOOTBALL_PLAN: z.enum(["auto", "free", "pro"]).default("auto"),
     CRON_SECRET: z.string().min(16),
   },
   client: {
@@ -36,6 +38,7 @@ export const env = createEnv({
     PASSKEY_RP_NAME: process.env.PASSKEY_RP_NAME,
     API_FOOTBALL_KEY: process.env.API_FOOTBALL_KEY,
     API_FOOTBALL_BASE_URL: process.env.API_FOOTBALL_BASE_URL,
+    API_FOOTBALL_PLAN: process.env.API_FOOTBALL_PLAN,
     CRON_SECRET: process.env.CRON_SECRET,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,

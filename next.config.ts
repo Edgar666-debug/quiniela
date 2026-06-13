@@ -5,15 +5,19 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
   : null;
 
+const apiFootballOrigin = process.env.API_FOOTBALL_BASE_URL
+  ? new URL(process.env.API_FOOTBALL_BASE_URL).origin
+  : "https://v3.football.api-sports.io";
+
 const cspHeader = [
   "default-src 'self'",
   // 'unsafe-eval' required in dev for Next.js hot reload; Vercel Toolbar needs its own CDN in prod
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : " https://vercel.live https://*.vercel-scripts.com"}`,
+  `script-src 'self' 'unsafe-inline' https://widgets.api-sports.io${isDev ? " 'unsafe-eval'" : " https://vercel.live https://*.vercel-scripts.com"}`,
   "style-src 'self' 'unsafe-inline' https://vercel.live",
   `img-src 'self' blob: data: https://media.api-sports.io https://vercel.live${supabaseHost ? ` https://${supabaseHost}` : ""}`,
   "font-src 'self' https://vercel.live",
   // Vercel Toolbar & Speed Insights use vercel.live / va.vercel-scripts.com
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vercel.live wss://ws-us3.pusher.com https://*.vercel-scripts.com",
+  `connect-src 'self' ${apiFootballOrigin} https://widgets.api-sports.io https://*.supabase.co wss://*.supabase.co https://vercel.live wss://ws-us3.pusher.com https://*.vercel-scripts.com`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

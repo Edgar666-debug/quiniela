@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Eye, Lock } from "lucide-react";
 
@@ -12,7 +12,7 @@ import { formatLocalDateTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 type MemberRow = { id: string; name: string | null; email: string; image: string | null; role: "OWNER" | "ORGANIZER" | "PLAYER" };
-type MatchdayRow = { id: string; number: number; closesAtUtc: string; isClosed: boolean; matchesCount: number };
+type MatchdayRow = { id: string; number: number; closesAtUtc: string; matchesCount: number };
 
 export function TournamentPicksIndexClient(props: {
   tournamentId: string;
@@ -22,11 +22,26 @@ export function TournamentPicksIndexClient(props: {
 }) {
   const [openUserId, setOpenUserId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const matchdays = useMemo(
+    () =>
+      props.matchdays.map((m) => ({
+        ...m,
+        isClosed: nowMs >= new Date(m.closesAtUtc).getTime(),
+      })),
+    [props.matchdays, nowMs],
+  );
 
   // show closed first, then open (open ones show progress bar)
   const sortedMatchdays = (() => {
-    const closed = props.matchdays.filter((m) => m.isClosed);
-    const open = props.matchdays.filter((m) => !m.isClosed);
+    const closed = matchdays.filter((m) => m.isClosed);
+    const open = matchdays.filter((m) => !m.isClosed);
     return [...closed, ...open];
   })();
 
@@ -86,7 +101,7 @@ export function TournamentPicksIndexClient(props: {
                     <span className="text-muted-ui text-xs">{m.role}</span>
                   </TableCell>
                   <TableCell className="py-2 text-right">
-                    <span className="text-muted-ui text-xs">{props.matchdays.length}</span>
+                    <span className="text-muted-ui text-xs">{matchdays.length}</span>
                   </TableCell>
                 </TableRow>
 

@@ -32,8 +32,6 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
   });
   if (!tournament) redirect("/dashboard");
 
-  const nowMs = Date.now();
-
   const [members, matchdays] = await Promise.all([
     prisma.tournamentMember.findMany({
       where: { tournamentId },
@@ -50,29 +48,21 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
     }),
   ]);
 
-  const openMatchdayIds = matchdays
-    .filter((m) => nowMs < m.closesAtUtc.getTime())
-    .map((m) => m.id);
-
-  // pick counts per open matchday per user: pickCounts[matchdayId][userId] = n
   const pickCounts: Record<string, Record<string, number>> = {};
-  if (openMatchdayIds.length > 0) {
-    const picks = await prisma.pick.findMany({
-      where: { match: { matchdayId: { in: openMatchdayIds } } },
-      select: { userId: true, match: { select: { matchdayId: true } } },
-    });
-    for (const p of picks) {
-      const mid = p.match.matchdayId;
-      pickCounts[mid] ??= {};
-      pickCounts[mid][p.userId] = (pickCounts[mid][p.userId] ?? 0) + 1;
-    }
+  const picks = await prisma.pick.findMany({
+    where: { match: { matchday: { tournamentId } } },
+    select: { userId: true, match: { select: { matchdayId: true } } },
+  });
+  for (const p of picks) {
+    const mid = p.match.matchdayId;
+    pickCounts[mid] ??= {};
+    pickCounts[mid][p.userId] = (pickCounts[mid][p.userId] ?? 0) + 1;
   }
 
   const matchdayRows = matchdays.map((m) => ({
     id: m.id,
     number: m.number,
     closesAtUtc: m.closesAtUtc.toISOString(),
-    isClosed: nowMs >= m.closesAtUtc.getTime(),
     matchesCount: m._count.matches,
   }));
 

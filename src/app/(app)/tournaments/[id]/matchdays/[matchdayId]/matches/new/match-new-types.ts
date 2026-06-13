@@ -1,4 +1,4 @@
-export type SearchTab = "league" | "team" | "player";
+export type SearchTab = "league" | "team";
 export type SearchMode = "date" | "range";
 
 export type LeagueRow = {
@@ -6,6 +6,7 @@ export type LeagueRow = {
   name: string;
   type: string;
   countryName: string;
+  logoUrl?: string | null;
   seasonYears: number[];
   currentSeasons: number[];
 };
@@ -16,14 +17,6 @@ export type TeamRow = {
   logoUrl?: string | null;
   city?: string | null;
   country?: string | null;
-};
-
-export type PlayerRow = {
-  id: number;
-  name: string;
-  photoUrl?: string | null;
-  teamName?: string | null;
-  teamLogoUrl?: string | null;
 };
 
 export type FixtureRow = {

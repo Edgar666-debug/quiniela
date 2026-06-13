@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { fetchFixturesByIds } from "@/lib/api-football";
+import { canAffordApiCalls, getApiFootballPlanConfig } from "@/lib/api-football-plan";
 import { recalculateStandingsForTournament } from "@/lib/standings";
- 
+
 const FINISHED = new Set(["FT", "AET", "PEN"]);
 const VOID = new Set(["PST", "CANC", "ABD", "AWD", "WO", "NF"]);
 
@@ -11,6 +12,10 @@ export type SyncLiveResult = {
   updatedMatches: number;
   tournamentsRecalculated: number;
   durationMs: number;
+  quotaSkipped?: boolean;
+  quotaMessage?: string;
+  planTier?: "free" | "pro";
+  apiCallsUsed?: number;
 };
 
 export async function runSyncLive(options?: { tournamentId?: string; runId?: string }): Promise<SyncLiveResult> {
@@ -19,6 +24,8 @@ export async function runSyncLive(options?: { tournamentId?: string; runId?: str
   const now = new Date();
   const lookbackMs = 72 * 60 * 60_000;
   const from = new Date(now.getTime() - lookbackMs);
+
+  const plan = await getApiFootballPlanConfig();
 
   const matches = await prisma.match.findMany({
     where: {
@@ -34,17 +41,14 @@ export async function runSyncLive(options?: { tournamentId?: string; runId?: str
       syncMisses: true,
       matchday: { select: { tournamentId: true } },
     },
-    take: 200,
+    take: plan.syncMaxMatches,
+    orderBy: { startsAtUtc: "desc" },
   });
 
   const checkedByTournamentId = new Map<string, number>();
   for (const match of matches) {
     checkedByTournamentId.set(match.matchday.tournamentId, (checkedByTournamentId.get(match.matchday.tournamentId) ?? 0) + 1);
   }
-
-  const touchedTournamentIds = new Set<string>();
-  const updatedByTournamentId = new Map<string, number>();
-  let updatedMatches = 0;
 
   const matchesByFixtureId = new Map<number, typeof matches>();
   for (const match of matches) {
@@ -55,12 +59,54 @@ export async function runSyncLive(options?: { tournamentId?: string; runId?: str
   }
 
   const fixtureIds = Array.from(matchesByFixtureId.keys());
-  const chunks = [];
+  const allChunks: number[][] = [];
   for (let i = 0; i < fixtureIds.length; i += 20) {
-    chunks.push(fixtureIds.slice(i, i + 20));
+    allChunks.push(fixtureIds.slice(i, i + 20));
+  }
+  const chunks = allChunks.slice(0, plan.syncMaxApiCalls);
+
+  const budget = await canAffordApiCalls(chunks.length);
+
+  if (matches.length === 0) {
+    return {
+      runId,
+      checkedMatches: 0,
+      updatedMatches: 0,
+      tournamentsRecalculated: 0,
+      durationMs: Date.now() - startedAtMs,
+      planTier: plan.tier,
+      apiCallsUsed: 0,
+    };
   }
 
-  const fixturesByChunk = await Promise.all(chunks.map((chunk) => fetchFixturesByIds(chunk)));
+  if (!budget.ok) {
+    const durationMs = Date.now() - startedAtMs;
+    return {
+      runId,
+      checkedMatches: matches.length,
+      updatedMatches: 0,
+      tournamentsRecalculated: 0,
+      durationMs,
+      quotaSkipped: true,
+      quotaMessage: budget.reason ?? "Cuota diaria de API-Football insuficiente para sincronizar.",
+      planTier: plan.tier,
+      apiCallsUsed: 0,
+    };
+  }
+
+  const touchedTournamentIds = new Set<string>();
+  const updatedByTournamentId = new Map<string, number>();
+  let updatedMatches = 0;
+
+  const fixturesByChunk: Awaited<ReturnType<typeof fetchFixturesByIds>>[] = [];
+
+  if (plan.allowParallelSyncChunks) {
+    fixturesByChunk.push(...(await Promise.all(chunks.map((chunk) => fetchFixturesByIds(chunk)))));
+  } else {
+    for (const chunk of chunks) {
+      fixturesByChunk.push(await fetchFixturesByIds(chunk));
+    }
+  }
 
   const chunkResults = await Promise.all(
     chunks.map(async (chunk, index) => {
@@ -156,5 +202,7 @@ export async function runSyncLive(options?: { tournamentId?: string; runId?: str
     updatedMatches,
     tournamentsRecalculated: touchedTournamentIds.size,
     durationMs,
+    planTier: plan.tier,
+    apiCallsUsed: chunks.length,
   };
 }

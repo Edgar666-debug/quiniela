@@ -24,9 +24,33 @@ export default async function MatchNewPage(props: { params: Promise<{ id: string
 
   const matchday = await prisma.matchday.findUnique({
     where: { id: matchdayId },
-    select: { id: true, number: true, tournamentId: true, closesAtUtc: true },
+    select: {
+      id: true,
+      number: true,
+      tournamentId: true,
+      closesAtUtc: true,
+      tournament: {
+        select: {
+          scope: true,
+          externalLeagueId: true,
+          leagueName: true,
+          leagueSeason: true,
+        },
+      },
+    },
   });
   if (!matchday || matchday.tournamentId !== tournamentId) redirect(`/tournaments/${tournamentId}/matchdays`);
+
+  const fixedLeague =
+    matchday.tournament.scope === "SINGLE_LEAGUE" &&
+    matchday.tournament.externalLeagueId &&
+    matchday.tournament.leagueSeason
+      ? {
+          leagueId: matchday.tournament.externalLeagueId,
+          leagueName: matchday.tournament.leagueName ?? `Liga ${matchday.tournament.externalLeagueId}`,
+          leagueSeason: matchday.tournament.leagueSeason,
+        }
+      : null;
 
   return (
     <MatchNewClient
@@ -35,6 +59,7 @@ export default async function MatchNewPage(props: { params: Promise<{ id: string
       matchdayNumber={matchday.number}
       matchdayClosesAtUtc={matchday.closesAtUtc.toISOString()}
       role={membership.role}
+      fixedLeague={fixedLeague}
     />
   );
 }

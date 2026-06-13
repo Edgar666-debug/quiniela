@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, SaveIcon, Trash, Trophy, Upload } from "lucide-react";
 
 import { FeedbackAlerts } from "@/components/app/feedback-alerts";
+import { TournamentLeaguePicker, type TournamentLeagueSelection, type TournamentScopeMode } from "@/components/tournaments/tournament-league-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,8 @@ type TournamentState = {
   name: string;
   logoUrl: string;
   logoFile: File | null;
+  scope: TournamentScopeMode;
+  leagueSelection: TournamentLeagueSelection | null;
   loading: boolean;
   error: string | null;
   message: string | null;
@@ -29,6 +32,8 @@ type TournamentAction =
   | { type: "set_logo_url"; value: string }
   | { type: "set_logo_file"; file: File | null; previewUrl: string | null; message: string | null }
   | { type: "clear_logo" }
+  | { type: "set_scope"; value: TournamentScopeMode }
+  | { type: "set_league_selection"; value: TournamentLeagueSelection | null }
   | { type: "submit_start" }
   | { type: "submit_fail"; error: string };
 
@@ -49,6 +54,18 @@ function newTournamentReducer(state: TournamentState, action: TournamentAction):
       };
     case "clear_logo":
       return { ...state, logoUrl: "", logoFile: null, uploadedPreviewUrl: null, message: null, error: null };
+    case "set_scope":
+      return { ...state, scope: action.value, leagueSelection: action.value === "OPEN" ? null : state.leagueSelection };
+    case "set_league_selection":
+      return {
+        ...state,
+        leagueSelection: action.value,
+        logoUrl:
+          action.value?.logoUrl && !state.logoFile
+            ? action.value.logoUrl
+            : state.logoUrl,
+        message: action.value?.logoUrl ? "Logo de la liga aplicado." : state.message,
+      };
     case "submit_start":
       return { ...state, loading: true, error: null, message: null };
     case "submit_fail":
@@ -66,6 +83,8 @@ export function NewTournamentClient() {
     name: "",
     logoUrl: "",
     logoFile: null,
+    scope: "OPEN",
+    leagueSelection: null,
     loading: false,
     error: null,
     message: null,
@@ -88,6 +107,11 @@ export function NewTournamentClient() {
   }
 
   async function createTournament() {
+    if (state.scope === "SINGLE_LEAGUE" && !state.leagueSelection) {
+      dispatch({ type: "submit_fail", error: "Selecciona una liga y temporada para el modo liga única." });
+      return;
+    }
+
     dispatch({ type: "submit_start" });
 
     const { response: res, data } = await sendJsonRequest<{
@@ -97,7 +121,11 @@ export function NewTournamentClient() {
       method: "POST",
       body: {
         name: state.name.trim(),
-        logoUrl: state.logoFile ? null : (state.logoUrl.trim() || null),
+        logoUrl: state.logoFile ? null : (state.logoUrl.trim() || state.leagueSelection?.logoUrl || null),
+        scope: state.scope,
+        externalLeagueId: state.leagueSelection?.externalLeagueId ?? null,
+        leagueName: state.leagueSelection?.leagueName ?? null,
+        leagueSeason: state.leagueSelection?.leagueSeason ?? null,
       },
     });
 
@@ -192,6 +220,14 @@ export function NewTournamentClient() {
             />
           </div>
         </div>
+
+        <TournamentLeaguePicker
+          scope={state.scope}
+          onScopeChange={(value) => dispatch({ type: "set_scope", value })}
+          selection={state.leagueSelection}
+          onSelectionChange={(value) => dispatch({ type: "set_league_selection", value })}
+          disabled={state.loading}
+        />
 
         <div className="flex flex-wrap gap-2">
           <input

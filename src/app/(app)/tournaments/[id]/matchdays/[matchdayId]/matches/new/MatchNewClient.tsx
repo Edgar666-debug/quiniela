@@ -14,6 +14,7 @@ export function MatchNewClient(props: {
   matchdayNumber: number;
   matchdayClosesAtUtc: string;
   role: "OWNER" | "ORGANIZER" | "PLAYER";
+  fixedLeague?: { leagueId: number; leagueName: string; leagueSeason: number } | null;
 }) {
   const canManage = props.role === "OWNER" || props.role === "ORGANIZER";
   const closesAtMs = new Date(props.matchdayClosesAtUtc).getTime();
@@ -69,6 +70,7 @@ export function MatchNewClient(props: {
         isClosed={isClosed}
         selectedFixtureIds={selectedFixtures.map((fixture) => fixture.id)}
         onToggleFixture={handleToggleFixture}
+        fixedLeague={props.fixedLeague}
       />
       <MatchNewConfirmForm
         tournamentId={props.tournamentId}

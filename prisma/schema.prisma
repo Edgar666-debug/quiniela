@@ -84,13 +84,17 @@ model Passkey {
 }
 
 model Tournament {
-  id        String             @id @default(cuid())
-  name      String
-  logoUrl   String?
-  status    TournamentStatus   @default(ACTIVE)
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-  ownerId   String
+  id               String             @id @default(cuid())
+  name             String
+  logoUrl          String?
+  status           TournamentStatus   @default(ACTIVE)
+  scope            TournamentScope    @default(OPEN)
+  externalLeagueId Int?
+  leagueName       String?
+  leagueSeason     Int?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  ownerId          String
   invites   Invite[]
   matchdays Matchday[]
   standings Standing[]
@@ -145,6 +149,9 @@ model Matchday {
 model Match {
   id                String   @id @default(cuid())
   externalFixtureId Int?     @unique
+  externalLeagueId  Int?
+  leagueName        String?
+  leagueSeason      Int?
   startsAtUtc       DateTime
   homeTeam          String
   awayTeam          String
@@ -219,4 +226,9 @@ enum TournamentStatus {
   ACTIVE
   FINISHED
   ARCHIVED
+}
+
+enum TournamentScope {
+  OPEN
+  SINGLE_LEAGUE
 }
