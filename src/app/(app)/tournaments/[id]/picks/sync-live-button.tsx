@@ -12,6 +12,9 @@ type SyncLiveResponse = {
   updatedMatches?: number;
   tournamentsRecalculated?: number;
   durationMs?: number;
+  quotaSkipped?: boolean;
+  quotaMessage?: string;
+  planTier?: "free" | "pro";
   error?: string;
 };
 
@@ -36,6 +39,12 @@ export function SyncLiveButton(props: { tournamentId: string }) {
 
     const checked = data.checkedMatches ?? 0;
     const updated = data.updatedMatches ?? 0;
+
+    if (data.quotaSkipped) {
+      setError(data.quotaMessage ?? "Sincronización pospuesta por cuota de API-Football.");
+      return;
+    }
+
     setMessage(
       updated > 0
         ? `Sincronización lista: ${updated} partido(s) actualizado(s) de ${checked} revisado(s).`

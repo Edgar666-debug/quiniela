@@ -47,7 +47,7 @@ export function MatchNewFixtureFilters(props: {
             </SelectContent>
           </Select>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            {props.hasSelectedEntity ? "Obligatoria cuando eliges liga, equipo o jugador." : "Si no seleccionas entidad, no se enviará al backend."}
+            {props.hasSelectedEntity ? "Obligatoria cuando eliges liga o equipo." : "Si no seleccionas entidad, no se enviará al backend."}
           </p>
         </div>
 
@@ -92,7 +92,7 @@ export function MatchNewFixtureFilters(props: {
           </Button>
         </div>
         {!props.hasDateFilter ? <InlineAlert variant="info" message="Debes capturar una fecha exacta o un rango antes de buscar fixtures." /> : null}
-        {props.hasSelectedEntity && !props.searchSeason.trim() ? <InlineAlert variant="info" message="La temporada es obligatoria cuando buscas por liga, equipo o jugador." /> : null}
+        {props.hasSelectedEntity && !props.searchSeason.trim() ? <InlineAlert variant="info" message="La temporada es obligatoria cuando buscas por liga o equipo." /> : null}
         {props.fixturesError ? <InlineAlert variant="error" message={props.fixturesError} /> : null}
       </div>
     </>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useReducer } from "react";
-import { Loader2, Search, Trophy, User, Users } from "lucide-react";
+import { Loader2, Search, Trophy, Users } from "lucide-react";
 
 import { InlineAlert } from "@/components/app/inline-alert";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,6 @@ type SearchAction =
 const TABS: { id: SearchTab; label: string; icon: typeof Trophy; placeholder: string; hint: string }[] = [
   { id: "league", label: "Liga", icon: Trophy, placeholder: "Liga MX, Premier League, Champions...", hint: "Busca por nombre de liga o país." },
   { id: "team", label: "Equipo", icon: Users, placeholder: "Real Madrid, América, Bayern...", hint: "Busca por nombre de equipo." },
-  { id: "player", label: "Jugador", icon: User, placeholder: "Messi, Ronaldo, Haaland...", hint: "Busca al jugador y luego filtra fixtures por temporada." },
 ];
 
 function resetFixtures(state: SearchState) {
@@ -137,7 +136,7 @@ export function MatchNewLeagueSearch(props: {
   const hasSelectedEntity = Boolean(state.selectedId);
   const hasDateFilter = state.searchMode === "date" ? Boolean(state.searchDate.trim()) : Boolean(state.searchFrom.trim() && state.searchTo.trim());
   const fixturesSearchDisabled = props.isClosed || !hasDateFilter || (hasSelectedEntity && !state.searchSeason.trim());
-  const hasEntityResults = entitySearch.leagueResults.length > 0 || entitySearch.teamResults.length > 0 || entitySearch.playerResults.length > 0;
+  const hasEntityResults = entitySearch.leagueResults.length > 0 || entitySearch.teamResults.length > 0;
 
   function handleTabChange(tab: SearchTab) {
     dispatch({ type: "set_tab", tab });
@@ -176,7 +175,7 @@ export function MatchNewLeagueSearch(props: {
     <Card>
       <CardHeader>
         <CardTitle>1) Buscar fixture</CardTitle>
-        <CardDescription>Busca por liga, equipo o jugador, o usa solo fecha/rango para encontrar el partido.</CardDescription>
+        <CardDescription>Busca por liga o equipo, o usa solo fecha/rango para encontrar el partido.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {props.isClosed ? <InlineAlert variant="error" message="La jornada está cerrada. Ya no puedes agregar partidos." /> : null}
@@ -222,7 +221,6 @@ export function MatchNewLeagueSearch(props: {
             tab={state.tab}
             leagueResults={entitySearch.leagueResults}
             teamResults={entitySearch.teamResults}
-            playerResults={entitySearch.playerResults}
             onSelectLeague={(league, season) => {
               dispatch({
                 type: "select_entity",
@@ -234,10 +232,6 @@ export function MatchNewLeagueSearch(props: {
             }}
             onSelectTeam={(team) => {
               dispatch({ type: "select_entity", id: String(team.id), label: team.name });
-              entitySearch.reset();
-            }}
-            onSelectPlayer={(player) => {
-              dispatch({ type: "select_entity", id: String(player.id), label: player.name });
               entitySearch.reset();
             }}
           />

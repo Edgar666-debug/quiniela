@@ -113,7 +113,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
           <CardDescription>Selecciona 1X2 antes del cierre. 1 punto por acierto.</CardDescription>
         </CardHeader>
         <CardContent>
-          <MatchdayClient matchdayId={matchdayId} initial={initial} />
+          <MatchdayClient tournamentId={tournamentId} matchdayId={matchdayId} initial={initial} />
         </CardContent>
       </Card>
     </main>

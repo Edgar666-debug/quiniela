@@ -2,6 +2,15 @@ export type Outcome = "HOME" | "DRAW" | "AWAY";
 
 export const FINISHED_STATUSES = new Set(["FT", "AET", "PEN"]);
 
+const VOID_STATUSES = new Set(["PST", "CANC", "ABD", "AWD", "WO", "NF"]);
+
+/** Widget game: solo auto-refresh mientras el partido puede cambiar (en juego o por empezar). */
+export function shouldRefreshGameWidget(statusShort: string): boolean {
+  if (FINISHED_STATUSES.has(statusShort)) return false;
+  if (VOID_STATUSES.has(statusShort)) return false;
+  return true;
+}
+
 export function outcomeFromScore(scoreHome: number, scoreAway: number): Outcome {
   if (scoreHome > scoreAway) return "HOME";
   if (scoreHome < scoreAway) return "AWAY";

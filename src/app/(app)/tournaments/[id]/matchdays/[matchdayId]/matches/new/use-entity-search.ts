@@ -3,14 +3,13 @@
 import { useCallback, useState } from "react";
 
 import { readJsonResponse } from "@/lib/http";
-import type { LeagueRow, PlayerRow, SearchTab, TeamRow } from "./match-new-types";
+import type { LeagueRow, SearchTab, TeamRow } from "./match-new-types";
 
 export type EntitySearchState = {
   loading: boolean;
   error: string | null;
   leagueResults: LeagueRow[];
   teamResults: TeamRow[];
-  playerResults: PlayerRow[];
 };
 
 const EMPTY_STATE: EntitySearchState = {
@@ -18,7 +17,6 @@ const EMPTY_STATE: EntitySearchState = {
   error: null,
   leagueResults: [],
   teamResults: [],
-  playerResults: [],
 };
 
 export function useEntitySearch() {
@@ -46,25 +44,13 @@ export function useEntitySearch() {
       return;
     }
 
-    if (tab === "team") {
-      const res = await fetch(`/api/api-football/teams/search?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-      const data = await readJsonResponse<{ teams?: TeamRow[]; error?: string }>(res);
-      if (!res.ok) {
-        setState({ ...EMPTY_STATE, error: data.error ?? "No se pudo buscar equipos." });
-        return;
-      }
-      setState({ ...EMPTY_STATE, teamResults: data.teams ?? [] });
-      return;
-    }
-
-    // tab === "player"
-    const res = await fetch(`/api/api-football/players/search?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-    const data = await readJsonResponse<{ players?: PlayerRow[]; error?: string }>(res);
+    const res = await fetch(`/api/api-football/teams/search?q=${encodeURIComponent(q)}`, { cache: "no-store" });
+    const data = await readJsonResponse<{ teams?: TeamRow[]; error?: string }>(res);
     if (!res.ok) {
-      setState({ ...EMPTY_STATE, error: data.error ?? "No se pudo buscar jugadores." });
+      setState({ ...EMPTY_STATE, error: data.error ?? "No se pudo buscar equipos." });
       return;
     }
-    setState({ ...EMPTY_STATE, playerResults: data.players ?? [] });
+    setState({ ...EMPTY_STATE, teamResults: data.teams ?? [] });
   }, []);
 
   return { ...state, search, reset };

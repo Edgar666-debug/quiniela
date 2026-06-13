@@ -1,4 +1,9 @@
 import { env } from "@/lib/env";
+import {
+  ApiFootballQuotaError,
+  getPlanCacheTtl,
+  recordApiFootballQuotaFromHeaders,
+} from "@/lib/api-football-plan";
 
 type ApiFootballErrors = Record<string, string> | string[] | null | undefined;
 
@@ -43,14 +48,6 @@ type ApiFootballTeamsResponse = {
   }>;
 };
 
-type ApiFootballPlayersResponse = {
-  errors?: ApiFootballErrors;
-  response: Array<{
-    player: { id: number; name: string; photo?: string };
-    statistics?: Array<{ team: { name: string; logo?: string } }>;
-  }>;
-};
-
 type FixtureData = {
   id: number;
   dateUtc: Date;
@@ -87,7 +84,15 @@ async function apiFootballRequest(url: URL, attempt = 0): Promise<Response> {
     cache: "no-store",
   });
 
-  if ((res.status === 429 || res.status >= 500) && attempt < 2) {
+  recordApiFootballQuotaFromHeaders(res.headers);
+
+  if (res.status === 429) {
+    const remaining = Number(res.headers.get("x-ratelimit-requests-remaining") ?? "0");
+    const limit = Number(res.headers.get("x-ratelimit-requests-limit") ?? "100");
+    throw new ApiFootballQuotaError(`API-Football rate limit (${res.status})`, remaining, limit);
+  }
+
+  if (res.status >= 500 && attempt < 2) {
     const retryAfter = Number(res.headers.get("retry-after") ?? "");
     const delayMs = Number.isFinite(retryAfter) ? retryAfter * 1000 : 400 * (attempt + 1);
     await new Promise((r) => setTimeout(r, delayMs));
@@ -128,7 +133,7 @@ export async function fetchFixturesByIds(fixtureIds: number[]): Promise<Map<numb
     if (batch.length === 1) url.searchParams.set("id", String(batch[0]));
     else url.searchParams.set("ids", batch.join("-"));
 
-    return requestJsonCached(url, 15_000, async () => {
+    return requestJsonCached(url, await getPlanCacheTtl("fixture"), async () => {
       const res = await apiFootballRequest(url);
 
       // API-Football returns 204 for "No Content". In practice, we also occasionally see 204 for multi-id lookups
@@ -184,7 +189,7 @@ export async function fetchFixtureById(fixtureId: number) {
   const url = new URL("/fixtures", env.API_FOOTBALL_BASE_URL);
   url.searchParams.set("id", String(fixtureId));
 
-  return requestJsonCached(url, 15_000, async () => {
+  return requestJsonCached(url, await getPlanCacheTtl("fixture"), async () => {
     const res = await apiFootballRequest(url);
     if (res.status === 204) return null;
     if (!res.ok) {
@@ -219,7 +224,6 @@ export async function searchFixtures(params: {
   season?: number;
   date?: string; // YYYY-MM-DD
   team?: number;
-  player?: number;
   from?: string; // YYYY-MM-DD
   to?: string; // YYYY-MM-DD
   status?: string;
@@ -230,12 +234,11 @@ export async function searchFixtures(params: {
   if (params.season) url.searchParams.set("season", String(params.season));
   if (params.date) url.searchParams.set("date", params.date);
   if (params.team) url.searchParams.set("team", String(params.team));
-  if (params.player) url.searchParams.set("player", String(params.player));
   if (params.from) url.searchParams.set("from", params.from);
   if (params.to) url.searchParams.set("to", params.to);
   if (params.status) url.searchParams.set("status", params.status);
 
-  const out = await requestJsonCached(url, 30_000, async () => {
+  const out = await requestJsonCached(url, await getPlanCacheTtl("search"), async () => {
     const res = await apiFootballRequest(url);
     if (res.status === 204) return [] as FixtureData[];
     if (!res.ok) {
@@ -288,7 +291,7 @@ export async function searchLeagues(params: { search: string; season?: number; c
   if (params.season) url.searchParams.set("season", String(params.season));
   if (params.current !== undefined) url.searchParams.set("current", String(params.current));
 
-  const out = await requestJsonCached(url, 6 * 60 * 60_000, async () => {
+  const out = await requestJsonCached(url, await getPlanCacheTtl("league"), async () => {
     const res = await apiFootballRequest(url);
     if (res.status === 204) return [] as LeagueSearchItem[];
     if (!res.ok) {
@@ -334,7 +337,7 @@ export async function searchTeams(params: { search: string; limit?: number }) {
   const url = new URL("/teams", env.API_FOOTBALL_BASE_URL);
   url.searchParams.set("search", params.search);
 
-  const out = await requestJsonCached(url, 60 * 60_000, async () => {
+  const out = await requestJsonCached(url, await getPlanCacheTtl("team"), async () => {
     const res = await apiFootballRequest(url);
     if (res.status === 204) return [] as TeamSearchItem[];
     if (!res.ok) {
@@ -360,46 +363,4 @@ export async function searchTeams(params: { search: string; limit?: number }) {
   return out.slice(0, limit);
 }
 
-export type PlayerSearchItem = {
-  id: number;
-  name: string;
-  photoUrl?: string | null;
-  teamName?: string | null;
-  teamLogoUrl?: string | null;
-};
-
-export async function searchPlayers(params: { search: string; season?: number; limit?: number }) {
-  const url = new URL("/players", env.API_FOOTBALL_BASE_URL);
-  url.searchParams.set("search", params.search);
-  // Free plan only covers up to 2024; default to 2024 if no season given.
-  url.searchParams.set("season", String(params.season ?? 2024));
-
-  const out = await requestJsonCached(url, 60 * 60_000, async () => {
-    const res = await apiFootballRequest(url);
-    if (res.status === 204) return [] as PlayerSearchItem[];
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new Error(`API-Football error ${res.status}: ${body}`);
-    }
-
-    const json = (await res.json()) as ApiFootballPlayersResponse;
-    const apiErr = extractApiError(json.errors);
-    if (apiErr) throw new Error(apiErr);
-
-    const arr: PlayerSearchItem[] = [];
-    for (const row of json.response ?? []) {
-      const stat = row.statistics?.[0];
-      arr.push({
-        id: row.player.id,
-        name: row.player.name,
-        photoUrl: row.player.photo ?? null,
-        teamName: stat?.team.name ?? null,
-        teamLogoUrl: stat?.team.logo ?? null,
-      });
-    }
-    return arr;
-  });
-
-  const limit = Math.min(Math.max(params.limit ?? 15, 1), 50);
-  return out.slice(0, limit);
-}
+export { ApiFootballQuotaError } from "@/lib/api-football-plan";

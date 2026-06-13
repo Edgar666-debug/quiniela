@@ -10,6 +10,7 @@ import { MatchdayClose } from "@/components/matchdays/matchday-close";
 import { MatchPickGroup, PickLegend, type PickValue } from "@/components/matches/pick-cards";
 import { groupMatchesByLocalKickoff } from "@/lib/format";
 import { FINISHED_STATUSES, outcomeFromScore, statusLabel, type Outcome } from "@/lib/football";
+import { MatchGameLink } from "@/components/api-football/match-game-link";
 
 type MatchRow = {
   id: string;
@@ -89,7 +90,7 @@ export function ParticipantMatchdayPicksClient(props: {
       {hasFinishedMatch ? <PickLegend /> : null}
 
       <div className="flex flex-col gap-6"> 
-        {grouped.map((g) => (
+        {grouped.map((g) => ( 
           <div key={g.key} className="flex flex-col gap-3">
             <p className="text-center text-sm font-semibold text-zinc-700 dark:text-zinc-200">{g.label}</p>
             <div className="grid gap-4">
@@ -102,6 +103,13 @@ export function ParticipantMatchdayPicksClient(props: {
                       {m.externalFixtureId ? ` • Fixture ${m.externalFixtureId}` : ""}
                     </p>
                     {m.pick ? <p className="text-muted-ui text-xs">Pick: {m.pick}</p> : null}
+                    {m.externalFixtureId ? (
+                      <MatchGameLink
+                        tournamentId={props.tournamentId}
+                        matchdayId={props.matchdayId}
+                        matchId={m.id}
+                      />
+                    ) : null}
                   </div>
 
                   <MatchPickGroup

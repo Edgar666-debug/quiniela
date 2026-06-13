@@ -41,6 +41,8 @@ export function buildAppCrumbs(pathname: string, tournamentName: string | null, 
         return [...base, { label: "Jornadas", href: matchdaysHref }, { label: "Jornada", href: matchdayHref }, { label: "Editar" }];
       if (rest === "matches/new")
         return [...base, { label: "Jornadas", href: matchdaysHref }, { label: "Jornada", href: matchdayHref }, { label: "Agregar partido" }];
+      if (rest?.startsWith("matches/") && rest !== "matches/new")
+        return [...base, { label: "Jornadas", href: matchdaysHref }, { label: "Jornada", href: matchdayHref }, { label: "Partido" }];
       return [...base, { label: "Jornadas", href: matchdaysHref }, { label: "Jornada", href: matchdayHref }, { label: rest }];
     }
 

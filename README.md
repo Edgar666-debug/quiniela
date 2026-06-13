@@ -10,7 +10,7 @@ Torneos tipo quiniela por invitación, con jornadas cerradas por horario, picks 
 - **Jornadas** — un solo cierre (UTC); los picks se bloquean al llegar la hora; barra de progreso de picks enviados.
 - **Quiniela 1X2** — HOME / DRAW / AWAY; 1 punto por acierto; resultados coloreados (verde / rojo / neutro) con leyenda.
 - **Ranking en vivo** — tabla `Standing` + Supabase Realtime.
-- **Partidos desde API-Football** — búsqueda por liga, equipo o jugador; fixtures por fecha.
+- **Partidos desde API-Football** — búsqueda por liga, equipo o fixtures por fecha.
 - **Picks por participante** — ver picks de otros tras el cierre de la jornada.
 - **Auth** — email/contraseña (verificación obligatoria), OTP por email, passkeys (WebAuthn), recuperación de contraseña.
 - **Cuenta** — perfil (con avatar), credenciales, sesiones activas, gestión de passkeys.
@@ -46,6 +46,7 @@ Torneos tipo quiniela por invitación, con jornadas cerradas por horario, picks 
 | `SUPABASE_JWT_SECRET` | JWT secret (Realtime + RLS) |
 | `API_FOOTBALL_KEY` | Key de API-Football |
 | `API_FOOTBALL_BASE_URL` | (opcional) Por defecto `https://v3.football.api-sports.io` |
+| `API_FOOTBALL_PLAN` | (opcional) `auto` (detecta plan vía `/status`), `free` o `pro` para forzar límites |
 | `CRON_SECRET` | Secreto ≥ 16 caracteres para el cron |
 
 ### 2. Base de datos
@@ -191,10 +192,14 @@ Autenticación: `Authorization: Bearer $CRON_SECRET` o cabecera `x-cron-secret`.
 
 ### API-Football (sesión requerida; rate limit)
 
+La app detecta el plan (Free vs Pro) con `GET /status` de API-Football (no consume cuota) y ajusta caché y límites de sincronización. Si pierdes Pro, la app sigue funcionando en modo Free: menos partidos por sync, caché más larga y reserva de cuota para búsquedas manuales.
+
+- `GET /api/api-football/status` — plan, cuota diaria y límites activos (`?refresh=1` fuerza relectura)
+- `GET /api/api-football/widget-config` — configuración del widget `game` (solo sesión)
+- `GET /api/api-football/widget-proxy/*` — proxy same-origin para el widget (la API key no sale al navegador)
 - `GET /api/api-football/leagues/search?q=...`
 - `GET /api/api-football/teams/search?q=...`
-- `GET /api/api-football/players/search?q=...`
-- `GET /api/api-football/fixtures/search` — filtros: `league`, `season`, `team`, `player`, `date`, `from`, `to`
+- `GET /api/api-football/fixtures/search` — filtros: `league`, `season`, `team`, `date`, `from`, `to`
 - `GET /api/api-football/fixtures/[fixtureId]`
 - `GET /api/internal/api-football/fixtures/[fixtureId]` — uso interno/cron
 
@@ -230,7 +235,7 @@ pnpm-workspace.yaml # Políticas pnpm
 ### Patrones de código relevantes
 
 - **`sendJsonRequest` / `readJsonResponse`** (`src/lib/http.ts`) — helpers para todas las llamadas `fetch` cliente → API; usados de forma consistente en todos los client components.
-- **`useEntitySearch`** (`matches/new/use-entity-search.ts`) — hook que encapsula la búsqueda de ligas, equipos y jugadores en la pantalla de agregar partido.
+- **`useEntitySearch`** (`matches/new/use-entity-search.ts`) — hook que encapsula la búsqueda de ligas y equipos en la pantalla de agregar partido.
 - **`UserAvatar`** (`components/app/user-avatar.tsx`) — componente reutilizable con prop `size`; muestra la foto del usuario o su inicial como fallback.
 
 ## Desarrollo con túnel / previews (opcional)
