@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
 import Image from "next/image";
+import { useState } from "react";
 import { Loader2, Search, Trophy } from "lucide-react";
 
 import { InlineAlert } from "@/components/app/inline-alert";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { readJsonResponse } from "@/lib/http";
+import { searchApiFootballLeagues } from "@/lib/api-football-search";
 
 export type TournamentScopeMode = "OPEN" | "SINGLE_LEAGUE";
 
@@ -53,17 +53,14 @@ export function TournamentLeaguePicker(props: {
     setLoading(true);
     setError(null);
 
-    const res = await fetch(`/api/api-football/leagues/search?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-    const data = await readJsonResponse<{ leagues?: LeagueRow[]; error?: string }>(res);
-    setLoading(false);
-
-    if (!res.ok) {
-      setError(data.error ?? "No se pudo buscar ligas.");
+    try {
+      setResults(await searchApiFootballLeagues<LeagueRow>(q));
+    } catch (searchError) {
+      setError(searchError instanceof Error ? searchError.message : "No se pudo buscar ligas.");
       setResults([]);
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    setResults(data.leagues ?? []);
   }
 
   function handleScopeChange(nextScope: TournamentScopeMode) {
@@ -130,14 +127,7 @@ export function TournamentLeaguePicker(props: {
             <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900/40 dark:bg-emerald-950/20">
               <div className="flex min-w-0 items-center gap-2">
                 {props.selection.logoUrl ? (
-                  <Image
-                    src={props.selection.logoUrl}
-                    alt=""
-                    width={20}
-                    height={20}
-                    className="size-5 shrink-0 object-contain"
-                    unoptimized
-                  />
+                  <Image src={props.selection.logoUrl} alt="" width={20} height={20} className="size-5 shrink-0 object-contain" unoptimized />
                 ) : (
                   <Trophy className="size-4 shrink-0 text-emerald-700 dark:text-emerald-400" />
                 )}
@@ -155,7 +145,10 @@ export function TournamentLeaguePicker(props: {
                 <Input
                   placeholder="Liga MX, Premier League, Champions..."
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    if (error) setError(null);
+                  }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") void searchLeagues();
                   }}
@@ -176,14 +169,7 @@ export function TournamentLeaguePicker(props: {
                         <li key={league.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
                           <div className="flex min-w-0 items-center gap-2">
                             {league.logoUrl ? (
-                              <Image
-                                src={league.logoUrl}
-                                alt=""
-                                width={24}
-                                height={24}
-                                className="size-6 shrink-0 object-contain"
-                                unoptimized
-                              />
+                              <Image src={league.logoUrl} alt="" width={24} height={24} className="size-6 shrink-0 object-contain" unoptimized />
                             ) : (
                               <div className="size-6 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800" />
                             )}
@@ -212,6 +198,7 @@ export function TournamentLeaguePicker(props: {
                               });
                               setResults([]);
                               setQuery("");
+                              setError(null);
                             }}
                           >
                             Seleccionar

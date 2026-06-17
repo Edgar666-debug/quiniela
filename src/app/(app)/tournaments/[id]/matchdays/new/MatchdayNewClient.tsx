@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "lucide-react";
-import { InlineAlert } from "@/components/app/inline-alert";
+
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { MatchdayFormFields } from "@/components/matchdays/matchday-form-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,30 @@ export function MatchdayNewClient(props: { tournamentId: string }) {
   const [closesAtLocal, setClosesAtLocal] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function createMatchday() {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const closesAtUtc = datetimeLocalToIso(closesAtLocal);
+      const { response, data } = await sendJsonRequest<{ error?: string }>(`/api/tournaments/${props.tournamentId}/matchdays`, {
+        method: "POST",
+        body: { number: Number(number), closesAtUtc },
+      });
+
+      if (!response.ok) {
+        setError(data.error ?? "No se pudo crear la jornada");
+        return;
+      }
+
+      pushAndRefresh(router, `/tournaments/${props.tournamentId}/matchdays`);
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "No se pudo crear la jornada");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
@@ -40,25 +65,10 @@ export function MatchdayNewClient(props: { tournamentId: string }) {
             onClosesAtChange={setClosesAtLocal}
           />
 
-          {error ? <InlineAlert variant="error" message={error} /> : null}
+          <FeedbackAlerts error={error} />
 
           <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={loading || !number.trim() || !closesAtLocal}
-              type="button"
-              onClick={async () => {
-                setError(null);
-                setLoading(true);
-                const closesAtUtc = datetimeLocalToIso(closesAtLocal);
-                const { response, data } = await sendJsonRequest<{ error?: string }>(
-                  `/api/tournaments/${props.tournamentId}/matchdays`,
-                  { method: "POST", body: { number: Number(number), closesAtUtc } },
-                );
-                setLoading(false);
-                if (!response.ok) return setError(data.error ?? "No se pudo crear la jornada");
-                pushAndRefresh(router, `/tournaments/${props.tournamentId}/matchdays`);
-              }}
-            >
+            <Button disabled={loading || !number.trim() || !closesAtLocal} type="button" onClick={() => void createMatchday()}>
               {loading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
               Crear jornada
             </Button>

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { sendJsonRequest } from "@/lib/http";
-import { requestSignedUploadUrl, uploadFileWithSignedUrl, validateImageFile } from "@/lib/storage-upload";
+import { uploadFileFromSignedUrlRequest, validateImageFile } from "@/lib/storage-upload";
 import { TournamentAdminStatusDialog, type TournamentStatusDialogKind } from "./tournament-admin-status-dialog";
 import { TournamentAdminStatusMenu } from "./tournament-admin-status-menu";
 
@@ -140,32 +140,39 @@ export function TournamentAdminClient(props: {
 
     dispatch({ type: "save_start" });
 
-    const { response, data } = await sendJsonRequest<{
-      tournament?: { name: string; logoUrl: string | null };
-      error?: string;
-    }>(`/api/tournaments/${props.tournamentId}`, {
-      method: "PATCH",
-      body: {
-        name: state.draftName.trim(),
-        logoUrl: nextLogoUrl !== undefined ? nextLogoUrl : state.draftLogoUrl.trim() || state.draftLeagueSelection?.logoUrl || null,
-        scope: state.draftScope,
-        externalLeagueId: state.draftLeagueSelection?.externalLeagueId ?? null,
-        leagueName: state.draftLeagueSelection?.leagueName ?? null,
-        leagueSeason: state.draftLeagueSelection?.leagueSeason ?? null,
-      },
-    });
+    try {
+      const { response, data } = await sendJsonRequest<{
+        tournament?: { name: string; logoUrl: string | null };
+        error?: string;
+      }>(`/api/tournaments/${props.tournamentId}`, {
+        method: "PATCH",
+        body: {
+          name: state.draftName.trim(),
+          logoUrl: nextLogoUrl !== undefined ? nextLogoUrl : state.draftLogoUrl.trim() || state.draftLeagueSelection?.logoUrl || null,
+          scope: state.draftScope,
+          externalLeagueId: state.draftLeagueSelection?.externalLeagueId ?? null,
+          leagueName: state.draftLeagueSelection?.leagueName ?? null,
+          leagueSeason: state.draftLeagueSelection?.leagueSeason ?? null,
+        },
+      });
 
-    if (!response.ok) {
-      dispatch({ type: "save_error", error: data.error ?? "No se pudo actualizar el torneo." });
-      return;
+      if (!response.ok) {
+        dispatch({ type: "save_error", error: data.error ?? "No se pudo actualizar el torneo." });
+        return;
+      }
+
+      dispatch({
+        type: "save_success",
+        name: data.tournament?.name ?? state.draftName.trim(),
+        logoUrl: data.tournament?.logoUrl ?? ((nextLogoUrl ?? state.draftLogoUrl.trim()) || null),
+        message: "Torneo actualizado.",
+      });
+    } catch (saveError) {
+      dispatch({
+        type: "save_error",
+        error: saveError instanceof Error ? saveError.message : "No se pudo actualizar el torneo.",
+      });
     }
-
-    dispatch({
-      type: "save_success",
-      name: data.tournament?.name ?? state.draftName.trim(),
-      logoUrl: data.tournament?.logoUrl ?? ((nextLogoUrl ?? state.draftLogoUrl.trim()) || null),
-      message: "Torneo actualizado.",
-    });
   }
 
   async function uploadLogo(file: File) {
@@ -177,33 +184,37 @@ export function TournamentAdminClient(props: {
 
     dispatch({ type: "upload_start" });
 
-    const { ok, data: signedData } = await requestSignedUploadUrl(`/api/tournaments/${props.tournamentId}/logo/upload-url`, file);
+    const upload = await uploadFileFromSignedUrlRequest(`/api/tournaments/${props.tournamentId}/logo/upload-url`, "tournament-assets", file, {
+      prepareError: "No se pudo preparar la carga del logo.",
+      uploadError: "No se pudo subir el logo.",
+    });
 
-    if (!ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
-      dispatch({ type: "upload_error", error: signedData.error ?? "No se pudo preparar la carga del logo." });
-      return;
-    }
-
-    const upload = await uploadFileWithSignedUrl("tournament-assets", file, signedData.path, signedData.token, signedData.publicUrl);
     if (!upload.ok) {
       dispatch({ type: "upload_error", error: upload.error ?? "No se pudo subir el logo." });
       return;
     }
 
-    const { response, data } = await sendJsonRequest<{
-      tournament?: { name: string; logoUrl: string | null };
-      error?: string;
-    }>(`/api/tournaments/${props.tournamentId}`, {
-      method: "PATCH",
-      body: { name: state.draftName.trim(), logoUrl: upload.publicUrl },
-    });
+    try {
+      const { response, data } = await sendJsonRequest<{
+        tournament?: { name: string; logoUrl: string | null };
+        error?: string;
+      }>(`/api/tournaments/${props.tournamentId}`, {
+        method: "PATCH",
+        body: { name: state.draftName.trim(), logoUrl: upload.publicUrl },
+      });
 
-    if (!response.ok) {
-      dispatch({ type: "upload_error", error: data.error ?? "No se pudo guardar el logo." });
-      return;
+      if (!response.ok) {
+        dispatch({ type: "upload_error", error: data.error ?? "No se pudo guardar el logo." });
+        return;
+      }
+
+      dispatch({ type: "upload_success", logoUrl: data.tournament?.logoUrl ?? upload.publicUrl, message: "Logo actualizado." });
+    } catch (uploadError) {
+      dispatch({
+        type: "upload_error",
+        error: uploadError instanceof Error ? uploadError.message : "No se pudo guardar el logo.",
+      });
     }
-
-    dispatch({ type: "upload_success", logoUrl: data.tournament?.logoUrl ?? upload.publicUrl, message: "Logo actualizado." });
   }
 
   async function updateStatus(nextStatus: "ACTIVE" | "ARCHIVED" | "FINISHED", fallbackError: string) {
@@ -211,19 +222,26 @@ export function TournamentAdminClient(props: {
     dispatch({ type: "clear_feedback" });
     dispatch({ type: "set_loading", value: true });
 
-    const { response, data } = await sendJsonRequest<{ error?: string }>(`/api/tournaments/${props.tournamentId}`, {
-      method: "PATCH",
-      body: { status: nextStatus },
-    });
+    try {
+      const { response, data } = await sendJsonRequest<{ error?: string }>(`/api/tournaments/${props.tournamentId}`, {
+        method: "PATCH",
+        body: { status: nextStatus },
+      });
 
-    dispatch({ type: "set_loading", value: false });
+      if (!response.ok) {
+        dispatch({ type: "save_error", error: data.error ?? fallbackError });
+        return;
+      }
 
-    if (!response.ok) {
-      dispatch({ type: "save_error", error: data.error ?? fallbackError });
-      return;
+      router.refresh();
+    } catch (statusError) {
+      dispatch({
+        type: "save_error",
+        error: statusError instanceof Error ? statusError.message : fallbackError,
+      });
+    } finally {
+      dispatch({ type: "set_loading", value: false });
     }
-
-    router.refresh();
   }
 
   return (

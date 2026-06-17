@@ -4,6 +4,7 @@ import { useState } from "react";
 import { KeyRound, Loader2 } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,27 @@ export function PasskeysClient() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function registerPasskey() {
+    setMessage(null);
+    setError(null);
+    setLoading(true);
+
+    try {
+      const { error: registerError } = await authClient.passkey.addPasskey({ name: name.trim() });
+
+      if (registerError) {
+        setError(registerError.message ?? "No se pudo registrar la passkey");
+        return;
+      }
+
+      setMessage("Passkey registrada.");
+    } catch (unknownError) {
+      setError(unknownError instanceof Error ? unknownError.message : "No se pudo registrar la passkey");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <Card>
@@ -34,22 +56,13 @@ export function PasskeysClient() {
           variant="outline"
           disabled={loading || !name.trim()}
           type="button"
-          onClick={async () => {
-            setMessage(null);
-            setError(null);
-            setLoading(true);
-            const { error } = await authClient.passkey.addPasskey({ name: name.trim() });
-            setLoading(false);
-            if (error) return setError(error.message ?? "No se pudo registrar la passkey");
-            setMessage("Passkey registrada.");
-          }}
+          onClick={() => void registerPasskey()}
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
           Agregar passkey
         </Button>
 
-        {message ? <p className="text-sm text-green-700">{message}</p> : null}
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        <FeedbackAlerts message={message} error={error} />
       </CardContent>
     </Card>
   );

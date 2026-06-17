@@ -5,6 +5,7 @@ import { Eye } from "lucide-react";
 
 import { auth } from "@/lib/auth";
 import { TournamentPageHeader } from "@/components/app/tournament-page-header";
+import { buildParticipantStatsByMatchday, matchdayParticipantSelect } from "@/lib/matchday-list";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SyncLiveButton } from "./sync-live-button";
@@ -44,20 +45,11 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
     prisma.matchday.findMany({
       where: { tournamentId },
       orderBy: [{ number: "desc" }],
-      select: { id: true, number: true, closesAtUtc: true, _count: { select: { matches: true } } },
+      select: matchdayParticipantSelect(),
     }),
   ]);
 
-  const pickCounts: Record<string, Record<string, number>> = {};
-  const picks = await prisma.pick.findMany({
-    where: { match: { matchday: { tournamentId } } },
-    select: { userId: true, match: { select: { matchdayId: true } } },
-  });
-  for (const p of picks) {
-    const mid = p.match.matchdayId;
-    pickCounts[mid] ??= {};
-    pickCounts[mid][p.userId] = (pickCounts[mid][p.userId] ?? 0) + 1;
-  }
+  const participantStats = buildParticipantStatsByMatchday(matchdays);
 
   const matchdayRows = matchdays.map((m) => ({
     id: m.id,
@@ -95,7 +87,7 @@ export default async function TournamentPicksIndexPage(props: { params: Promise<
               role: m.role,
             }))}
             matchdays={matchdayRows}
-            pickCounts={pickCounts}
+            participantStats={participantStats}
           />
         </CardContent>
       </Card>

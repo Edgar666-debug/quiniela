@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { useEffect, useReducer, useRef } from "react";
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { sendJsonRequest } from "@/lib/http";
 import { pushAndRefresh } from "@/lib/navigation";
-import { requestSignedUploadUrl, uploadFileWithSignedUrl, validateImageFile } from "@/lib/storage-upload";
+import { uploadFileFromSignedUrlRequest, validateImageFile } from "@/lib/storage-upload";
 
 type TournamentState = {
   name: string;
@@ -60,10 +60,7 @@ function newTournamentReducer(state: TournamentState, action: TournamentAction):
       return {
         ...state,
         leagueSelection: action.value,
-        logoUrl:
-          action.value?.logoUrl && !state.logoFile
-            ? action.value.logoUrl
-            : state.logoUrl,
+        logoUrl: action.value?.logoUrl && !state.logoFile ? action.value.logoUrl : state.logoUrl,
         message: action.value?.logoUrl ? "Logo de la liga aplicado." : state.message,
       };
     case "submit_start":
@@ -114,56 +111,66 @@ export function NewTournamentClient() {
 
     dispatch({ type: "submit_start" });
 
-    const { response: res, data } = await sendJsonRequest<{
-      tournament?: { id: string; name: string; logoUrl: string | null };
-      error?: string;
-    }>("/api/tournaments", {
-      method: "POST",
-      body: {
-        name: state.name.trim(),
-        logoUrl: state.logoFile ? null : (state.logoUrl.trim() || state.leagueSelection?.logoUrl || null),
-        scope: state.scope,
-        externalLeagueId: state.leagueSelection?.externalLeagueId ?? null,
-        leagueName: state.leagueSelection?.leagueName ?? null,
-        leagueSeason: state.leagueSelection?.leagueSeason ?? null,
-      },
-    });
+    try {
+      const { response: createResponse, data } = await sendJsonRequest<{
+        tournament?: { id: string; name: string; logoUrl: string | null };
+        error?: string;
+      }>("/api/tournaments", {
+        method: "POST",
+        body: {
+          name: state.name.trim(),
+          logoUrl: state.logoFile ? null : state.logoUrl.trim() || state.leagueSelection?.logoUrl || null,
+          scope: state.scope,
+          externalLeagueId: state.leagueSelection?.externalLeagueId ?? null,
+          leagueName: state.leagueSelection?.leagueName ?? null,
+          leagueSeason: state.leagueSelection?.leagueSeason ?? null,
+        },
+      });
 
-    if (!res.ok || !data.tournament?.id) {
-      return dispatch({ type: "submit_fail", error: data.error ?? "No se pudo crear el torneo." });
-    }
+      if (!createResponse.ok || !data.tournament?.id) {
+        dispatch({ type: "submit_fail", error: data.error ?? "No se pudo crear el torneo." });
+        return;
+      }
 
-    if (!state.logoFile) {
+      if (!state.logoFile) {
+        goToTournament(data.tournament.id);
+        return;
+      }
+
+      const upload = await uploadFileFromSignedUrlRequest(
+        `/api/tournaments/${data.tournament.id}/logo/upload-url`,
+        "tournament-assets",
+        state.logoFile,
+        {
+          prepareError: "El torneo se creó, pero no se pudo preparar la carga del logo. Puedes intentarlo otra vez desde administración.",
+          uploadError: "El torneo se creó, pero no se pudo subir el logo. Puedes intentarlo otra vez desde administración.",
+        },
+      );
+
+      if (!upload.ok) {
+        dispatch({ type: "submit_fail", error: upload.error });
+        goToTournament(data.tournament.id);
+        return;
+      }
+
+      const { response: patchResponse } = await sendJsonRequest(`/api/tournaments/${data.tournament.id}`, {
+        method: "PATCH",
+        body: { name: state.name.trim(), logoUrl: upload.publicUrl },
+      });
+
+      if (!patchResponse.ok) {
+        dispatch({ type: "submit_fail", error: "El torneo se creó, pero no se pudo guardar el logo. Puedes intentarlo otra vez desde administración." });
+        goToTournament(data.tournament.id);
+        return;
+      }
+
       goToTournament(data.tournament.id);
-      return;
+    } catch (createError) {
+      dispatch({
+        type: "submit_fail",
+        error: createError instanceof Error ? createError.message : "No se pudo crear el torneo.",
+      });
     }
-
-    const { ok, data: signedData } = await requestSignedUploadUrl(`/api/tournaments/${data.tournament.id}/logo/upload-url`, state.logoFile);
-    if (!ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
-      dispatch({ type: "submit_fail", error: "El torneo se creó, pero no se pudo preparar la carga del logo. Puedes intentarlo otra vez desde administración." });
-      goToTournament(data.tournament.id);
-      return;
-    }
-
-    const upload = await uploadFileWithSignedUrl("tournament-assets", state.logoFile, signedData.path, signedData.token, signedData.publicUrl);
-    if (!upload.ok) {
-      dispatch({ type: "submit_fail", error: "El torneo se creó, pero no se pudo subir el logo. Puedes intentarlo otra vez desde administración." });
-      goToTournament(data.tournament.id);
-      return;
-    }
-
-    const { response: patchRes } = await sendJsonRequest(`/api/tournaments/${data.tournament.id}`, {
-      method: "PATCH",
-      body: { name: state.name.trim(), logoUrl: upload.publicUrl },
-    });
-
-    if (!patchRes.ok) {
-      dispatch({ type: "submit_fail", error: "El torneo se creó, pero no se pudo guardar el logo. Puedes intentarlo otra vez desde administración." });
-      goToTournament(data.tournament.id);
-      return;
-    }
-
-    goToTournament(data.tournament.id);
   }
 
   return (

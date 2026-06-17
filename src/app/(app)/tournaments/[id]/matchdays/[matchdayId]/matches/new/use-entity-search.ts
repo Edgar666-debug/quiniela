@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import { readJsonResponse } from "@/lib/http";
+import { searchApiFootballLeagues, searchApiFootballTeams } from "@/lib/api-football-search";
 import type { LeagueRow, SearchTab, TeamRow } from "./match-new-types";
 
 export type EntitySearchState = {
@@ -33,24 +33,19 @@ export function useEntitySearch() {
 
     setState({ ...EMPTY_STATE, loading: true });
 
-    if (tab === "league") {
-      const res = await fetch(`/api/api-football/leagues/search?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-      const data = await readJsonResponse<{ leagues?: LeagueRow[]; error?: string }>(res);
-      if (!res.ok) {
-        setState({ ...EMPTY_STATE, error: data.error ?? "No se pudo buscar ligas." });
+    try {
+      if (tab === "league") {
+        setState({ ...EMPTY_STATE, leagueResults: await searchApiFootballLeagues<LeagueRow>(q) });
         return;
       }
-      setState({ ...EMPTY_STATE, leagueResults: data.leagues ?? [] });
-      return;
-    }
 
-    const res = await fetch(`/api/api-football/teams/search?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-    const data = await readJsonResponse<{ teams?: TeamRow[]; error?: string }>(res);
-    if (!res.ok) {
-      setState({ ...EMPTY_STATE, error: data.error ?? "No se pudo buscar equipos." });
-      return;
+      setState({ ...EMPTY_STATE, teamResults: await searchApiFootballTeams<TeamRow>(q) });
+    } catch (searchError) {
+      setState({
+        ...EMPTY_STATE,
+        error: searchError instanceof Error ? searchError.message : tab === "league" ? "No se pudo buscar ligas." : "No se pudo buscar equipos.",
+      });
     }
-    setState({ ...EMPTY_STATE, teamResults: data.teams ?? [] });
   }, []);
 
   return { ...state, search, reset };

@@ -1,15 +1,16 @@
-"use client";
+﻿"use client";
 
-import { useReducer, useRef } from "react";
 import Image from "next/image";
+import { useReducer, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Image as ImageIcon, Loader2, SaveIcon, Trash, Upload, User as UserIcon } from "lucide-react";
 
-import { requestSignedUploadUrl, uploadFileWithSignedUrl, validateImageFile } from "@/lib/storage-upload";
-import { sendJsonRequest } from "@/lib/http";
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { sendJsonRequest } from "@/lib/http";
+import { uploadFileFromSignedUrlRequest, validateImageFile } from "@/lib/storage-upload";
 
 type DraftState = {
   sourceName: string | null;
@@ -120,74 +121,97 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
   });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const activeDraft =
-    state.draft?.sourceName === props.initial.name && state.draft?.sourceImage === props.initial.image ? state.draft : null;
+  const activeDraft = state.draft?.sourceName === props.initial.name && state.draft?.sourceImage === props.initial.image ? state.draft : null;
   const name = activeDraft?.name ?? props.initial.name ?? "";
   const image = activeDraft?.image ?? props.initial.image ?? "";
   const imageUrl = image.trim() ? image.trim() : null;
 
   async function save() {
     dispatch({ type: "save_start" });
-    const { response, data } = await sendJsonRequest<{ user?: { name: string | null; image: string | null }; error?: string }>(
-      "/api/me/profile",
-      {
-      method: "PATCH",
-      body: {
-        name: name.trim() ? name.trim() : undefined,
-        image: image.trim() ? image.trim() : null,
-      },
-    });
-    if (!response.ok) return dispatch({ type: "save_fail", error: data.error ?? "No se pudo guardar el perfil." });
 
-    dispatch({
-      type: "save_success",
-      sourceName: props.initial.name,
-      sourceImage: props.initial.image,
-      name: data.user?.name ?? "",
-      image: data.user?.image ?? "",
-      message: "Perfil actualizado.",
-    });
-    router.refresh();
+    try {
+      const { response, data } = await sendJsonRequest<{ user?: { name: string | null; image: string | null }; error?: string }>(
+        "/api/me/profile",
+        {
+          method: "PATCH",
+          body: {
+            name: name.trim() ? name.trim() : undefined,
+            image: image.trim() ? image.trim() : null,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        dispatch({ type: "save_fail", error: data.error ?? "No se pudo guardar el perfil." });
+        return;
+      }
+
+      dispatch({
+        type: "save_success",
+        sourceName: props.initial.name,
+        sourceImage: props.initial.image,
+        name: data.user?.name ?? "",
+        image: data.user?.image ?? "",
+        message: "Perfil actualizado.",
+      });
+      router.refresh();
+    } catch (saveError) {
+      dispatch({
+        type: "save_fail",
+        error: saveError instanceof Error ? saveError.message : "No se pudo guardar el perfil.",
+      });
+    }
   }
 
   async function uploadAvatar(file: File) {
     const fileError = validateImageFile(file, "avatar");
-    if (fileError) return dispatch({ type: "upload_fail", error: fileError });
+    if (fileError) {
+      dispatch({ type: "upload_fail", error: fileError });
+      return;
+    }
 
     dispatch({ type: "upload_start" });
 
-    const { ok, data: signedData } = await requestSignedUploadUrl("/api/me/avatar/upload-url", file);
+    try {
+      const upload = await uploadFileFromSignedUrlRequest("/api/me/avatar/upload-url", "avatars", file, {
+        prepareError: "No se pudo preparar la carga del avatar.",
+        uploadError: "No se pudo subir el avatar.",
+      });
 
-    if (!ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
-      return dispatch({ type: "upload_fail", error: signedData.error ?? "No se pudo preparar la carga del avatar." });
+      if (!upload.ok) {
+        dispatch({ type: "upload_fail", error: upload.error ?? "No se pudo subir el avatar." });
+        return;
+      }
+
+      const imageUrlWithVersion = upload.publicUrl;
+      const { response, data } = await sendJsonRequest<{ user?: { name: string | null; image: string | null }; error?: string }>(
+        "/api/me/profile",
+        {
+          method: "PATCH",
+          body: { image: imageUrlWithVersion },
+        },
+      );
+
+      if (!response.ok) {
+        dispatch({ type: "upload_fail", error: data.error ?? "No se pudo guardar el avatar." });
+        return;
+      }
+
+      dispatch({
+        type: "upload_success",
+        sourceName: props.initial.name,
+        sourceImage: props.initial.image,
+        name,
+        image: data.user?.image ?? imageUrlWithVersion,
+        message: "Avatar actualizado.",
+      });
+      router.refresh();
+    } catch (uploadError) {
+      dispatch({
+        type: "upload_fail",
+        error: uploadError instanceof Error ? uploadError.message : "No se pudo subir el avatar.",
+      });
     }
-
-    const upload = await uploadFileWithSignedUrl("avatars", file, signedData.path, signedData.token, signedData.publicUrl);
-    if (!upload.ok) {
-      return dispatch({ type: "upload_fail", error: upload.error ?? "No se pudo subir el avatar." });
-    }
-
-    const imageUrlWithVersion = upload.publicUrl;
-    const { response, data } = await sendJsonRequest<{ user?: { name: string | null; image: string | null }; error?: string }>(
-      "/api/me/profile",
-      {
-      method: "PATCH",
-      body: { image: imageUrlWithVersion },
-    });
-
-    if (!response.ok) {
-      return dispatch({ type: "upload_fail", error: data.error ?? "No se pudo guardar el avatar." });
-    }
-
-    dispatch({
-      type: "upload_success",
-      sourceName: props.initial.name,
-      sourceImage: props.initial.image,
-      name,
-      image: data.user?.image ?? imageUrlWithVersion,
-      message: "Avatar actualizado.",
-    });
-    router.refresh();
   }
 
   return (
@@ -259,16 +283,11 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
             event.currentTarget.value = "";
           }}
         />
-        <Button
-          type="button"
-          variant="outline"
-          disabled={state.loading || state.uploadingAvatar}
-          onClick={() => fileInputRef.current?.click()}
-        >
+        <Button type="button" variant="outline" disabled={state.loading || state.uploadingAvatar} onClick={() => fileInputRef.current?.click()}>
           {state.uploadingAvatar ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
           Subir
         </Button>
-        <Button type="button" variant="outline" onClick={save} disabled={state.loading || state.uploadingAvatar}>
+        <Button type="button" variant="outline" onClick={() => void save()} disabled={state.loading || state.uploadingAvatar}>
           {state.loading ? <Loader2 className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
           Guardar
         </Button>
@@ -293,8 +312,7 @@ export function ProfileClient(props: { initial: { name: string | null; image: st
         </div>
       </div>
 
-      {state.message ? <p className="text-sm text-green-700">{state.message}</p> : null}
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      <FeedbackAlerts message={state.message} error={state.error} />
     </div>
   );
 }

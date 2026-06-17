@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
+import console  from "console";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -31,6 +31,7 @@ export async function POST(_: Request, ctx: { params: Promise<{ id: string }> })
       where: { tournamentId_userId: { tournamentId, userId: session.user.id } },
     }),
   ]);
+  console.info(`[LEAVE] User ${session.user.id} left tournament ${tournamentId}`);
 
   return NextResponse.json({ ok: true });
 }

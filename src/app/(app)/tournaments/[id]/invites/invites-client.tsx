@@ -1,14 +1,18 @@
-"use client";
+﻿"use client";
 
-import { useReducer, useState } from "react";
+import { useReducer } from "react";
 import { Clipboard, Loader2, Mail, Plus, Ticket } from "lucide-react";
+import useSWR from "swr";
+
 import { EmptyState } from "@/components/app/empty-state";
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { formatLocalDateTime } from "@/lib/date";
+import { sendJsonRequest } from "@/lib/http";
 
 type InviteItem = {
   token: string;
@@ -30,7 +34,7 @@ type InviteAction =
   | { type: "set_recipient_email"; value: string }
   | { type: "reset_feedback" }
   | { type: "create_start"; mode: "token" | "email" }
-  | { type: "create_fail"; mode: "token" | "email"; error: string }
+  | { type: "create_fail"; error: string }
   | { type: "create_success"; mode: "token" | "email"; message: string };
 
 function invitesReducer(state: InviteState, action: InviteAction): InviteState {
@@ -69,8 +73,16 @@ function invitesReducer(state: InviteState, action: InviteAction): InviteState {
 }
 
 export function InvitesClient(props: { tournamentId: string; tournamentStatus: "ACTIVE" | "FINISHED" | "ARCHIVED"; initialInvites: InviteItem[] }) {
-  const [localInvites, setLocalInvites] = useState<{ source: InviteItem[]; value: InviteItem[] } | null>(null);
-  const invites = localInvites?.source === props.initialInvites ? localInvites.value : props.initialInvites;
+  const { data, mutate } = useSWR(
+    `/api/tournaments/${props.tournamentId}/invites`,
+    async () => props.initialInvites,
+    {
+      fallbackData: props.initialInvites,
+      revalidateOnFocus: false,
+    },
+  );
+  const invites = data ?? props.initialInvites;
+
   const [state, dispatch] = useReducer(invitesReducer, {
     loading: false,
     emailLoading: false,
@@ -79,39 +91,67 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
     error: null,
   });
 
-  const hasAvailable = invites.some((i) => i.uses < i.maxUses);
+  const hasAvailable = invites.some((invite) => invite.uses < invite.maxUses);
   const canGenerate = props.tournamentStatus === "ACTIVE";
 
   async function createInvite(email?: string) {
     dispatch({ type: "reset_feedback" });
-    if (!canGenerate) return dispatch({ type: "create_fail", mode: email ? "email" : "token", error: "El torneo no está activo. No se pueden generar invitaciones." });
 
-    dispatch({ type: "create_start", mode: email ? "email" : "token" });
-
-    const res = await fetch(`/api/tournaments/${props.tournamentId}/invites`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ maxUses: 1, ...(email ? { email } : {}) }),
-    });
-    const data = (await res.json()) as { invite?: { token: string; maxUses: number; uses: number; expiresAt: string | null }; error?: string };
-    if (!res.ok) return dispatch({ type: "create_fail", mode: email ? "email" : "token", error: data.error ?? "No se pudo crear la invitación" });
-    if (!data.invite?.token) return dispatch({ type: "create_fail", mode: email ? "email" : "token", error: "Respuesta inválida del servidor" });
-
-    const item: InviteItem = {
-      token: data.invite.token,
-      maxUses: data.invite.maxUses ?? 1,
-      uses: data.invite.uses ?? 0,
-      expiresAtUtc: data.invite.expiresAt ?? null,
-      createdAtUtc: new Date().toISOString(),
-    };
-    setLocalInvites({ source: props.initialInvites, value: [item, ...invites].slice(0, 20) });
-
-    if (email) {
-      dispatch({ type: "create_success", mode: "email", message: `Invitación enviada a ${email}` });
-    } else {
-      await navigator.clipboard.writeText(item.token).catch(() => {});
-      dispatch({ type: "create_success", mode: "token", message: `Token copiado: ${item.token}` });
+    if (!canGenerate) {
+      dispatch({ type: "create_fail", error: "El torneo no está activo. No se pueden generar invitaciones." });
+      return;
     }
+
+    const mode = email ? "email" : "token";
+    dispatch({ type: "create_start", mode });
+
+    try {
+      const { response, data: responseData } = await sendJsonRequest<{
+        invite?: { token: string; maxUses: number; uses: number; expiresAt: string | null };
+        error?: string;
+      }>(`/api/tournaments/${props.tournamentId}/invites`, {
+        method: "POST",
+        body: { maxUses: 1, ...(email ? { email } : {}) },
+      });
+
+      if (!response.ok) {
+        dispatch({ type: "create_fail", error: responseData.error ?? "No se pudo crear la invitación" });
+        return;
+      }
+
+      if (!responseData.invite?.token) {
+        dispatch({ type: "create_fail", error: "Respuesta inválida del servidor" });
+        return;
+      }
+
+      const nextInvite: InviteItem = {
+        token: responseData.invite.token,
+        maxUses: responseData.invite.maxUses ?? 1,
+        uses: responseData.invite.uses ?? 0,
+        expiresAtUtc: responseData.invite.expiresAt ?? null,
+        createdAtUtc: new Date().toISOString(),
+      };
+
+      await mutate([nextInvite, ...invites].slice(0, 20), { revalidate: false });
+
+      if (email) {
+        dispatch({ type: "create_success", mode: "email", message: `Invitación enviada a ${email}` });
+        return;
+      }
+
+      await navigator.clipboard.writeText(nextInvite.token).catch(() => {});
+      dispatch({ type: "create_success", mode: "token", message: `Token copiado: ${nextInvite.token}` });
+    } catch (createError) {
+      dispatch({
+        type: "create_fail",
+        error: createError instanceof Error ? createError.message : "No se pudo crear la invitación",
+      });
+    }
+  }
+
+  async function copyInviteToken(token: string) {
+    await navigator.clipboard.writeText(token).catch(() => {});
+    dispatch({ type: "create_success", mode: "token", message: `Token copiado: ${token}` });
   }
 
   return (
@@ -126,13 +166,11 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">
-            <Button className="w-fit" disabled={state.loading || state.emailLoading || !canGenerate} type="button" onClick={() => createInvite()}>
+            <Button className="w-fit" disabled={state.loading || state.emailLoading || !canGenerate} type="button" onClick={() => void createInvite()}>
               {state.loading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
               Generar token
             </Button>
-            {hasAvailable ? (
-              <p className="text-subtle-ui text-xs">Tip: si ya tienes tokens sin usar, también puedes reutilizarlos.</p>
-            ) : null}
+            {hasAvailable ? <p className="text-subtle-ui text-xs">Tip: si ya tienes tokens sin usar, también puedes reutilizarlos.</p> : null}
           </div>
 
           <Separator />
@@ -146,7 +184,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
                   type="email"
                   placeholder="invitado@ejemplo.com"
                   value={state.recipientEmail}
-                  onChange={(e) => dispatch({ type: "set_recipient_email", value: e.target.value })}
+                  onChange={(event) => dispatch({ type: "set_recipient_email", value: event.target.value })}
                   disabled={state.emailLoading || !canGenerate}
                   className="max-w-72"
                 />
@@ -154,7 +192,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
                   type="button"
                   variant="outline"
                   disabled={state.emailLoading || state.loading || !canGenerate || !state.recipientEmail.trim()}
-                  onClick={() => createInvite(state.recipientEmail.trim())}
+                  onClick={() => void createInvite(state.recipientEmail.trim())}
                 >
                   {state.emailLoading ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
                   Enviar
@@ -163,8 +201,7 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
             </div>
           </div>
 
-          {state.message ? <p className="text-sm text-green-700">{state.message}</p> : null}
-          {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+          <FeedbackAlerts message={state.message} error={state.error} />
         </CardContent>
       </Card>
 
@@ -178,31 +215,23 @@ export function InvitesClient(props: { tournamentId: string; tournamentStatus: "
             <EmptyState compact description="Aún no hay invitaciones." />
           ) : (
             <ul className="flex flex-col gap-3">
-              {invites.map((i) => (
-                <li key={i.token} className="list-row-ui">
+              {invites.map((invite) => (
+                <li key={invite.token} className="list-row-ui">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate font-mono text-sm">{i.token}</p>
+                      <p className="truncate font-mono text-sm">{invite.token}</p>
                       <p className="text-muted-ui text-xs">
-                        Usos: {i.uses}/{i.maxUses}
-                        {i.expiresAtUtc ? ` • Expira: ${formatLocalDateTime(i.expiresAtUtc)}` : ""}
+                        Usos: {invite.uses}/{invite.maxUses}
+                        {invite.expiresAtUtc ? ` • Expira: ${formatLocalDateTime(invite.expiresAtUtc)}` : ""}
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      onClick={async () => {
-                        await navigator.clipboard.writeText(i.token).catch(() => {});
-                        dispatch({ type: "create_success", mode: "token", message: `Token copiado: ${i.token}` });
-                      }}
-                    >
+                    <Button variant="outline" size="sm" type="button" onClick={() => void copyInviteToken(invite.token)}>
                       <Clipboard className="size-4" />
                       Copiar
                     </Button>
                   </div>
                   <Separator className="my-2" />
-                  <p className="text-subtle-ui text-xs">Creado: {formatLocalDateTime(i.createdAtUtc)}</p>
+                  <p className="text-subtle-ui text-xs">Creado: {formatLocalDateTime(invite.createdAtUtc)}</p>
                 </li>
               ))}
             </ul>

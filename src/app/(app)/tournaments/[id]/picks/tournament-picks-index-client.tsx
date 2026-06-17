@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { UserAvatar } from "@/components/app/user-avatar";
 import { formatLocalDateTime } from "@/lib/date";
+import type { ParticipantMatchdayStats } from "@/lib/matchday-list";
 import { cn } from "@/lib/utils";
 
 type MemberRow = { id: string; name: string | null; email: string; image: string | null; role: "OWNER" | "ORGANIZER" | "PLAYER" };
@@ -18,7 +19,7 @@ export function TournamentPicksIndexClient(props: {
   tournamentId: string;
   members: MemberRow[];
   matchdays: MatchdayRow[];
-  pickCounts: Record<string, Record<string, number>>;
+  participantStats: Record<string, Record<string, ParticipantMatchdayStats>>;
 }) {
   const [openUserId, setOpenUserId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -112,8 +113,36 @@ export function TournamentPicksIndexClient(props: {
                         <div className="grid gap-2 md:grid-cols-2">
                           {sortedMatchdays.map((md) => {
                             const href = `/tournaments/${props.tournamentId}/picks/${m.id}/${md.id}`;
-                            const pickedCount = props.pickCounts[md.id]?.[m.id] ?? 0;
-                            const pct = md.matchesCount > 0 ? Math.round((pickedCount / md.matchesCount) * 100) : 0;
+                            const stats = props.participantStats[md.id]?.[m.id];
+                            const pickedCount = stats?.pickCount ?? 0;
+                            const fillPercent = md.matchesCount > 0 ? Math.round((pickedCount / md.matchesCount) * 100) : 0;
+                            const complete = md.matchesCount > 0 && pickedCount >= md.matchesCount;
+                            const showAccuracy = md.isClosed && (stats?.scoredMatchesCount ?? 0) > 0;
+                            const percent = showAccuracy ? (stats?.accuracyPercent ?? 0) : fillPercent;
+                            const label = showAccuracy
+                              ? `${stats?.correctCount ?? 0}/${stats?.scoredMatchesCount ?? 0} aciertos`
+                              : complete
+                                ? "✓ Completo"
+                                : `${pickedCount}/${md.matchesCount} picks`;
+                            const barClass = showAccuracy
+                              ? percent >= 70
+                                ? "bg-emerald-500"
+                                : percent > 0
+                                  ? "bg-amber-400"
+                                  : "bg-zinc-200 dark:bg-zinc-700"
+                              : complete
+                                ? "bg-emerald-500"
+                                : pickedCount > 0
+                                  ? "bg-amber-400"
+                                  : "bg-zinc-200 dark:bg-zinc-700";
+                            const labelClass = showAccuracy
+                              ? percent >= 70
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-muted-ui"
+                              : complete
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-muted-ui";
+
                             return (
                               <div
                                 key={md.id}
@@ -127,18 +156,23 @@ export function TournamentPicksIndexClient(props: {
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate text-sm font-medium">Jornada {md.number}</p>
                                   <p className="text-muted-ui text-xs">Cierre: {formatLocalDateTime(md.closesAtUtc)}</p>
-                                  {!md.isClosed && md.matchesCount > 0 ? (
-                                    <div className="mt-1.5 flex items-center gap-2">
-                                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
-                                        <div
-                                          className="h-full rounded-full bg-emerald-500 transition-all"
-                                          style={{ width: `${pct}%` }}
-                                        />
+                                  {md.matchesCount > 0 ? (
+                                    md.isClosed && (stats?.scoredMatchesCount ?? 0) === 0 ? (
+                                      <p className="text-muted-ui mt-1.5 text-xs">Esperando resultados</p>
+                                    ) : (
+                                      <div className="mt-1.5 flex flex-col gap-1">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <span className={`text-xs font-medium ${labelClass}`}>{label}</span>
+                                          <span className="text-muted-ui text-xs tabular-nums">{percent}%</span>
+                                        </div>
+                                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+                                          <div
+                                            className={`h-full rounded-full transition-all ${barClass}`}
+                                            style={{ width: `${percent}%` }}
+                                          />
+                                        </div>
                                       </div>
-                                      <span className="shrink-0 text-xs tabular-nums">
-                                        {pickedCount}/{md.matchesCount}
-                                      </span>
-                                    </div>
+                                    )
                                   ) : null}
                                 </div>
                                 {!md.isClosed ? (

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { useEffect, useReducer, useState } from "react";
@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatLocalDateTime } from "@/lib/date";
-import { readJsonResponse, sendJsonRequest } from "@/lib/http";
+import { fetchJsonOrThrow, sendJsonRequest } from "@/lib/http";
 import { pushAndRefresh } from "@/lib/navigation";
 
 type JoinState = {
@@ -76,14 +76,7 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 }
 
 async function invitePreviewFetcher(url: string): Promise<InvitePreviewResponse> {
-  const res = await fetch(url);
-  const data = await readJsonResponse<InvitePreviewResponse & { error?: string }>(res);
-
-  if (!res.ok) {
-    throw new Error(data.error ?? "No se pudo validar la invitación.");
-  }
-
-  return data;
+  return fetchJsonOrThrow<InvitePreviewResponse>(url, undefined, "No se pudo validar la invitación.");
 }
 
 export function JoinTournamentClient(props: { initialToken?: string }) {
@@ -171,16 +164,26 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
             type="button"
             onClick={async () => {
               dispatch({ type: "join_start" });
-              const { response, data } = await sendJsonRequest<{ ok?: boolean; error?: string }>(
-                `/api/invites/${encodeURIComponent(trimmedToken)}/join`,
-                { method: "POST" },
-              );
-              if (!response.ok) {
-                dispatch({ type: "join_fail", error: data.error ?? "No se pudo unir al torneo" });
-                return;
+
+              try {
+                const { response, data } = await sendJsonRequest<{ ok?: boolean; error?: string }>(
+                  `/api/invites/${encodeURIComponent(trimmedToken)}/join`,
+                  { method: "POST" },
+                );
+
+                if (!response.ok) {
+                  dispatch({ type: "join_fail", error: data.error ?? "No se pudo unir al torneo" });
+                  return;
+                }
+
+                dispatch({ type: "join_success", message: "Te uniste al torneo." });
+                pushAndRefresh(router, "/tournaments");
+              } catch (joinError) {
+                dispatch({
+                  type: "join_fail",
+                  error: joinError instanceof Error ? joinError.message : "No se pudo unir al torneo",
+                });
               }
-              dispatch({ type: "join_success", message: "Te uniste al torneo." });
-              pushAndRefresh(router, "/tournaments");
             }}
           >
             {state.loading ? <Loader2 className="size-4 animate-spin" /> : <Ticket className="size-4" />}
@@ -194,4 +197,3 @@ export function JoinTournamentClient(props: { initialToken?: string }) {
     </Card>
   );
 }
-

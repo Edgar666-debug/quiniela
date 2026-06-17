@@ -1,16 +1,17 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useTheme } from "next-themes";
 
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import {
   ensureApiSportsWidgetScript,
   mapAppThemeToWidgetTheme,
   mountApiSportsGameWidget,
   unmountApiSportsWidget,
 } from "@/lib/api-sports-widget";
-import { readJsonResponse } from "@/lib/http";
+import { fetchJsonOrThrow } from "@/lib/http";
 import { shouldRefreshGameWidget } from "@/lib/football";
 
 type WidgetConfigResponse = {
@@ -18,7 +19,6 @@ type WidgetConfigResponse = {
   widgetAccessToken?: string;
   lang?: string;
   refreshSeconds?: number | false;
-  error?: string;
 };
 
 export function ApiSportsGameWidgetPanel(props: { fixtureId: number; statusShort: string }) {
@@ -38,18 +38,19 @@ export function ApiSportsGameWidgetPanel(props: { fixtureId: number; statusShort
       try {
         await ensureApiSportsWidgetScript();
 
-        const res = await fetch("/api/api-football/widget-config", { cache: "no-store" });
-        const data = await readJsonResponse<WidgetConfigResponse>(res);
-        if (!res.ok || !data.widgetApiBaseUrl || !data.widgetAccessToken) {
-          throw new Error(data.error ?? "No se pudo cargar la configuración del widget.");
-        }
+        const data = await fetchJsonOrThrow<WidgetConfigResponse>(
+          "/api/api-football/widget-config",
+          { cache: "no-store" },
+          "No se pudo cargar la configuración del widget.",
+        );
 
         if (cancelled || !container) return;
+        if (!data.widgetApiBaseUrl || !data.widgetAccessToken) {
+          throw new Error("No se pudo cargar la configuración del widget.");
+        }
 
         const refreshSeconds: number | false =
-          shouldRefreshGameWidget(props.statusShort) && typeof data.refreshSeconds === "number"
-            ? data.refreshSeconds
-            : false;
+          shouldRefreshGameWidget(props.statusShort) && typeof data.refreshSeconds === "number" ? data.refreshSeconds : false;
 
         mountApiSportsGameWidget(container, {
           widgetApiBaseUrl: data.widgetApiBaseUrl,
@@ -59,9 +60,9 @@ export function ApiSportsGameWidgetPanel(props: { fixtureId: number; statusShort
           theme: mapAppThemeToWidgetTheme(resolvedTheme),
           refreshSeconds,
         });
-      } catch (err) {
+      } catch (loadError) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "No se pudo mostrar el widget del partido.");
+          setError(loadError instanceof Error ? loadError.message : "No se pudo mostrar el widget del partido.");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -84,7 +85,7 @@ export function ApiSportsGameWidgetPanel(props: { fixtureId: number; statusShort
           Cargando widget…
         </div>
       ) : null}
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      <FeedbackAlerts error={error} />
       <div ref={containerRef} className="min-h-[360px]" />
     </div>
   );
