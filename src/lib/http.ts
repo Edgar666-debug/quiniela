@@ -4,6 +4,21 @@ export async function readJsonResponse<T extends JsonObject>(response: Response)
   return (await response.json().catch(() => ({}))) as T;
 }
 
+export async function fetchJsonOrThrow<T extends JsonObject>(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  fallbackError = "No se pudo cargar la información.",
+) {
+  const response = await fetch(input, init);
+  const data = await readJsonResponse<T & { error?: string }>(response);
+
+  if (!response.ok) {
+    throw new Error(data.error ?? fallbackError);
+  }
+
+  return data as T;
+}
+
 export async function sendJsonRequest<T extends JsonObject>(
   input: RequestInfo | URL,
   init?: Omit<RequestInit, "body" | "headers"> & {

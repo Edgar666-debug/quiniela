@@ -1,14 +1,15 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import useSWR from "swr";
 
+import { EmptyState } from "@/components/app/empty-state";
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
+import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { passkeyDateFormatter } from "@/lib/format";
-import { EmptyState } from "@/components/app/empty-state";
-import { Button } from "@/components/ui/button";
-import { InlineAlert } from "@/components/app/inline-alert";
 
 type PasskeyItem = {
   id: string;
@@ -16,10 +17,14 @@ type PasskeyItem = {
   createdAt: Date;
 };
 
-export function PasskeysListClient({ passkeys: initial }: { passkeys: PasskeyItem[] }) {
+export function PasskeysListClient({ passkeys: initialPasskeys }: { passkeys: PasskeyItem[] }) {
   const router = useRouter();
-  const [localPasskeys, setLocalPasskeys] = useState<{ source: PasskeyItem[]; value: PasskeyItem[] } | null>(null);
-  const passkeys = localPasskeys?.source === initial ? localPasskeys.value : initial;
+  const { data, mutate } = useSWR("account-passkeys", async () => initialPasskeys, {
+    fallbackData: initialPasskeys,
+    revalidateOnFocus: false,
+  });
+  const passkeys = data ?? initialPasskeys;
+
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,18 +32,18 @@ export function PasskeysListClient({ passkeys: initial }: { passkeys: PasskeyIte
     setDeletingId(id);
     setError(null);
 
-    const { error } = await authClient.passkey.deletePasskey({ id });
+    const optimisticPasskeys = passkeys.filter((passkey) => passkey.id !== id);
+    await mutate(optimisticPasskeys, { revalidate: false });
 
-    if (error) {
-      setError(error.message ?? "No se pudo eliminar la passkey.");
+    const { error: deleteError } = await authClient.passkey.deletePasskey({ id });
+
+    if (deleteError) {
+      await mutate();
+      setError(deleteError.message ?? "No se pudo eliminar la passkey.");
       setDeletingId(null);
       return;
     }
 
-    setLocalPasskeys({
-      source: initial,
-      value: passkeys.filter((p) => p.id !== id),
-    });
     setDeletingId(null);
     router.refresh();
   }
@@ -49,26 +54,21 @@ export function PasskeysListClient({ passkeys: initial }: { passkeys: PasskeyIte
 
   return (
     <div className="flex flex-col gap-2">
-      {error ? <InlineAlert variant="error" message={error} /> : null}
+      <FeedbackAlerts error={error} />
       <ul className="flex flex-col gap-2">
-        {passkeys.map((p) => (
-          <li
-            key={p.id}
-            className="list-row-ui flex items-center justify-between gap-3"
-          >
+        {passkeys.map((passkey) => (
+          <li key={passkey.id} className="list-row-ui flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{p.name ?? "Passkey"}</p>
-              <p className="text-subtle-ui text-xs">
-                Creada: {passkeyDateFormatter.format(p.createdAt)}
-              </p>
+              <p className="truncate text-sm font-medium">{passkey.name ?? "Passkey"}</p>
+              <p className="text-subtle-ui text-xs">Creada: {passkeyDateFormatter.format(passkey.createdAt)}</p>
             </div>
             <Button
               size="icon"
               variant="ghost"
               className="icon-muted-ui shrink-0 hover:text-red-500 dark:hover:text-red-400"
-              disabled={deletingId === p.id}
-              onClick={() => handleDelete(p.id)}
-              aria-label={`Eliminar passkey ${p.name ?? ""}`}
+              disabled={deletingId === passkey.id}
+              onClick={() => void handleDelete(passkey.id)}
+              aria-label={`Eliminar passkey ${passkey.name ?? ""}`}
             >
               <Trash2 className="size-4" />
             </Button>

@@ -49,3 +49,35 @@ export async function uploadFileWithSignedUrl(bucket: string, file: File, path: 
     publicUrl: `${publicUrl}?v=${Date.now()}`,
   };
 }
+
+export async function uploadFileFromSignedUrlRequest(
+  signedUrlRequestPath: string,
+  bucket: string,
+  file: File,
+  messages?: {
+    prepareError?: string;
+    uploadError?: string;
+  },
+) {
+  const { ok, data: signedData } = await requestSignedUploadUrl(signedUrlRequestPath, file);
+
+  if (!ok || !signedData.path || !signedData.token || !signedData.publicUrl) {
+    return {
+      ok: false as const,
+      error: signedData.error ?? messages?.prepareError ?? "No se pudo preparar la carga del archivo.",
+    };
+  }
+
+  const upload = await uploadFileWithSignedUrl(bucket, file, signedData.path, signedData.token, signedData.publicUrl);
+  if (!upload.ok) {
+    return {
+      ok: false as const,
+      error: upload.error ?? messages?.uploadError ?? "No se pudo subir el archivo.",
+    };
+  }
+
+  return {
+    ok: true as const,
+    publicUrl: upload.publicUrl,
+  };
+}

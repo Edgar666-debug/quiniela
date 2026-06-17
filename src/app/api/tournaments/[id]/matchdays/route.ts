@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/lib/auth";
+import { matchdayListSelect, toMatchdayListRow } from "@/lib/matchday-list";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -12,6 +13,30 @@ const bodySchema = z.object({
   number: z.number().int().min(1).max(100),
   closesAtUtc: z.iso.datetime(),
 });
+
+export async function GET(_: Request, ctx: { params: Promise<{ id: string }> }) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id: tournamentId } = await ctx.params;
+
+  const membership = await prisma.tournamentMember.findUnique({
+    where: { tournamentId_userId: { tournamentId, userId: session.user.id } },
+    select: { role: true },
+  });
+  if (!membership) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const matchdays = await prisma.matchday.findMany({
+    where: { tournamentId },
+    orderBy: [{ number: "desc" }],
+    select: matchdayListSelect(session.user.id),
+  });
+
+  return NextResponse.json({
+    role: membership.role,
+    matchdays: matchdays.map(toMatchdayListRow),
+  });
+}
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });

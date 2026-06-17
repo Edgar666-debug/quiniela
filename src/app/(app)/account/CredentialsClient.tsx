@@ -1,13 +1,14 @@
-"use client";
+﻿"use client";
 
 import { useReducer } from "react";
 import { KeyRound, Loader2, MailCheck } from "lucide-react";
 
-import { authClient } from "@/lib/auth-client";
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { authClient } from "@/lib/auth-client";
 import { sendJsonRequest } from "@/lib/http";
 
 type CredentialsState = {
@@ -75,6 +76,56 @@ export function CredentialsClient(props: { currentEmail: string }) {
 
   const email = state.emailOverride?.source === props.currentEmail ? state.emailOverride.value : props.currentEmail;
 
+  async function changeEmail() {
+    dispatch({ type: "SUBMIT_START" });
+
+    try {
+      const { error } = await authClient.changeEmail({
+        newEmail: state.newEmail.trim(),
+        callbackURL: "/account",
+      });
+
+      if (error) {
+        dispatch({ type: "SUBMIT_ERROR", error: error.message ?? "No se pudo iniciar el cambio de email." });
+        return;
+      }
+
+      dispatch({ type: "EMAIL_CHANGE_OK", source: props.currentEmail, value: state.newEmail.trim() });
+    } catch (changeError) {
+      dispatch({
+        type: "SUBMIT_ERROR",
+        error: changeError instanceof Error ? changeError.message : "No se pudo iniciar el cambio de email.",
+      });
+    }
+  }
+
+  async function changePassword() {
+    dispatch({ type: "SUBMIT_START" });
+
+    try {
+      const { response, data } = await sendJsonRequest<{ error?: string }>("/api/auth/change-password", {
+        method: "POST",
+        body: {
+          currentPassword: state.currentPassword,
+          newPassword: state.newPassword,
+          revokeOtherSessions: true,
+        },
+      });
+
+      if (!response.ok) {
+        dispatch({ type: "SUBMIT_ERROR", error: data.error ?? "No se pudo cambiar la contraseña." });
+        return;
+      }
+
+      dispatch({ type: "PASSWORD_CHANGE_OK" });
+    } catch (changeError) {
+      dispatch({
+        type: "SUBMIT_ERROR",
+        error: changeError instanceof Error ? changeError.message : "No se pudo cambiar la contraseña.",
+      });
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="space-y-3">
@@ -91,7 +142,7 @@ export function CredentialsClient(props: { currentEmail: string }) {
             autoComplete="email"
             placeholder="nuevo@email.com"
             value={state.newEmail}
-            onChange={(e) => dispatch({ type: "SET_NEW_EMAIL", value: e.target.value })}
+            onChange={(event) => dispatch({ type: "SET_NEW_EMAIL", value: event.target.value })}
           />
         </div>
 
@@ -99,15 +150,7 @@ export function CredentialsClient(props: { currentEmail: string }) {
           type="button"
           variant="outline"
           disabled={state.loading || !state.newEmail.trim() || state.newEmail.trim() === email}
-          onClick={async () => {
-            dispatch({ type: "SUBMIT_START" });
-            const { error } = await authClient.changeEmail({
-              newEmail: state.newEmail.trim(),
-              callbackURL: "/account",
-            });
-            if (error) return dispatch({ type: "SUBMIT_ERROR", error: error.message ?? "No se pudo iniciar el cambio de email." });
-            dispatch({ type: "EMAIL_CHANGE_OK", source: props.currentEmail, value: state.newEmail.trim() });
-          }}
+          onClick={() => void changeEmail()}
         >
           {state.loading ? <Loader2 className="size-4 animate-spin" /> : <MailCheck className="size-4" />}
         </Button>
@@ -128,9 +171,9 @@ export function CredentialsClient(props: { currentEmail: string }) {
             type="password"
             autoComplete="current-password"
             value={state.currentPassword}
-            onChange={(e) => dispatch({ type: "SET_CURRENT_PASSWORD", value: e.target.value })}
+            onChange={(event) => dispatch({ type: "SET_CURRENT_PASSWORD", value: event.target.value })}
           />
-        </div> 
+        </div>
 
         <div className="grid gap-2">
           <Label htmlFor="newPassword">Nueva contraseña</Label>
@@ -139,36 +182,21 @@ export function CredentialsClient(props: { currentEmail: string }) {
             type="password"
             autoComplete="new-password"
             value={state.newPassword}
-            onChange={(e) => dispatch({ type: "SET_NEW_PASSWORD", value: e.target.value })}
+            onChange={(event) => dispatch({ type: "SET_NEW_PASSWORD", value: event.target.value })}
           />
         </div>
 
         <Button
           type="button"
           disabled={state.loading || !state.currentPassword || !state.newPassword || state.newPassword.length < 8}
-          onClick={async () => {
-            dispatch({ type: "SUBMIT_START" });
-            const { response, data } = await sendJsonRequest<{ error?: string }>("/api/auth/change-password", {
-              method: "POST",
-              body: {
-                currentPassword: state.currentPassword,
-                newPassword: state.newPassword,
-                revokeOtherSessions: true,
-              },
-            });
-            if (!response.ok) {
-              return dispatch({ type: "SUBMIT_ERROR", error: data.error ?? "No se pudo cambiar la contraseña." });
-            }
-            dispatch({ type: "PASSWORD_CHANGE_OK" });
-          }}
+          onClick={() => void changePassword()}
         >
           {state.loading ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
         </Button>
         <p className="text-xs text-zinc-500">Mínimo 8 caracteres (ajustable en config de Better Auth).</p>
       </div>
 
-      {state.message ? <p className="text-sm text-green-700">{state.message}</p> : null}
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      <FeedbackAlerts message={state.message} error={state.error} />
     </div>
   );
 }

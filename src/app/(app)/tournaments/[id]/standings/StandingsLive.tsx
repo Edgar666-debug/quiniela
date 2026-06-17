@@ -1,13 +1,16 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
+import useSWR from "swr";
 
-import { useStandingsRealtime } from "@/hooks/useStandingsRealtime";
+import { InlineAlert } from "@/components/app/inline-alert";
+import { UserAvatar } from "@/components/app/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserAvatar } from "@/components/app/user-avatar";
+import { useStandingsRealtime } from "@/hooks/useStandingsRealtime";
+import { fetchJsonOrThrow } from "@/lib/http";
 
 type StandingRow = {
   points: number;
@@ -22,22 +25,27 @@ function medalForIndex(index: number) {
 }
 
 export function StandingsLive(props: { tournamentId: string; initial: StandingRow[]; realtimeToken: string | null }) {
-  const [localRows, setLocalRows] = useState<{ source: StandingRow[]; value: StandingRow[] } | null>(null);
-  const rows = localRows?.source === props.initial ? localRows.value : props.initial;
+  const { data, error, isValidating, mutate } = useSWR(
+    `/api/tournaments/${props.tournamentId}/standings`,
+    async (url: string) => {
+      const payload = await fetchJsonOrThrow<{ standings?: StandingRow[] }>(url, { cache: "no-store" }, "No se pudo cargar el ranking.");
+      return payload.standings ?? [];
+    },
+    {
+      fallbackData: props.initial,
+      revalidateOnFocus: false,
+    },
+  );
 
-  const [loading, setLoading] = useState(false);
+  const rows = data ?? props.initial;
 
   const refresh = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch(`/api/tournaments/${props.tournamentId}/standings`, { cache: "no-store" });
-    const data = (await res.json()) as { standings?: StandingRow[] };
-    setLoading(false);
-    if (data.standings) setLocalRows({ source: props.initial, value: data.standings });
-  }, [props.initial, props.tournamentId]);
+    await mutate();
+  }, [mutate]);
 
   useStandingsRealtime(props.tournamentId, props.realtimeToken, refresh);
 
-  const maxPoints = Math.max(0, ...rows.map((r) => r.points));
+  const maxPoints = Math.max(0, ...rows.map((row) => row.points));
 
   return (
     <Card>
@@ -46,12 +54,14 @@ export function StandingsLive(props: { tournamentId: string; initial: StandingRo
           <CardTitle>Ranking</CardTitle>
           <CardDescription>Se actualiza automáticamente cuando cambian los puntos.</CardDescription>
         </div>
-        <Button variant="outline" size="sm" type="button" onClick={refresh} disabled={loading}>
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+        <Button variant="outline" size="sm" type="button" onClick={() => void refresh()} disabled={isValidating}>
+          {isValidating ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           Actualizar
         </Button>
       </CardHeader>
       <CardContent>
+        {error ? <InlineAlert variant="error" message={error.message} className="mb-4" /> : null}
+
         <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
           <Table>
             <TableHeader className="border-b bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
@@ -61,20 +71,21 @@ export function StandingsLive(props: { tournamentId: string; initial: StandingRo
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r, i) => {
-                const medal = medalForIndex(i);
-                const width = maxPoints > 0 ? Math.round((r.points / maxPoints) * 100) : 0;
+              {rows.map((row, index) => {
+                const medal = medalForIndex(index);
+                const width = maxPoints > 0 ? Math.round((row.points / maxPoints) * 100) : 0;
+
                 return (
-                  <TableRow key={r.user.id}>
+                  <TableRow key={row.user.id}>
                     <TableCell className="relative px-4 py-3">
                       <div className="absolute inset-y-0 left-0 -z-10 bg-zinc-50 dark:bg-zinc-900/30" style={{ width: `${width}%` }} />
                       <div className="flex items-center gap-2">
-                        <span className="w-6 shrink-0 text-center text-sm">{medal ?? i + 1}</span>
-                        <UserAvatar name={r.user.name} email={r.user.email} image={r.user.image} />
-                        <span className="truncate font-medium">{r.user.name ?? r.user.email}</span>
+                        <span className="w-6 shrink-0 text-center text-sm">{medal ?? index + 1}</span>
+                        <UserAvatar name={row.user.name} email={row.user.email} image={row.user.image} />
+                        <span className="truncate font-medium">{row.user.name ?? row.user.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-right font-semibold tabular-nums">{r.points}</TableCell>
+                    <TableCell className="px-4 py-3 text-right font-semibold tabular-nums">{row.points}</TableCell>
                   </TableRow>
                 );
               })}

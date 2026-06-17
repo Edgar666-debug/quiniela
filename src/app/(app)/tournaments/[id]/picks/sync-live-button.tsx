@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 
-import { InlineAlert } from "@/components/app/inline-alert";
+import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { Button } from "@/components/ui/button";
-import { readJsonResponse } from "@/lib/http";
+import { sendJsonRequest } from "@/lib/http";
 
 type SyncLiveResponse = {
   checkedMatches?: number;
@@ -28,38 +28,41 @@ export function SyncLiveButton(props: { tournamentId: string }) {
     setMessage(null);
     setError(null);
 
-    const res = await fetch(`/api/tournaments/${props.tournamentId}/sync-live`, { method: "POST" });
-    const data = await readJsonResponse<SyncLiveResponse>(res);
-    setLoading(false);
+    try {
+      const { response, data } = await sendJsonRequest<SyncLiveResponse>(`/api/tournaments/${props.tournamentId}/sync-live`, { method: "POST" });
 
-    if (!res.ok) {
-      setError(data.error ?? "No se pudo sincronizar resultados.");
-      return;
+      if (!response.ok) {
+        setError(data.error ?? "No se pudo sincronizar resultados.");
+        return;
+      }
+
+      const checked = data.checkedMatches ?? 0;
+      const updated = data.updatedMatches ?? 0;
+
+      if (data.quotaSkipped) {
+        setError(data.quotaMessage ?? "Sincronización pospuesta por cuota de API-Football.");
+        return;
+      }
+
+      setMessage(
+        updated > 0
+          ? `Sincronización lista: ${updated} partido(s) actualizado(s) de ${checked} revisado(s).`
+          : `Sincronización lista: ${checked} partido(s) revisado(s), sin cambios.`,
+      );
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : "No se pudo sincronizar resultados.");
+    } finally {
+      setLoading(false);
     }
-
-    const checked = data.checkedMatches ?? 0;
-    const updated = data.updatedMatches ?? 0;
-
-    if (data.quotaSkipped) {
-      setError(data.quotaMessage ?? "Sincronización pospuesta por cuota de API-Football.");
-      return;
-    }
-
-    setMessage(
-      updated > 0
-        ? `Sincronización lista: ${updated} partido(s) actualizado(s) de ${checked} revisado(s).`
-        : `Sincronización lista: ${checked} partido(s) revisado(s), sin cambios.`,
-    );
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <Button type="button" variant="outline" size="sm" disabled={loading} onClick={runSync}>
+      <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => void runSync()}>
         {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
         Sincronizar
       </Button>
-      {message ? <InlineAlert variant="success" message={message} /> : null}
-      {error ? <InlineAlert variant="error" message={error} /> : null}
+      <FeedbackAlerts message={message} error={error} />
     </div>
   );
 }

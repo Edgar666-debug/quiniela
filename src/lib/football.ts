@@ -17,6 +17,34 @@ export function outcomeFromScore(scoreHome: number, scoreAway: number): Outcome 
   return "DRAW";
 }
 
+export function computeMatchdayAccuracy(
+  matches: Array<{
+    statusShort: string;
+    scoreHome: number | null;
+    scoreAway: number | null;
+    pickOutcome: Outcome | null;
+  }>,
+) {
+  let correct = 0;
+  let scoredMatches = 0;
+
+  for (const match of matches) {
+    if (!FINISHED_STATUSES.has(match.statusShort) || match.scoreHome == null || match.scoreAway == null) {
+      continue;
+    }
+    scoredMatches += 1;
+    if (match.pickOutcome && match.pickOutcome === outcomeFromScore(match.scoreHome, match.scoreAway)) {
+      correct += 1;
+    }
+  }
+
+  return {
+    correct,
+    scoredMatches,
+    percent: scoredMatches > 0 ? Math.round((correct / scoredMatches) * 100) : null,
+  };
+}
+
 export function statusLabel(short: string) {
   if (short === "FT") return "Final";
   if (short === "AET") return "Final (ET)";
