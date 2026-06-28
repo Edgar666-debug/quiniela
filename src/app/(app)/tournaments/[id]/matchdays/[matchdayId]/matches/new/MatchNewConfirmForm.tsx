@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { formatUtcToLocalShort } from "@/lib/format";
-import { readJsonResponse, sendJsonRequest } from "@/lib/http";
+import { fetchJsonOrThrow, sendJsonRequest } from "@/lib/http";
 import { pushAndRefresh } from "@/lib/navigation";
 import { toLocalDateTimeInputValue, type FixtureSelection } from "./match-new-types";
 
@@ -108,22 +108,26 @@ export function MatchNewConfirmForm(props: {
     if (!id) return;
 
     dispatch({ type: "load_fixture_start" });
-    const res = await fetch(`/api/api-football/fixtures/${encodeURIComponent(id)}`, { cache: "no-store" });
-    const data = await readJsonResponse<{
-      fixture?: { dateUtc: string; homeTeam: string; awayTeam: string; statusShort: string };
-      error?: string;
-    }>(res);
-    if (!res.ok) return dispatch({ type: "load_fixture_fail", error: data.error ?? "No se pudo consultar el fixture" });
-    if (!data.fixture) return dispatch({ type: "load_fixture_fail", error: "Fixture no encontrado" });
+    try {
+      const data = await fetchJsonOrThrow<{
+        fixture?: { dateUtc: string; homeTeam: string; awayTeam: string; statusShort: string };
+      }>(`/api/api-football/fixtures/${encodeURIComponent(id)}`, { cache: "no-store" }, "No se pudo consultar el fixture");
+      if (!data.fixture) return dispatch({ type: "load_fixture_fail", error: "Fixture no encontrado" });
 
-    dispatch({
-      type: "load_fixture_ok",
-      fixtureId: id,
-      startsAtLocal: toLocalDateTimeInputValue(new Date(data.fixture.dateUtc)),
-      homeTeam: data.fixture.homeTeam,
-      awayTeam: data.fixture.awayTeam,
-      message: `Fixture cargado (estado: ${data.fixture.statusShort}).`,
-    });
+      dispatch({
+        type: "load_fixture_ok",
+        fixtureId: id,
+        startsAtLocal: toLocalDateTimeInputValue(new Date(data.fixture.dateUtc)),
+        homeTeam: data.fixture.homeTeam,
+        awayTeam: data.fixture.awayTeam,
+        message: `Fixture cargado (estado: ${data.fixture.statusShort}).`,
+      });
+    } catch (loadError) {
+      dispatch({
+        type: "load_fixture_fail",
+        error: loadError instanceof Error ? loadError.message : "No se pudo consultar el fixture",
+      });
+    }
   }
 
   async function submitSelectedMatches() {

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { readJsonResponse } from "@/lib/http";
+import { fetchJsonOrThrow } from "@/lib/http";
 import {
   createDefaultSearchDates,
   createSeasonOptions,
@@ -183,14 +183,19 @@ export function MatchNewLeagueSearch(props: MatchNewLeagueSearchProps) {
 
     params.set("limit", "30");
 
-    const res = await fetch(`/api/api-football/fixtures/search?${params.toString()}`, { cache: "no-store" });
-    const data = await readJsonResponse<{ fixtures?: FixtureRow[]; error?: string }>(res);
-    if (!res.ok) {
-      dispatch({ type: "fixtures_fail", error: data.error ?? "No se pudo buscar fixtures." });
-      return;
+    try {
+      const data = await fetchJsonOrThrow<{ fixtures?: FixtureRow[] }>(
+        `/api/api-football/fixtures/search?${params.toString()}`,
+        { cache: "no-store" },
+        "No se pudo buscar fixtures.",
+      );
+      dispatch({ type: "fixtures_ok", fixtures: data.fixtures ?? [] });
+    } catch (searchError) {
+      dispatch({
+        type: "fixtures_fail",
+        error: searchError instanceof Error ? searchError.message : "No se pudo buscar fixtures.",
+      });
     }
-
-    dispatch({ type: "fixtures_ok", fixtures: data.fixtures ?? [] });
   }
 
   return (

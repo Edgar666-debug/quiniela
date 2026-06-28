@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, LogOut, Trash2 } from "lucide-react";
+import useSWR from "swr";
 
 import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { UserAvatar } from "@/components/app/user-avatar";
@@ -18,10 +19,13 @@ type MemberRow = {
 
 export function MembersClient(props: { tournamentId: string; myUserId: string; myRole: "OWNER" | "ORGANIZER" | "PLAYER"; initial: MemberRow[] }) {
   const router = useRouter();
-  const [localRows, setLocalRows] = useState<{ source: MemberRow[]; value: MemberRow[] } | null>(null);
+  const { data, mutate } = useSWR(`tournament-members:${props.tournamentId}`, async () => props.initial, {
+    fallbackData: props.initial,
+    revalidateOnFocus: false,
+  });
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const rows = localRows?.source === props.initial ? localRows.value : props.initial;
+  const rows = data ?? props.initial;
 
   const canManage = props.myRole === "OWNER" || props.myRole === "ORGANIZER";
 
@@ -47,18 +51,22 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
               setError(null);
               setLoadingUserId(props.myUserId);
 
-              const { response, data } = await sendJsonRequest<{ error?: string }>(`/api/tournaments/${props.tournamentId}/leave`, {
-                method: "POST",
-              });
+              try {
+                const { response, data: responseData } = await sendJsonRequest<{ error?: string }>(`/api/tournaments/${props.tournamentId}/leave`, {
+                  method: "POST",
+                });
 
-              setLoadingUserId(null);
+                if (!response.ok) {
+                  setError(responseData.error ?? "No se pudo salir del torneo");
+                  return;
+                }
 
-              if (!response.ok) {
-                setError(data.error ?? "No se pudo salir del torneo");
-                return;
+                pushAndRefresh(router, "/tournaments");
+              } catch (leaveError) {
+                setError(leaveError instanceof Error ? leaveError.message : "No se pudo salir del torneo");
+              } finally {
+                setLoadingUserId(null);
               }
-
-              pushAndRefresh(router, "/tournaments");
             }}
           >
             {loadingUserId === props.myUserId ? <Loader2 className="size-4 animate-spin" /> : <LogOut className="size-4" />}
@@ -85,23 +93,25 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
                 onClick={async () => {
                   setError(null);
                   setLoadingUserId(member.user.id);
+                  const optimisticRows = rows.filter((row) => row.user.id !== member.user.id);
+                  await mutate(optimisticRows, { revalidate: false });
 
-                  const { response, data } = await sendJsonRequest<{ error?: string }>(
-                    `/api/tournaments/${props.tournamentId}/members/${member.user.id}`,
-                    { method: "DELETE" },
-                  );
+                  try {
+                    const { response, data: responseData } = await sendJsonRequest<{ error?: string }>(
+                      `/api/tournaments/${props.tournamentId}/members/${member.user.id}`,
+                      { method: "DELETE" },
+                    );
 
-                  setLoadingUserId(null);
-
-                  if (!response.ok) {
-                    setError(data.error ?? "No se pudo expulsar");
-                    return;
+                    if (!response.ok) {
+                      await mutate();
+                      setError(responseData.error ?? "No se pudo expulsar");
+                    }
+                  } catch (removeError) {
+                    await mutate();
+                    setError(removeError instanceof Error ? removeError.message : "No se pudo expulsar");
+                  } finally {
+                    setLoadingUserId(null);
                   }
-
-                  setLocalRows({
-                    source: props.initial,
-                    value: rows.filter((row) => row.user.id !== member.user.id),
-                  });
                 }}
               >
                 {loadingUserId === member.user.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}

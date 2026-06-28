@@ -22,7 +22,7 @@ export function validateImageFile(file: File, kind: string) {
   return null;
 }
 
-export async function requestSignedUploadUrl(url: string, file: File) {
+async function requestSignedUploadUrl(url: string, file: File) {
   const signedRes = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -37,7 +37,7 @@ export async function requestSignedUploadUrl(url: string, file: File) {
   };
 }
 
-export async function uploadFileWithSignedUrl(bucket: string, file: File, path: string, token: string, publicUrl: string) {
+async function uploadFileWithSignedUrl(bucket: string, file: File, path: string, token: string, publicUrl: string) {
   const upload = await supabase.storage.from(bucket).uploadToSignedUrl(path, token, file);
 
   if (upload.error) {

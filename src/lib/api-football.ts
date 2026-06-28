@@ -28,6 +28,12 @@ type ApiFootballFixtureResponse = {
       away: { name: string; logo?: string };
     };
     goals: { home: number | null; away: number | null };
+    score: {
+      halftime?: { home: number | null; away: number | null } | null;
+      fulltime?: { home: number | null; away: number | null } | null;
+      extratime?: { home: number | null; away: number | null } | null;
+      penalty?: { home: number | null; away: number | null } | null;
+    };
   }>;
 };
 
@@ -63,6 +69,27 @@ type FixtureData = {
   season?: number;
   round?: string;
 };
+
+function toFixtureData(row: ApiFootballFixtureResponse["response"][number]): FixtureData {
+  const regularScoreHome = row.score.fulltime?.home ?? row.goals.home;
+  const regularScoreAway = row.score.fulltime?.away ?? row.goals.away;
+
+  return {
+    id: row.fixture.id,
+    dateUtc: new Date(row.fixture.date),
+    statusShort: row.fixture.status.short,
+    scoreHome: regularScoreHome,
+    scoreAway: regularScoreAway,
+    homeTeam: row.teams.home.name,
+    awayTeam: row.teams.away.name,
+    homeLogoUrl: row.teams.home.logo ?? null,
+    awayLogoUrl: row.teams.away.logo ?? null,
+    leagueId: row.league?.id,
+    leagueName: row.league?.name,
+    season: row.league?.season,
+    round: row.league?.round,
+  };
+}
 
 type CacheEntry<T> = { expiresAtMs: number; value: T };
 const responseCache = new Map<string, CacheEntry<unknown>>();
@@ -148,21 +175,7 @@ export async function fetchFixturesByIds(fixtureIds: number[]): Promise<Map<numb
       const json = (await res.json()) as ApiFootballFixtureResponse;
       const out = new Map<number, FixtureData>();
       for (const row of json.response ?? []) {
-        out.set(row.fixture.id, {
-          id: row.fixture.id,
-          dateUtc: new Date(row.fixture.date),
-          statusShort: row.fixture.status.short,
-          scoreHome: row.goals.home,
-          scoreAway: row.goals.away,
-          homeTeam: row.teams.home.name,
-          awayTeam: row.teams.away.name,
-          homeLogoUrl: row.teams.home.logo ?? null,
-          awayLogoUrl: row.teams.away.logo ?? null,
-          leagueId: row.league?.id,
-          leagueName: row.league?.name,
-          season: row.league?.season,
-          round: row.league?.round,
-        });
+        out.set(row.fixture.id, toFixtureData(row));
       }
       return out;
     });
@@ -201,21 +214,7 @@ export async function fetchFixtureById(fixtureId: number) {
     const fixture = json.response?.[0];
     if (!fixture) return null;
 
-    return {
-      id: fixture.fixture.id,
-      dateUtc: new Date(fixture.fixture.date),
-      statusShort: fixture.fixture.status.short,
-      scoreHome: fixture.goals.home,
-      scoreAway: fixture.goals.away,
-      homeTeam: fixture.teams.home.name,
-      awayTeam: fixture.teams.away.name,
-      homeLogoUrl: fixture.teams.home.logo ?? null,
-      awayLogoUrl: fixture.teams.away.logo ?? null,
-      leagueId: fixture.league?.id,
-      leagueName: fixture.league?.name,
-      season: fixture.league?.season,
-      round: fixture.league?.round,
-    } satisfies FixtureData;
+    return toFixtureData(fixture) satisfies FixtureData;
   });
 }
 
@@ -252,21 +251,7 @@ export async function searchFixtures(params: {
 
     const arr: FixtureData[] = [];
     for (const row of json.response ?? []) {
-      arr.push({
-        id: row.fixture.id,
-        dateUtc: new Date(row.fixture.date),
-        statusShort: row.fixture.status.short,
-        scoreHome: row.goals.home,
-        scoreAway: row.goals.away,
-        homeTeam: row.teams.home.name,
-        awayTeam: row.teams.away.name,
-        homeLogoUrl: row.teams.home.logo ?? null,
-        awayLogoUrl: row.teams.away.logo ?? null,
-        leagueId: row.league?.id,
-        leagueName: row.league?.name,
-        season: row.league?.season,
-        round: row.league?.round,
-      });
+      arr.push(toFixtureData(row));
     }
     return arr;
   });

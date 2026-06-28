@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CalendarDays, Eye, LayoutDashboard, Settings, Trophy, Users } from "lucide-react";
+import { CalendarDays, Eye, GitBranch, LayoutDashboard, Settings, Trophy, Users } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -98,6 +98,23 @@ export default async function TournamentHomePage(props: { params: Promise<{ id: 
             </Button>
           </CardContent>
         </Card>
+
+        {tournament.scope === "SINGLE_LEAGUE" ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Llave</CardTitle>
+              <CardDescription>Ver el cuadro de eliminación con los partidos ya cargados.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline">
+                <Link href={`/tournaments/${tournamentId}/bracket`}>
+                  <GitBranch className="size-4" />
+                  Ver llave
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card>
           <CardHeader>
