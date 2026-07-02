@@ -53,6 +53,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
       statusShort: true,
       scoreHome: true,
       scoreAway: true,
+      isEditable: true,
       picks: { where: { userId: session.user.id }, select: { outcome: true }, take: 1 },
     },
   });
@@ -72,6 +73,7 @@ export default async function MatchdayPage(props: { params: Promise<{ id: string
       statusShort: m.statusShort,
       scoreHome: m.scoreHome,
       scoreAway: m.scoreAway,
+      isEditable: m.isEditable,
       myPick: m.picks[0]?.outcome ?? null,
     })),
   };

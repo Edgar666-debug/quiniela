@@ -163,6 +163,7 @@ model Match {
   syncMisses        Int      @default(0)
   homeLogoUrl       String?
   awayLogoUrl       String?
+  isEditable        Boolean  @default(true)
   createdByUserId   String?
   createdBy         User?    @relation("MatchCreatedBy", fields: [createdByUserId], references: [id])
   matchday          Matchday @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
