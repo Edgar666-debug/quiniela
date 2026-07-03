@@ -31,7 +31,7 @@ export async function runSyncLive(options?: { tournamentId?: string; runId?: str
     where: {
       ...(options?.tournamentId ? { matchday: { tournamentId: options.tournamentId } } : {}),
       externalFixtureId: { not: null },
-      isEditable: true,
+      //isEditable: true,
       startsAtUtc: { lte: now, gte: from },
       syncMisses: { lt: 3 },
       NOT: [{ statusShort: { in: Array.from(FINISHED) } }, { statusShort: { in: Array.from(VOID) } }],
