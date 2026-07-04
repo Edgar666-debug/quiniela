@@ -87,6 +87,7 @@ model Tournament {
   id               String             @id @default(cuid())
   name             String
   logoUrl          String?
+  champion         String?
   status           TournamentStatus   @default(ACTIVE)
   scope            TournamentScope    @default(OPEN)
   externalLeagueId Int?
@@ -105,6 +106,7 @@ model Tournament {
 
 model TournamentMember {
   id           String     @id @default(cuid())
+  champion     String?
   role         MemberRole @default(PLAYER)
   joinedAt     DateTime   @default(now())
   tournamentId String

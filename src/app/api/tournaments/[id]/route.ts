@@ -5,8 +5,10 @@ import { z } from "zod";
 import { fetchLeagueLogoUrl } from "@/lib/api-football";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { recalculateStandingsForTournament } from "@/lib/standings";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getManagedTournamentLogoObjectPath, TOURNAMENT_LOGOS_BUCKET } from "@/lib/supabase/storage";
+import { inferTournamentChampion, validateChampionSelection } from "@/lib/tournament-champion";
 import {
   canEditTournamentScope,
   normalizeTournamentScopeFields,
@@ -26,6 +28,7 @@ const bodySchema = z
     externalLeagueId: z.number().int().positive().optional().nullable(),
     leagueName: z.string().trim().min(1).max(120).optional().nullable(),
     leagueSeason: z.number().int().min(1900).max(2100).optional().nullable(),
+    champion: z.string().trim().min(1).max(120).nullable().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.scope === "SINGLE_LEAGUE") {
@@ -50,12 +53,14 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     body.data.externalLeagueId !== undefined ||
     body.data.leagueName !== undefined ||
     body.data.leagueSeason !== undefined;
+  const hasChampionChange = body.data.champion !== undefined;
 
   if (
     body.data.status === undefined &&
     body.data.name === undefined &&
     body.data.logoUrl === undefined &&
-    !hasScopeChange
+    !hasScopeChange &&
+    !hasChampionChange
   ) {
     return NextResponse.json({ error: "No changes" }, { status: 400 });
   }
@@ -75,6 +80,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       externalLeagueId: true,
       leagueName: true,
       leagueSeason: true,
+      champion: true,
     },
   });
   if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -115,6 +121,24 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
   let logoUrl = body.data.logoUrl;
   const nextScope = scopeUpdate ?? current;
+  let champion = body.data.champion;
+  if (nextScope.scope !== "SINGLE_LEAGUE") {
+    champion = null;
+  } else if (champion) {
+    const validation = await validateChampionSelection(
+      {
+        id: tournamentId,
+        externalLeagueId: nextScope.externalLeagueId,
+        leagueSeason: nextScope.leagueSeason,
+      },
+      champion,
+    );
+    if (!validation.match) {
+      return NextResponse.json({ error: "El campeón no coincide con los equipos disponibles del torneo." }, { status: 409 });
+    }
+    champion = validation.match.name;
+  }
+
   if (
     logoUrl === undefined &&
     nextScope.scope === "SINGLE_LEAGUE" &&
@@ -124,6 +148,10 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     logoUrl = await fetchLeagueLogoUrl(nextScope.externalLeagueId, nextScope.leagueSeason ?? undefined);
   }
 
+  if (body.data.status === "FINISHED" && nextScope.scope === "SINGLE_LEAGUE" && champion === undefined && !current.champion) {
+    champion = await inferTournamentChampion(tournamentId);
+  }
+
   const tournament = await prisma.tournament.update({
     where: { id: tournamentId },
     data: {
@@ -131,6 +159,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       name: body.data.name,
       ...(logoUrl !== undefined ? { logoUrl } : {}),
       ...(scopeUpdate ?? {}),
+      ...(champion !== undefined ? { champion } : {}),
     },
     select: {
       id: true,
@@ -141,6 +170,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       externalLeagueId: true,
       leagueName: true,
       leagueSeason: true,
+      champion: true,
     },
   });
 
@@ -148,6 +178,13 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   const nextManagedPath = getManagedTournamentLogoObjectPath(tournament.logoUrl);
   if (previousManagedPath && previousManagedPath !== nextManagedPath) {
     await supabaseAdmin.storage.from(TOURNAMENT_LOGOS_BUCKET).remove([previousManagedPath]).catch(() => {});
+  }
+
+  if (
+    body.data.status === "FINISHED" ||
+    (body.data.status === undefined && hasChampionChange && current.status === "FINISHED")
+  ) {
+    await recalculateStandingsForTournament(tournamentId);
   }
 
   return NextResponse.json({ tournament });

@@ -54,12 +54,18 @@ type ApiFootballTeamsResponse = {
   }>;
 };
 
+type ApiFootballRoundsResponse = {
+  errors?: ApiFootballErrors;
+  response: string[];
+};
+
 type FixtureData = {
   id: number;
   dateUtc: Date;
   statusShort: string;
   scoreHome: number | null;
   scoreAway: number | null;
+  winnerSide?: "home" | "away" | null;
   homeTeam: string;
   awayTeam: string;
   homeLogoUrl?: string | null;
@@ -73,6 +79,12 @@ type FixtureData = {
 function toFixtureData(row: ApiFootballFixtureResponse["response"][number]): FixtureData {
   const regularScoreHome = row.score.fulltime?.home ?? row.goals.home;
   const regularScoreAway = row.score.fulltime?.away ?? row.goals.away;
+  const extraScoreHome = row.score.extratime?.home;
+  const extraScoreAway = row.score.extratime?.away;
+  const penaltyScoreHome = row.score.penalty?.home;
+  const penaltyScoreAway = row.score.penalty?.away;
+  const decisiveHome = penaltyScoreHome ?? extraScoreHome ?? regularScoreHome;
+  const decisiveAway = penaltyScoreAway ?? extraScoreAway ?? regularScoreAway;
 
   return {
     id: row.fixture.id,
@@ -80,6 +92,12 @@ function toFixtureData(row: ApiFootballFixtureResponse["response"][number]): Fix
     statusShort: row.fixture.status.short,
     scoreHome: regularScoreHome,
     scoreAway: regularScoreAway,
+    winnerSide:
+      decisiveHome != null && decisiveAway != null && decisiveHome !== decisiveAway
+        ? decisiveHome > decisiveAway
+          ? "home"
+          : "away"
+        : null,
     homeTeam: row.teams.home.name,
     awayTeam: row.teams.away.name,
     homeLogoUrl: row.teams.home.logo ?? null,
@@ -330,6 +348,28 @@ export async function fetchLeagueLogoUrl(leagueId: number, season?: number) {
   });
 }
 
+export async function fetchCurrentRound(params: { league: number; season: number }) {
+  const url = new URL("/fixtures/rounds", env.API_FOOTBALL_BASE_URL);
+  url.searchParams.set("league", String(params.league));
+  url.searchParams.set("season", String(params.season));
+  url.searchParams.set("current", "true");
+
+  return requestJsonCached(url, await getPlanCacheTtl("league"), async () => {
+    const res = await apiFootballRequest(url);
+    if (res.status === 204) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`API-Football error ${res.status}: ${body}`);
+    }
+
+    const json = (await res.json()) as ApiFootballRoundsResponse;
+    const apiErr = extractApiError(json.errors);
+    if (apiErr) throw new Error(apiErr);
+
+    return json.response?.[0]?.trim() || null;
+  });
+}
+
 export type TeamSearchItem = {
   id: number;
   name: string;
@@ -365,6 +405,37 @@ export async function searchTeams(params: { search: string; limit?: number }) {
   });
 
   const limit = Math.min(Math.max(params.limit ?? 15, 1), 50);
+  return out.slice(0, limit);
+}
+
+export async function fetchTeamsByLeague(params: { league: number; season: number; limit?: number }) {
+  const url = new URL("/teams", env.API_FOOTBALL_BASE_URL);
+  url.searchParams.set("league", String(params.league));
+  url.searchParams.set("season", String(params.season));
+
+  const out = await requestJsonCached(url, await getPlanCacheTtl("team"), async () => {
+    const res = await apiFootballRequest(url);
+    if (res.status === 204) return [] as TeamSearchItem[];
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`API-Football error ${res.status}: ${body}`);
+    }
+
+    const json = (await res.json()) as ApiFootballTeamsResponse;
+    const arr: TeamSearchItem[] = [];
+    for (const row of json.response ?? []) {
+      arr.push({
+        id: row.team.id,
+        name: row.team.name,
+        logoUrl: row.team.logo ?? null,
+        city: row.venue?.city ?? null,
+        country: row.venue?.country ?? null,
+      });
+    }
+    return arr;
+  });
+
+  const limit = Math.min(Math.max(params.limit ?? 50, 1), 100);
   return out.slice(0, limit);
 }
 

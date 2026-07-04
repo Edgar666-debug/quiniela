@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { CHAMPION_BONUS_POINTS, normalizeChampionName, resolveTournamentChampion } from "@/lib/tournament-champion";
 import { PickOutcome } from "@/generated/prisma/enums";
 
 const FINISHED = new Set(["FT", "AET", "PEN"]);
@@ -10,10 +11,21 @@ function outcomeFromScore(scoreHome: number, scoreAway: number): PickOutcome {
 }
 
 export async function recalculateStandingsForTournament(tournamentId: string) {
-  const [members, finishedMatches] = await Promise.all([
+  const [tournament, members, finishedMatches] = await Promise.all([
+    prisma.tournament.findUnique({
+      where: { id: tournamentId },
+      select: {
+        id: true,
+        scope: true,
+        status: true,
+        champion: true,
+        externalLeagueId: true,
+        leagueSeason: true,
+      },
+    }),
     prisma.tournamentMember.findMany({
       where: { tournamentId },
-      select: { userId: true },
+      select: { userId: true, champion: true },
     }),
     prisma.match.findMany({
       where: {
@@ -25,6 +37,7 @@ export async function recalculateStandingsForTournament(tournamentId: string) {
       select: { id: true, scoreHome: true, scoreAway: true },
     }),
   ]);
+  if (!tournament) return;
 
   const matchOutcomeById = new Map<string, PickOutcome>();
   for (const match of finishedMatches) {
@@ -47,6 +60,19 @@ export async function recalculateStandingsForTournament(tournamentId: string) {
     if (!actual) continue;
     if (pick.outcome === actual) {
       pointsByUser.set(pick.userId, (pointsByUser.get(pick.userId) ?? 0) + 1);
+    }
+  }
+
+  if (tournament.status === "FINISHED") {
+    const resolvedChampion = await resolveTournamentChampion(tournament);
+    const normalizedChampion = resolvedChampion ? normalizeChampionName(resolvedChampion) : null;
+
+    if (normalizedChampion) {
+      for (const member of members) {
+        if (!member.champion) continue;
+        if (normalizeChampionName(member.champion) !== normalizedChampion) continue;
+        pointsByUser.set(member.userId, (pointsByUser.get(member.userId) ?? 0) + CHAMPION_BONUS_POINTS);
+      }
     }
   }
 

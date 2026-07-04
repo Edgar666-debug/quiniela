@@ -7,12 +7,15 @@ import { Loader2, Save, Trash, Trophy, Upload } from "lucide-react";
 
 import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { InlineAlert } from "@/components/app/inline-alert";
+import { ChampionOptionLabel } from "@/components/tournaments/champion-option-label";
 import { TournamentLeaguePicker, type TournamentLeagueSelection, type TournamentScopeMode } from "@/components/tournaments/tournament-league-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { sendJsonRequest } from "@/lib/http";
 import { uploadFileFromSignedUrlRequest, validateImageFile } from "@/lib/storage-upload";
+import type { ChampionOption } from "@/lib/tournament-champion";
 import { TournamentAdminStatusDialog, type TournamentStatusDialogKind } from "./tournament-admin-status-dialog";
 import { TournamentAdminStatusMenu } from "./tournament-admin-status-menu";
 
@@ -25,6 +28,7 @@ type AdminState = {
   draftLogoUrl: string;
   draftScope: TournamentScopeMode;
   draftLeagueSelection: TournamentLeagueSelection | null;
+  draftChampion: string;
   message: string | null;
   error: string | null;
 };
@@ -42,6 +46,7 @@ type AdminAction =
   | { type: "set_logo_url"; value: string }
   | { type: "set_scope"; value: TournamentScopeMode }
   | { type: "set_league_selection"; value: TournamentLeagueSelection | null }
+  | { type: "set_champion"; value: string }
   | { type: "clear_feedback" };
 
 function tournamentAdminReducer(state: AdminState, action: AdminAction): AdminState {
@@ -78,6 +83,7 @@ function tournamentAdminReducer(state: AdminState, action: AdminAction): AdminSt
         ...state,
         draftScope: action.value,
         draftLeagueSelection: action.value === "OPEN" ? null : state.draftLeagueSelection,
+        draftChampion: action.value === "OPEN" ? "" : state.draftChampion,
       };
     case "set_league_selection":
       return {
@@ -86,6 +92,8 @@ function tournamentAdminReducer(state: AdminState, action: AdminAction): AdminSt
         draftLogoUrl: action.value?.logoUrl ?? state.draftLogoUrl,
         message: action.value?.logoUrl ? "Logo de la liga aplicado." : state.message,
       };
+    case "set_champion":
+      return { ...state, draftChampion: action.value };
     case "clear_feedback":
       return { ...state, message: null, error: null };
     default:
@@ -98,6 +106,7 @@ function createInitialState(props: {
   currentLogoUrl: string | null;
   currentScope: TournamentScopeMode;
   currentLeagueSelection: TournamentLeagueSelection | null;
+  currentChampion: string | null;
 }): AdminState {
   return {
     loading: false,
@@ -108,6 +117,7 @@ function createInitialState(props: {
     draftLogoUrl: props.currentLogoUrl ?? "",
     draftScope: props.currentScope,
     draftLeagueSelection: props.currentLeagueSelection,
+    draftChampion: props.currentChampion ?? "",
     message: null,
     error: null,
   };
@@ -120,6 +130,8 @@ export function TournamentAdminClient(props: {
   currentLogoUrl: string | null;
   currentScope: TournamentScopeMode;
   currentLeagueSelection: TournamentLeagueSelection | null;
+  currentChampion: string | null;
+  championConfig: { options: ChampionOption[]; resolvedChampion: string | null } | null;
   scopeLocked: boolean;
 }) {
   const router = useRouter();
@@ -131,6 +143,7 @@ export function TournamentAdminClient(props: {
   const isArchived = props.status === "ARCHIVED";
   const previewLogoUrl = state.draftLogoUrl.trim() || null;
   const actionsDisabled = state.savingDetails || state.uploadingLogo;
+  const selectedOfficialChampion = props.championConfig?.options.find((option) => option.name === state.draftChampion) ?? null;
 
   async function saveDetails(nextLogoUrl?: string | null) {
     if (state.draftScope === "SINGLE_LEAGUE" && !state.draftLeagueSelection) {
@@ -153,6 +166,7 @@ export function TournamentAdminClient(props: {
           externalLeagueId: state.draftLeagueSelection?.externalLeagueId ?? null,
           leagueName: state.draftLeagueSelection?.leagueName ?? null,
           leagueSeason: state.draftLeagueSelection?.leagueSeason ?? null,
+          champion: state.draftScope === "SINGLE_LEAGUE" ? state.draftChampion || null : null,
         },
       });
 
@@ -252,11 +266,7 @@ export function TournamentAdminClient(props: {
       <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex size-14 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/40">
-            {previewLogoUrl ? (
-              <Image src={previewLogoUrl} alt="" width={56} height={56} className="h-full w-full object-cover" unoptimized />
-            ) : (
-              <Trophy className="size-6 text-zinc-500" />
-            )}
+            {previewLogoUrl ? <Image src={previewLogoUrl} alt="" width={56} height={56} className="h-full w-full object-cover" unoptimized /> : <Trophy className="size-6 text-zinc-500" />}
           </div>
 
           <div className="flex w-full items-center justify-between gap-2">
@@ -277,21 +287,11 @@ export function TournamentAdminClient(props: {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="tournamentName">Nombre</Label>
-            <Input
-              id="tournamentName"
-              value={state.draftName}
-              onChange={(event) => dispatch({ type: "set_name", value: event.target.value })}
-              maxLength={80}
-            />
+            <Input id="tournamentName" value={state.draftName} onChange={(event) => dispatch({ type: "set_name", value: event.target.value })} maxLength={80} />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="tournamentLogo">Logo (URL)</Label>
-            <Input
-              id="tournamentLogo"
-              value={state.draftLogoUrl}
-              onChange={(event) => dispatch({ type: "set_logo_url", value: event.target.value })}
-              placeholder="https://..."
-            />
+            <Input id="tournamentLogo" value={state.draftLogoUrl} onChange={(event) => dispatch({ type: "set_logo_url", value: event.target.value })} placeholder="https://..." />
           </div>
         </div>
 
@@ -313,12 +313,7 @@ export function TournamentAdminClient(props: {
             {state.uploadingLogo ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
             Subir
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={actionsDisabled || !state.draftName.trim()}
-            onClick={() => void saveDetails()}
-          >
+          <Button type="button" variant="outline" disabled={actionsDisabled || !state.draftName.trim()} onClick={() => void saveDetails()}>
             {state.savingDetails ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             Guardar
           </Button>
@@ -346,24 +341,37 @@ export function TournamentAdminClient(props: {
         locked={props.scopeLocked}
       />
 
-      <TournamentAdminStatusDialog
-        kind="archive"
-        open={state.openDialog === "archive"}
-        onOpenChange={(open) => dispatch({ type: "set_dialog", value: open ? "archive" : null })}
-        onConfirm={() => void updateStatus("ARCHIVED", "No se pudo archivar el torneo")}
-      />
-      <TournamentAdminStatusDialog
-        kind="reactivate"
-        open={state.openDialog === "reactivate"}
-        onOpenChange={(open) => dispatch({ type: "set_dialog", value: open ? "reactivate" : null })}
-        onConfirm={() => void updateStatus("ACTIVE", "No se pudo reactivar el torneo")}
-      />
-      <TournamentAdminStatusDialog
-        kind="finish"
-        open={state.openDialog === "finish"}
-        onOpenChange={(open) => dispatch({ type: "set_dialog", value: open ? "finish" : null })}
-        onConfirm={() => void updateStatus("FINISHED", "No se pudo finalizar el torneo")}
-      />
+      {state.draftScope === "SINGLE_LEAGUE" ? (
+        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="mb-3">
+            <p className="text-sm font-medium">Campeón oficial</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Fallback manual si no se puede inferir automáticamente.</p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="officialChampion">Equipo</Label>
+            <Select value={state.draftChampion || "__none__"} onValueChange={(value) => dispatch({ type: "set_champion", value: value === "__none__" ? "" : value })} disabled={actionsDisabled}>
+              <SelectTrigger id="officialChampion">
+                {selectedOfficialChampion ? <ChampionOptionLabel option={selectedOfficialChampion} /> : <SelectValue placeholder="Sin definir" />}
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Sin definir</SelectItem>
+                {(props.championConfig?.options ?? []).map((option) => (
+                  <SelectItem key={option.name} value={option.name}>
+                    <ChampionOptionLabel option={option} />
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {props.championConfig?.resolvedChampion ? <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">Resuelto actualmente: {props.championConfig.resolvedChampion}</p> : null}
+        </div>
+      ) : null}
+
+      <TournamentAdminStatusDialog kind="archive" open={state.openDialog === "archive"} onOpenChange={(open) => dispatch({ type: "set_dialog", value: open ? "archive" : null })} onConfirm={() => void updateStatus("ARCHIVED", "No se pudo archivar el torneo")} />
+      <TournamentAdminStatusDialog kind="reactivate" open={state.openDialog === "reactivate"} onOpenChange={(open) => dispatch({ type: "set_dialog", value: open ? "reactivate" : null })} onConfirm={() => void updateStatus("ACTIVE", "No se pudo reactivar el torneo")} />
+      <TournamentAdminStatusDialog kind="finish" open={state.openDialog === "finish"} onOpenChange={(open) => dispatch({ type: "set_dialog", value: open ? "finish" : null })} onConfirm={() => void updateStatus("FINISHED", "No se pudo finalizar el torneo")} />
 
       {isFinished ? <InlineAlert variant="info" message="El torneo está finalizado. El estado ya no se puede cambiar." /> : null}
       {isArchived ? <InlineAlert variant="info" message="El torneo está archivado. Puedes reactivarlo." /> : null}

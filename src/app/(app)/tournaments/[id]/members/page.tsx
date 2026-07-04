@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getChampionPickState } from "@/lib/tournament-champion";
 import { TournamentPageHeader } from "@/components/app/tournament-page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MembersClient } from "./MembersClient";
@@ -25,7 +26,7 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { name: true, logoUrl: true },
+    select: { name: true, logoUrl: true, scope: true, status: true },
   });
   if (!tournament) redirect("/dashboard");
 
@@ -38,6 +39,7 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
       user: { select: { id: true, email: true, name: true, image: true } },
     },
   });
+  const championState = tournament.scope === "SINGLE_LEAGUE" ? await getChampionPickState(tournamentId, session.user.id) : null;
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
@@ -58,6 +60,7 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
             tournamentId={tournamentId}
             myUserId={session.user.id}
             myRole={membership.role}
+            championState={championState}
             initial={members.map((m) => ({ role: m.role, user: m.user }))}
           />
         </CardContent>

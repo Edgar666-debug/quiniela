@@ -6,6 +6,7 @@ import { TournamentPageHeader } from "@/components/app/tournament-page-header";
 import { auth } from "@/lib/auth";
 import { canEditTournament } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { getChampionPickState } from "@/lib/tournament-champion";
 import { canEditTournamentScope } from "@/lib/tournament-scope";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TournamentAdminClient } from "../tournament-admin-client";
@@ -36,6 +37,7 @@ export default async function TournamentAdminPage(props: { params: Promise<{ id:
       externalLeagueId: true,
       leagueName: true,
       leagueSeason: true,
+      champion: true,
     },
   });
   if (!tournament) redirect("/dashboard");
@@ -49,6 +51,8 @@ export default async function TournamentAdminPage(props: { params: Promise<{ id:
           leagueSeason: tournament.leagueSeason,
         }
       : null;
+  const championState = tournament.scope === "SINGLE_LEAGUE" ? await getChampionPickState(tournamentId, session.user.id) : null;
+  const championConfig = championState ? { options: championState.options, resolvedChampion: championState.resolvedChampion } : null;
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
@@ -72,6 +76,8 @@ export default async function TournamentAdminPage(props: { params: Promise<{ id:
             currentLogoUrl={tournament.logoUrl}
             currentScope={tournament.scope}
             currentLeagueSelection={currentLeagueSelection}
+            currentChampion={tournament.champion ?? null}
+            championConfig={championConfig}
             scopeLocked={scopeLocked}
           />
         </CardContent>

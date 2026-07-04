@@ -2,30 +2,45 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, LogOut, Trash2 } from "lucide-react";
+import { Loader2, LogOut, Save, Trash2, Trophy } from "lucide-react";
 import useSWR from "swr";
 
 import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { UserAvatar } from "@/components/app/user-avatar";
+import { ChampionOptionLabel } from "@/components/tournaments/champion-option-label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { sendJsonRequest } from "@/lib/http";
 import { pushAndRefresh } from "@/lib/navigation";
+import type { ChampionPickState } from "@/lib/tournament-champion";
 
 type MemberRow = {
   role: "OWNER" | "ORGANIZER" | "PLAYER";
   user: { id: string; email: string; name: string | null; image: string | null };
 };
 
-export function MembersClient(props: { tournamentId: string; myUserId: string; myRole: "OWNER" | "ORGANIZER" | "PLAYER"; initial: MemberRow[] }) {
+export function MembersClient(props: {
+  tournamentId: string;
+  myUserId: string;
+  myRole: "OWNER" | "ORGANIZER" | "PLAYER";
+  championState: ChampionPickState | null;
+  initial: MemberRow[];
+}) {
   const router = useRouter();
   const { data, mutate } = useSWR(`tournament-members:${props.tournamentId}`, async () => props.initial, {
     fallbackData: props.initial,
     revalidateOnFocus: false,
   });
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
+  const [savingChampion, setSavingChampion] = useState(false);
+  const [championValue, setChampionValue] = useState(props.championState?.myChampion ?? "");
+  const [championMessage, setChampionMessage] = useState<string | null>(null);
+  const [championError, setChampionError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const rows = data ?? props.initial;
+  const selectedChampionOption = props.championState?.options.find((option) => option.name === championValue) ?? null;
 
   const canManage = props.myRole === "OWNER" || props.myRole === "ORGANIZER";
 
@@ -39,6 +54,81 @@ export function MembersClient(props: { tournamentId: string; myUserId: string; m
 
   return (
     <div className="flex flex-col gap-3">
+      {props.championState?.enabled ? (
+        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Trophy className="size-4 text-amber-500" />
+                <p className="text-sm font-medium">Tu campeón</p>
+              </div>
+              <p className="text-muted-ui text-xs">Elige al campeón del torneo. Vale 3 puntos al final.</p>
+            </div>
+            {props.championState.resolvedChampion ? <Badge variant="secondary">Oficial: {props.championState.resolvedChampion}</Badge> : null}
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="memberChampion">Equipo</Label>
+            <Select value={championValue || "__none__"} onValueChange={(value) => setChampionValue(value === "__none__" ? "" : value)} disabled={savingChampion || !props.championState.editable}>
+              <SelectTrigger id="memberChampion">
+                {selectedChampionOption ? <ChampionOptionLabel option={selectedChampionOption} /> : <SelectValue placeholder="Selecciona un campeón" />}
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Sin definir</SelectItem>
+                {props.championState.options.map((option) => (
+                  <SelectItem key={option.name} value={option.name}>
+                    <ChampionOptionLabel option={option} />
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={savingChampion || !props.championState.editable}
+              onClick={async () => {
+                setChampionError(null);
+                setChampionMessage(null);
+                setSavingChampion(true);
+
+                try {
+                  const { response, data: responseData } = await sendJsonRequest<{
+                    error?: string;
+                    state?: ChampionPickState;
+                  }>(`/api/tournaments/${props.tournamentId}/champion-pick`, {
+                    method: "PATCH",
+                    body: { champion: championValue || null },
+                  });
+
+                  if (!response.ok) {
+                    setChampionError(responseData.error ?? "No se pudo guardar el campeón.");
+                    return;
+                  }
+
+                  setChampionValue(responseData.state?.myChampion ?? championValue);
+                  setChampionMessage("Campeón guardado.");
+                  router.refresh();
+                } catch (saveError) {
+                  setChampionError(saveError instanceof Error ? saveError.message : "No se pudo guardar el campeón.");
+                } finally {
+                  setSavingChampion(false);
+                }
+              }}
+            >
+              {savingChampion ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+              Guardar campeón
+            </Button>
+            {!props.championState.editable ? <Badge variant="outline">Bloqueado por estado: {props.championState.status}</Badge> : null}
+          </div>
+
+          <FeedbackAlerts message={championMessage} error={championError} className="mt-3" />
+        </div>
+      ) : null}
+
       <FeedbackAlerts error={error} />
 
       <div className="flex flex-wrap gap-2">
