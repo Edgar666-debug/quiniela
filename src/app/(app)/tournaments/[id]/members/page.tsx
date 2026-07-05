@@ -20,7 +20,7 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
 
   const membership = await prisma.tournamentMember.findUnique({
     where: { tournamentId_userId: { tournamentId, userId: session.user.id } },
-    select: { id: true, role: true },
+    select: { id: true, role: true, champion: true },
   });
   if (!membership) redirect("/dashboard");
 
@@ -36,6 +36,7 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
     select: {
       role: true,
       joinedAt: true,
+      champion: true,
       user: { select: { id: true, email: true, name: true, image: true } },
     },
   });
@@ -60,6 +61,7 @@ export default async function TournamentMembersPage(props: { params: Promise<{ i
             tournamentId={tournamentId}
             myUserId={session.user.id}
             myRole={membership.role}
+            championOption={membership.champion ??''}
             championState={championState}
             initial={members.map((m) => ({ role: m.role, user: m.user }))}
           />

@@ -7,11 +7,11 @@ import useSWR from "swr";
 
 import { FeedbackAlerts } from "@/components/app/feedback-alerts";
 import { UserAvatar } from "@/components/app/user-avatar";
-import { ChampionOptionLabel } from "@/components/tournaments/champion-option-label";
+//import { ChampionOptionLabel } from "@/components/tournaments/champion-option-label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+//import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { sendJsonRequest } from "@/lib/http";
 import { pushAndRefresh } from "@/lib/navigation";
 import type { ChampionPickState } from "@/lib/tournament-champion";
@@ -25,7 +25,9 @@ export function MembersClient(props: {
   tournamentId: string;
   myUserId: string;
   myRole: "OWNER" | "ORGANIZER" | "PLAYER";
+  championOption: string;
   championState: ChampionPickState | null;
+  
   initial: MemberRow[];
 }) {
   const router = useRouter();
@@ -34,13 +36,13 @@ export function MembersClient(props: {
     revalidateOnFocus: false,
   });
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
-  const [savingChampion, setSavingChampion] = useState(false);
-  const [championValue, setChampionValue] = useState(props.championState?.myChampion ?? "");
-  const [championMessage, setChampionMessage] = useState<string | null>(null);
-  const [championError, setChampionError] = useState<string | null>(null);
+  //const [savingChampion, setSavingChampion] = useState(false);
+  //const [championValue, setChampionValue] = useState(props.championState?.myChampion ?? "");
+  //const [championMessage, setChampionMessage] = useState<string | null>(null);
+  //const [championError, setChampionError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const rows = data ?? props.initial;
-  const selectedChampionOption = props.championState?.options.find((option) => option.name === championValue) ?? null;
+  //const selectedChampionOption = props.championState?.options.find((option) => option.name === championValue) ?? null;
 
   const canManage = props.myRole === "OWNER" || props.myRole === "ORGANIZER";
 
@@ -54,7 +56,7 @@ export function MembersClient(props: {
 
   return (
     <div className="flex flex-col gap-3">
-      {props.championState?.enabled ? (
+      {/*{props.championState?.enabled ? (
         <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
@@ -66,7 +68,7 @@ export function MembersClient(props: {
             </div>
             {props.championState.resolvedChampion ? <Badge variant="secondary">Oficial: {props.championState.resolvedChampion}</Badge> : null}
           </div>
-
+          
           <div className="grid gap-2">
             <Label htmlFor="memberChampion">Equipo</Label>
             <Select value={championValue || "__none__"} onValueChange={(value) => setChampionValue(value === "__none__" ? "" : value)} disabled={savingChampion || !props.championState.editable}>
@@ -82,7 +84,7 @@ export function MembersClient(props: {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </div>*
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button
@@ -127,7 +129,7 @@ export function MembersClient(props: {
 
           <FeedbackAlerts message={championMessage} error={championError} className="mt-3" />
         </div>
-      ) : null}
+      ) : null}*/}
 
       <FeedbackAlerts error={error} />
 
@@ -172,6 +174,9 @@ export function MembersClient(props: {
               <p className="truncate text-sm font-medium">{member.user.name ?? member.user.email}</p>
               <p className="text-muted-ui truncate text-xs">{member.user.email}</p>
             </div>
+          </div>
+          <div className="min-w-0">
+          <Label>Campeón: {props.championOption ?? props.championOption}</Label>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline">{member.role}</Badge>
