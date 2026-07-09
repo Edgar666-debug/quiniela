@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,7 @@ import type { ChampionPickState } from "@/lib/tournament-champion";
 
 type MemberRow = {
   role: "OWNER" | "ORGANIZER" | "PLAYER";
+  champion: string | null;
   user: { id: string; email: string; name: string | null; image: string | null };
 };
 
@@ -25,9 +26,7 @@ export function MembersClient(props: {
   tournamentId: string;
   myUserId: string;
   myRole: "OWNER" | "ORGANIZER" | "PLAYER";
-  championOption: string;
   championState: ChampionPickState | null;
-  
   initial: MemberRow[];
 }) {
   const router = useRouter();
@@ -42,7 +41,8 @@ export function MembersClient(props: {
   const [championError, setChampionError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const rows = data ?? props.initial;
-  const selectedChampionOption = props.championState?.options.find((option) => option.name === championValue) ?? null;
+  const championOptions = props.championState?.options ?? [];
+  const selectedChampionOption = championOptions.find((option) => option.name === championValue) ?? null;
 
   const canManage = props.myRole === "OWNER" || props.myRole === "ORGANIZER";
 
@@ -68,7 +68,7 @@ export function MembersClient(props: {
             </div>
             {props.championState.resolvedChampion ? <Badge variant="secondary">Oficial: {props.championState.resolvedChampion}</Badge> : null}
           </div>
-          
+
           <div className="grid gap-2">
             <Label htmlFor="memberChampion">Equipo</Label>
             <Select value={championValue || "__none__"} onValueChange={(value) => setChampionValue(value === "__none__" ? "" : value)} disabled={savingChampion || !props.championState.editable}>
@@ -77,7 +77,7 @@ export function MembersClient(props: {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">Sin definir</SelectItem>
-                {props.championState.options.map((option) => (
+                {championOptions.map((option) => (
                   <SelectItem key={option.name} value={option.name}>
                     <ChampionOptionLabel option={option} />
                   </SelectItem>
@@ -166,55 +166,62 @@ export function MembersClient(props: {
         ) : null}
       </div>
 
-      {rows.map((member) => (
-        <div key={member.user.id} className="list-row-ui flex flex-wrap items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <UserAvatar name={member.user.name} email={member.user.email} image={member.user.image} />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{member.user.name ?? member.user.email}</p>
-              <p className="text-muted-ui truncate text-xs">{member.user.email}</p>
+      {rows.map((member) => {
+        const memberChampionOption = member.champion
+          ? championOptions.find((option) => option.name === member.champion) ?? { name: member.champion, logoUrl: null }
+          : null;
+
+        return (
+          <div key={member.user.id} className="list-row-ui flex flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <UserAvatar name={member.user.name} email={member.user.email} image={member.user.image} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{member.user.name ?? member.user.email}</p>
+                <p className="text-muted-ui truncate text-xs">{member.user.email}</p>
+              </div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-muted-ui text-xs">Campeón elegido</p>
+              {memberChampionOption ? <ChampionOptionLabel option={memberChampionOption} /> : <Label>Sin definir</Label>}
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{member.role}</Badge>
+              {canRemove(member) ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={loadingUserId === member.user.id}
+                  onClick={async () => {
+                    setError(null);
+                    setLoadingUserId(member.user.id);
+                    const optimisticRows = rows.filter((row) => row.user.id !== member.user.id);
+                    await mutate(optimisticRows, { revalidate: false });
+
+                    try {
+                      const { response, data: responseData } = await sendJsonRequest<{ error?: string }>(
+                        `/api/tournaments/${props.tournamentId}/members/${member.user.id}`,
+                        { method: "DELETE" },
+                      );
+
+                      if (!response.ok) {
+                        await mutate();
+                        setError(responseData.error ?? "No se pudo expulsar");
+                      }
+                    } catch (removeError) {
+                      await mutate();
+                      setError(removeError instanceof Error ? removeError.message : "No se pudo expulsar");
+                    } finally {
+                      setLoadingUserId(null);
+                    }
+                  }}
+                >
+                  {loadingUserId === member.user.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                </Button>
+              ) : null}
             </div>
           </div>
-          <div className="min-w-0">
-          <Label>Campeón: {props.championOption ?? props.championOption}</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">{member.role}</Badge>
-            {canRemove(member) ? (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={loadingUserId === member.user.id}
-                onClick={async () => {
-                  setError(null);
-                  setLoadingUserId(member.user.id);
-                  const optimisticRows = rows.filter((row) => row.user.id !== member.user.id);
-                  await mutate(optimisticRows, { revalidate: false });
-
-                  try {
-                    const { response, data: responseData } = await sendJsonRequest<{ error?: string }>(
-                      `/api/tournaments/${props.tournamentId}/members/${member.user.id}`,
-                      { method: "DELETE" },
-                    );
-
-                    if (!response.ok) {
-                      await mutate();
-                      setError(responseData.error ?? "No se pudo expulsar");
-                    }
-                  } catch (removeError) {
-                    await mutate();
-                    setError(removeError instanceof Error ? removeError.message : "No se pudo expulsar");
-                  } finally {
-                    setLoadingUserId(null);
-                  }
-                }}
-              >
-                {loadingUserId === member.user.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
