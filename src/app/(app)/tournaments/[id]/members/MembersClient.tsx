@@ -182,12 +182,11 @@ export function MembersClient(props: {
                 <p className="text-muted-ui truncate text-xs">{member.user.email}</p>
               </div>
             </div>
-            {showChampionSection ? (
+
               <div className="min-w-0 flex-1">
                 <p className="text-muted-ui text-xs">Campeón elegido</p>
                 {memberChampionOption ? <ChampionOptionLabel option={memberChampionOption} /> : <Label>Sin definir</Label>}
               </div>
-            ) : null}
             <div className="flex items-center gap-2">
               <Badge variant="outline">{member.role}</Badge>
               {canRemove(member) ? (
