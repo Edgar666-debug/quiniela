@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Toggle } from "@/components/ui/toggle";
 import { sendJsonRequest } from "@/lib/http";
 import { uploadFileFromSignedUrlRequest, validateImageFile } from "@/lib/storage-upload";
 import type { ChampionOption } from "@/lib/tournament-champion";
@@ -29,6 +30,7 @@ type AdminState = {
   draftScope: TournamentScopeMode;
   draftLeagueSelection: TournamentLeagueSelection | null;
   draftChampion: string;
+  draftChampionPicksEnabled: boolean;
   message: string | null;
   error: string | null;
 };
@@ -47,6 +49,7 @@ type AdminAction =
   | { type: "set_scope"; value: TournamentScopeMode }
   | { type: "set_league_selection"; value: TournamentLeagueSelection | null }
   | { type: "set_champion"; value: string }
+  | { type: "set_champion_picks_enabled"; value: boolean }
   | { type: "clear_feedback" };
 
 function tournamentAdminReducer(state: AdminState, action: AdminAction): AdminState {
@@ -94,6 +97,8 @@ function tournamentAdminReducer(state: AdminState, action: AdminAction): AdminSt
       };
     case "set_champion":
       return { ...state, draftChampion: action.value };
+    case "set_champion_picks_enabled":
+      return { ...state, draftChampionPicksEnabled: action.value };
     case "clear_feedback":
       return { ...state, message: null, error: null };
     default:
@@ -107,6 +112,7 @@ function createInitialState(props: {
   currentScope: TournamentScopeMode;
   currentLeagueSelection: TournamentLeagueSelection | null;
   currentChampion: string | null;
+  currentChampionPicksEnabled: boolean;
 }): AdminState {
   return {
     loading: false,
@@ -118,6 +124,7 @@ function createInitialState(props: {
     draftScope: props.currentScope,
     draftLeagueSelection: props.currentLeagueSelection,
     draftChampion: props.currentChampion ?? "",
+    draftChampionPicksEnabled: props.currentChampionPicksEnabled,
     message: null,
     error: null,
   };
@@ -131,6 +138,7 @@ export function TournamentAdminClient(props: {
   currentScope: TournamentScopeMode;
   currentLeagueSelection: TournamentLeagueSelection | null;
   currentChampion: string | null;
+  currentChampionPicksEnabled: boolean;
   championConfig: { options: ChampionOption[]; resolvedChampion: string | null } | null;
   scopeLocked: boolean;
 }) {
@@ -167,6 +175,7 @@ export function TournamentAdminClient(props: {
           leagueName: state.draftLeagueSelection?.leagueName ?? null,
           leagueSeason: state.draftLeagueSelection?.leagueSeason ?? null,
           champion: state.draftScope === "SINGLE_LEAGUE" ? state.draftChampion || null : null,
+          championPicksEnabled: state.draftChampionPicksEnabled,
         },
       });
 
@@ -343,6 +352,21 @@ export function TournamentAdminClient(props: {
 
       {state.draftScope === "SINGLE_LEAGUE" ? (
         <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">Selección de campeón</p>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">Habilita o deshabilita esta sección para los participantes.</p>
+            </div>
+            <Toggle
+              pressed={state.draftChampionPicksEnabled}
+              onPressedChange={(pressed) => dispatch({ type: "set_champion_picks_enabled", value: pressed })}
+              disabled={actionsDisabled}
+              aria-label="Habilitar selección de campeón"
+              size="sm"
+            >
+              {state.draftChampionPicksEnabled ? "Activada" : "Desactivada"}
+            </Toggle>
+          </div>
           <div className="mb-3">
             <p className="text-sm font-medium">Campeón oficial</p>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">Fallback manual si no se puede inferir automáticamente.</p>

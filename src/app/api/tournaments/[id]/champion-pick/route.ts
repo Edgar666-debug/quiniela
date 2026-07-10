@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+﻿import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -46,6 +46,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       id: true,
       scope: true,
       status: true,
+      championPicksEnabled: true,
       externalLeagueId: true,
       leagueSeason: true,
     },
@@ -53,6 +54,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (!tournament) return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
   if (tournament.scope !== "SINGLE_LEAGUE") {
     return NextResponse.json({ error: "Este torneo no usa selección de campeón." }, { status: 409 });
+  }
+  if (!tournament.championPicksEnabled) {
+    return NextResponse.json({ error: "La selección de campeón está deshabilitada." }, { status: 409 });
   }
   if (tournament.status !== "ACTIVE") {
     return NextResponse.json({ error: "La selección de campeón ya está cerrada." }, { status: 409 });

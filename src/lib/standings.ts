@@ -19,6 +19,7 @@ export async function recalculateStandingsForTournament(tournamentId: string) {
         scope: true,
         status: true,
         champion: true,
+        championPicksEnabled: true,
         externalLeagueId: true,
         leagueSeason: true,
       },
@@ -63,7 +64,7 @@ export async function recalculateStandingsForTournament(tournamentId: string) {
     }
   }
 
-  if (tournament.status === "FINISHED") {
+  if (tournament.status === "FINISHED" && tournament.championPicksEnabled) {
     const resolvedChampion = await resolveTournamentChampion(tournament);
     const normalizedChampion = resolvedChampion ? normalizeChampionName(resolvedChampion) : null;
 

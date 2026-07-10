@@ -25,6 +25,7 @@ type TournamentChampionContext = {
   scope: "OPEN" | "SINGLE_LEAGUE";
   status: "ACTIVE" | "FINISHED" | "ARCHIVED";
   champion: string | null;
+  championPicksEnabled: boolean;
   externalLeagueId: number | null;
   leagueSeason: number | null;
 };
@@ -192,6 +193,7 @@ export async function getChampionPickState(tournamentId: string, userId: string)
       scope: true,
       status: true,
       champion: true,
+      championPicksEnabled: true,
       externalLeagueId: true,
       leagueSeason: true,
     },
@@ -205,8 +207,8 @@ export async function getChampionPickState(tournamentId: string, userId: string)
       : [];
 
   return {
-    enabled: tournament.scope === "SINGLE_LEAGUE",
-    editable: tournament.scope === "SINGLE_LEAGUE" && tournament.status === "ACTIVE",
+    enabled: tournament.scope === "SINGLE_LEAGUE" && tournament.championPicksEnabled,
+    editable: tournament.scope === "SINGLE_LEAGUE" && tournament.championPicksEnabled && tournament.status === "ACTIVE",
     scope: tournament.scope,
     status: tournament.status,
     myChampion: membership.champion,

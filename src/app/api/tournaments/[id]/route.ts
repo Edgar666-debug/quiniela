@@ -29,6 +29,7 @@ const bodySchema = z
     leagueName: z.string().trim().min(1).max(120).optional().nullable(),
     leagueSeason: z.number().int().min(1900).max(2100).optional().nullable(),
     champion: z.string().trim().min(1).max(120).nullable().optional(),
+    championPicksEnabled: z.boolean().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.scope === "SINGLE_LEAGUE") {
@@ -54,13 +55,15 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     body.data.leagueName !== undefined ||
     body.data.leagueSeason !== undefined;
   const hasChampionChange = body.data.champion !== undefined;
+  const hasChampionPicksEnabledChange = body.data.championPicksEnabled !== undefined;
 
   if (
     body.data.status === undefined &&
     body.data.name === undefined &&
     body.data.logoUrl === undefined &&
     !hasScopeChange &&
-    !hasChampionChange
+    !hasChampionChange &&
+    !hasChampionPicksEnabledChange
   ) {
     return NextResponse.json({ error: "No changes" }, { status: 400 });
   }
@@ -81,6 +84,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       leagueName: true,
       leagueSeason: true,
       champion: true,
+      championPicksEnabled: true,
     },
   });
   if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -160,6 +164,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       ...(logoUrl !== undefined ? { logoUrl } : {}),
       ...(scopeUpdate ?? {}),
       ...(champion !== undefined ? { champion } : {}),
+      ...(body.data.championPicksEnabled !== undefined ? { championPicksEnabled: body.data.championPicksEnabled } : {}),
     },
     select: {
       id: true,
@@ -171,6 +176,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       leagueName: true,
       leagueSeason: true,
       champion: true,
+      championPicksEnabled: true,
     },
   });
 
@@ -182,7 +188,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
   if (
     body.data.status === "FINISHED" ||
-    (body.data.status === undefined && hasChampionChange && current.status === "FINISHED")
+    (body.data.status === undefined && (hasChampionChange || hasChampionPicksEnabledChange) && current.status === "FINISHED")
   ) {
     await recalculateStandingsForTournament(tournamentId);
   }

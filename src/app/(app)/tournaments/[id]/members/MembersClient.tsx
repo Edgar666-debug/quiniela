@@ -43,6 +43,8 @@ export function MembersClient(props: {
   const rows = data ?? props.initial;
   const championOptions = props.championState?.options ?? [];
   const selectedChampionOption = championOptions.find((option) => option.name === championValue) ?? null;
+  const championState = props.championState;
+  const showChampionSection = props.championState?.enabled ?? false;
 
   const canManage = props.myRole === "OWNER" || props.myRole === "ORGANIZER";
 
@@ -56,7 +58,7 @@ export function MembersClient(props: {
 
   return (
     <div className="flex flex-col gap-3">
-      {props.championState?.enabled ? (
+      {showChampionSection && championState ? (
         <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
@@ -66,12 +68,12 @@ export function MembersClient(props: {
               </div>
               <p className="text-muted-ui text-xs">Elige al campeón del torneo. Vale 3 puntos al final.</p>
             </div>
-            {props.championState.resolvedChampion ? <Badge variant="secondary">Oficial: {props.championState.resolvedChampion}</Badge> : null}
+            {championState.resolvedChampion ? <Badge variant="secondary">Oficial: {championState.resolvedChampion}</Badge> : null}
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="memberChampion">Equipo</Label>
-            <Select value={championValue || "__none__"} onValueChange={(value) => setChampionValue(value === "__none__" ? "" : value)} disabled={savingChampion || !props.championState.editable}>
+            <Select value={championValue || "__none__"} onValueChange={(value) => setChampionValue(value === "__none__" ? "" : value)} disabled={savingChampion || !championState.editable}>
               <SelectTrigger id="memberChampion">
                 {selectedChampionOption ? <ChampionOptionLabel option={selectedChampionOption} /> : <SelectValue placeholder="Selecciona un campeón" />}
               </SelectTrigger>
@@ -91,7 +93,7 @@ export function MembersClient(props: {
               type="button"
               size="sm"
               variant="outline"
-              disabled={savingChampion || !props.championState.editable}
+              disabled={savingChampion || !championState.editable}
               onClick={async () => {
                 setChampionError(null);
                 setChampionMessage(null);
@@ -124,7 +126,7 @@ export function MembersClient(props: {
               {savingChampion ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
               Guardar campeón
             </Button>
-            {!props.championState.editable ? <Badge variant="outline">Bloqueado por estado: {props.championState.status}</Badge> : null}
+            {!championState.editable ? <Badge variant="outline">Bloqueado por estado: {championState.status}</Badge> : null}
           </div>
 
           <FeedbackAlerts message={championMessage} error={championError} className="mt-3" />
@@ -180,10 +182,12 @@ export function MembersClient(props: {
                 <p className="text-muted-ui truncate text-xs">{member.user.email}</p>
               </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-muted-ui text-xs">Campeón elegido</p>
-              {memberChampionOption ? <ChampionOptionLabel option={memberChampionOption} /> : <Label>Sin definir</Label>}
-            </div>
+            {showChampionSection ? (
+              <div className="min-w-0 flex-1">
+                <p className="text-muted-ui text-xs">Campeón elegido</p>
+                {memberChampionOption ? <ChampionOptionLabel option={memberChampionOption} /> : <Label>Sin definir</Label>}
+              </div>
+            ) : null}
             <div className="flex items-center gap-2">
               <Badge variant="outline">{member.role}</Badge>
               {canRemove(member) ? (

@@ -88,6 +88,7 @@ model Tournament {
   name             String
   logoUrl          String?
   champion         String?
+  championPicksEnabled Boolean        @default(true)
   status           TournamentStatus   @default(ACTIVE)
   scope            TournamentScope    @default(OPEN)
   externalLeagueId Int?

@@ -1,0 +1,1 @@
+﻿ALTER TABLE "Tournament" ADD COLUMN "championPicksEnabled" BOOLEAN NOT NULL DEFAULT true;

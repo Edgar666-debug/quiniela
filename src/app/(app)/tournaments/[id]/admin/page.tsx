@@ -38,6 +38,7 @@ export default async function TournamentAdminPage(props: { params: Promise<{ id:
       leagueName: true,
       leagueSeason: true,
       champion: true,
+      championPicksEnabled: true,
     },
   });
   if (!tournament) redirect("/dashboard");
@@ -77,6 +78,7 @@ export default async function TournamentAdminPage(props: { params: Promise<{ id:
             currentScope={tournament.scope}
             currentLeagueSelection={currentLeagueSelection}
             currentChampion={tournament.champion ?? null}
+            currentChampionPicksEnabled={tournament.championPicksEnabled}
             championConfig={championConfig}
             scopeLocked={scopeLocked}
           />
